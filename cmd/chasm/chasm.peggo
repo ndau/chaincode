@@ -1,0 +1,55 @@
+{
+    package main
+
+}
+
+Script <- EOL* p:Preamble code:Code EOF { return newScript(p.(PreambleNode), code) }
+
+Preamble <-  _? "context" _? ":" _? cc:ContextConstant  { return newPreambleNode(cc.(byte)) }
+
+Code <-  _? "code" _? ":" _? s:Statements { return s, nil }
+
+Statements  <- s:Line+
+Line <- _? op:Operation EOL
+
+Operation <-
+    ( ConstDef
+    / Opcode
+    )
+
+ConstDef <- k:Constant _? '=' _? v:Value { c.state[k.(string)] = v.(string); return v, nil }
+
+Opcode =
+    ( "nop" { return newUnitaryOpcode(OpNop) }
+    / "drop" { return newUnitaryOpcode(OpDrop) }
+    / "push" v:Value  { return newPushOpcode(v.(string)) }
+    )
+
+Value =
+    ( Timestamp
+    / Integer
+    / Constant
+    )
+
+Timestamp <- ts:(Date 'T' Time 'Z') { return newPushTimestamp(ts.(string)) }
+Date <- [0-9] [0-9] [0-9] [0-9] '-' [0-9] [0-9] '-' [0-9] [0-9]
+Time <-  [0-9] [0-9] ':' [0:9] [0-9] '-' [0-9] [0-9]
+
+ContextConstant <-
+    ( "NODE_PAYOUT" { return CtxNodePayout, nil }
+    / "EAI_TIMING" { return CtxEaiTiming, nil }
+    / "NODE_QUALITY" { return CtxNodeQuality, nil }
+    / "MARKET_PRICE" { return CtxMarketPrice, nil }
+    )
+
+Integer <- [0-9]+                            { return c.text, nil }
+Constant <- k:([A-Z] [A-Z0-9_]*)                  { return c.state[k.(string)], nil }
+
+_ <- [ \t]+
+
+EOL <- _? Comment? ("\r\n" / "\n\r" / "\r" / "\n" / EOF)
+
+Comment <- ';' [^\r\n]*
+
+EOF <- !.
+
