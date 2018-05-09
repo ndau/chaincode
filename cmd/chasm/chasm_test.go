@@ -1,0 +1,78 @@
+package main
+
+import (
+	"fmt"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
+
+func checkParse(t *testing.T, name string, code string, result string) {
+	sn, err := Parse(name, []byte(code))
+	if err != nil {
+		fmt.Println(err)
+	}
+	assert.Nil(t, err)
+	b := sn.(Script).bytes()
+	bcheck(t, b, result)
+}
+
+func TestSimple1(t *testing.T) {
+	code := `
+		; comment
+		context: TEST
+		{
+		nop
+		}
+`
+	checkParse(t, "Simple1", code, "0000")
+}
+
+func TestSimple2(t *testing.T) {
+	code := `
+		; comment
+		context: TEST
+		{
+			nop ; nop instruction
+			drop ; drop nothing
+		}
+`
+	checkParse(t, "Simple2", code, "000001")
+}
+
+func TestSimplePush(t *testing.T) {
+	code := `
+		; comment
+		context: TEST
+		{
+			push 0
+		}
+`
+	checkParse(t, "SimplePush", code, "0020")
+}
+
+func TestSeveralPushes(t *testing.T) {
+	code := `
+		; comment
+		context: TEST
+		{
+			push -1
+			push 1
+			push 2
+			push 12
+		}
+`
+	checkParse(t, "SeveralPushes", code, "002b2a2102210c")
+}
+
+func TestConstants(t *testing.T) {
+	code := `
+		; comment
+		context: TEST
+		{
+			K = 65535
+			push K
+		}
+`
+	checkParse(t, "Constants", code, "0022FFFF")
+}

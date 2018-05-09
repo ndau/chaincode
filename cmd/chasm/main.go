@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -29,14 +30,14 @@ func main() {
 
 // Opcodes
 const (
-	OpNop   byte = 0x00
-	OpDrop  byte = 0x01
-	OpZero  byte = 0x20
-	OpPushN byte = 0x20
+	OpNop    byte = 0x00
+	OpDrop   byte = 0x01
+	OpZero   byte = 0x20
+	OpPushN  byte = 0x20
 	OpPush64 byte = 0x29
-	OpOne   byte = 0x2A
-	OpNeg1  byte = 0x2B
-	OpPushT byte = 0x2C
+	OpOne    byte = 0x2A
+	OpNeg1   byte = 0x2B
+	OpPushT  byte = 0x2C
 )
 
 // Some masking values
@@ -47,6 +48,7 @@ const (
 
 // Constants for Contexts
 const (
+	CtxTest        byte = iota
 	CtxNodePayout  byte = iota
 	CtxEaiTiming   byte = iota
 	CtxNodeQuality byte = iota
@@ -86,13 +88,19 @@ func (n Script) bytes() []byte {
 	return b
 }
 
-func newScript(p Node, opcodes interface{}) (Script, error) {
-	sl := toIfaceSlice(opcodes)
-	ops := make([]Node, len(sl))
-	for i, v := range sl {
-		ops[i] = v.(Node)
+func newScript(p interface{}, opcodes interface{}) (Script, error) {
+	preamble, ok := p.(PreambleNode)
+	if !ok {
+		return Script{}, errors.New("not a preamble node")
 	}
-	return Script{preamble: p, opcodes: ops}, nil
+	sl := toIfaceSlice(opcodes)
+	ops := []Node{}
+	for _, v := range sl {
+		if n, ok := v.(Node); ok {
+			ops = append(ops, n)
+		}
+	}
+	return Script{preamble: preamble, opcodes: ops}, nil
 }
 
 // PreambleNode expresses the information in the preamble (which for now is just a context byte)
@@ -169,10 +177,10 @@ func (n PushOpcode) bytes() []byte {
 		if n.arg < 0 {
 			suppress = byte(0xFF)
 		}
-		for ;b[len(b)-1] == suppress; {
+		for b[len(b)-1] == suppress {
 			b = b[:len(b)-1]
 		}
-	 	nbytes := byte(len(b))
+		nbytes := byte(len(b))
 		op := OpPushN | nbytes
 		b = append([]byte{op}, b...)
 		return b

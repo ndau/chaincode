@@ -3,32 +3,42 @@
 
 }
 
-Script <- EOL* p:Preamble code:Code EOF { return newScript(p.(PreambleNode), code) }
+Script <- EOL* p:Preamble code:Code EOF { return newScript(p, code) }
 
-Preamble <-  _? "context" _? ":" _? cc:ContextConstant  { return newPreambleNode(cc.(byte)) }
+Preamble <-  _? "context" _? ":" _? cc:ContextConstant EOL { return newPreambleNode(cc.(byte)) }
 
-Code <-  _? "code" _? ":" _? s:Statements { return s, nil }
+Code <-  EOL* _? '{' s:Line+ _? '}' EOL* { return s, nil }
 
-Statements  <- s:Line+
-Line <- _? op:Operation EOL
+Line <-
+    ( _? op:Operation EOL { return op, nil }
+    / EOL { return nil, nil }
+    )
 
 Operation <-
     ( ConstDef
     / Opcode
     )
 
-ConstDef <- k:Constant _? '=' _? v:Value { c.state[k.(string)] = v.(string); return v, nil }
+ConstDef <-
+    ( k:Constant _? '=' _? v:Value {
+            if key, ok := k.(string); ok {
+                c.state[key] = string(v.([]byte))
+                return v, nil
+            }
+            return nil, errors.New("Bad const def")
+        }
+    )
 
 Opcode =
     ( "nop" { return newUnitaryOpcode(OpNop) }
     / "drop" { return newUnitaryOpcode(OpDrop) }
-    / "push" v:Value  { return newPushOpcode(v.(string)) }
+    / "push" _? v:Value  { return newPushOpcode(v.(string)) }
     )
 
 Value =
     ( Timestamp
     / Integer
-    / Constant
+    / ConstantRef
     )
 
 Timestamp <- ts:(Date 'T' Time 'Z') { return newPushTimestamp(ts.(string)) }
@@ -36,18 +46,20 @@ Date <- [0-9] [0-9] [0-9] [0-9] '-' [0-9] [0-9] '-' [0-9] [0-9]
 Time <-  [0-9] [0-9] ':' [0:9] [0-9] '-' [0-9] [0-9]
 
 ContextConstant <-
-    ( "NODE_PAYOUT" { return CtxNodePayout, nil }
+    ( "TEST" { return CtxTest, nil }
+    / "NODE_PAYOUT" { return CtxNodePayout, nil }
     / "EAI_TIMING" { return CtxEaiTiming, nil }
     / "NODE_QUALITY" { return CtxNodeQuality, nil }
     / "MARKET_PRICE" { return CtxMarketPrice, nil }
     )
 
-Integer <- [0-9]+                            { return c.text, nil }
-Constant <- k:([A-Z] [A-Z0-9_]*)                  { return c.state[k.(string)], nil }
+ConstantRef <- k:Constant                         { return c.state[k.(string)], nil }
+Integer <- '-'? [0-9]+                            { return c.text, nil }
+Constant <- [A-Z] [A-Z0-9_]*                      { return string(c.text), nil }
 
 _ <- [ \t]+
 
-EOL <- _? Comment? ("\r\n" / "\n\r" / "\r" / "\n" / EOF)
+EOL <- _? Comment? ("\r\n" / "\n\r" / "\r" / "\n" )
 
 Comment <- ';' [^\r\n]*
 
