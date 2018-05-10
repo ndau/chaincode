@@ -134,6 +134,19 @@ func TestUnitaryOpcodes2(t *testing.T) {
 		"00607094959697808182889091929330")
 }
 
+func TestBinary(t *testing.T) {
+	code := `
+		; comment
+		context: TEST
+		{
+			pick 2
+			pick 12
+			roll 0xA
+		}
+`
+	checkParse(t, "Binary", code, "000E020E0C0F0A")
+}
+
 func TestRealistic(t *testing.T) {
 	code := `
 		; This program pushes a, b, c,
@@ -166,17 +179,4 @@ func TestRealistic(t *testing.T) {
 	checkParse(t, "Realistic", code, `
 		00 21 03 21 05 21 07 21  15 0f 04 0e 01 05 42 42
 		0f 04 0f 02 42 40 40 10`)
-}
-
-func TestBinary(t *testing.T) {
-	code := `
-		; comment
-		context: TEST
-		{
-			pick 2
-			pick 12
-			roll 0xA
-		}
-`
-	checkParse(t, "Binary", code, "000E020E0C0F0A")
 }

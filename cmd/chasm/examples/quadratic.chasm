@@ -1,0 +1,28 @@
+; Demonstration code for chasm assembler
+; This program pushes a, b, c,
+; and x on the stack and calculates
+; a*x*x + b*x + c
+
+context: TEST
+{
+    A = 3
+    B = 5
+    C = 7
+    X = 21
+
+    push A
+    push B
+    push C
+    push X	; ABCX
+    roll 4	; BCXA
+    pick 1	; BCXAX
+    dup  	; BCXAXX
+    mul		; BCXAR
+    mul		; BCXR
+    roll 4  ; CXRB
+    roll 2  ; CRBX
+    mul		; CRS
+    add		; CR
+    add		; R
+    ret
+}
