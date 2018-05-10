@@ -1,21 +1,8 @@
 package main
 
 import (
-	"fmt"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
 )
-
-func checkParse(t *testing.T, name string, code string, result string) {
-	sn, err := Parse(name, []byte(code))
-	if err != nil {
-		fmt.Println(err)
-	}
-	assert.Nil(t, err)
-	b := sn.(Script).bytes()
-	bcheck(t, b, result)
-}
 
 func TestSimple1(t *testing.T) {
 	code := `
@@ -114,7 +101,11 @@ func TestUnitaryOpcodes1(t *testing.T) {
 			slice
 		}
 `
-	checkParse(t, "Unitary1", code, "000001020506090D101120202a2a2b2d2f4041424344454647485051525354")
+	checkParse(t, "Unitary1", code, `
+		0000 0102 0506 090D
+		1011 2020 2a2a 2b2d
+		2f40 4142 4344 4546
+		4748 5051 5253 54`)
 }
 
 func TestUnitaryOpcodes2(t *testing.T) {
@@ -139,11 +130,11 @@ func TestUnitaryOpcodes2(t *testing.T) {
 			pushl
 		}
 `
-	checkParse(t, "Unitary2", code, "00607094959697808182889091929330")
+	checkParse(t, "Unitary2", code,
+		"00607094959697808182889091929330")
 }
 
 func TestRealistic(t *testing.T) {
-	t.Skip()
 	code := `
 		; This program pushes a, b, c,
 		; and x on the stack and calculates
@@ -158,13 +149,23 @@ func TestRealistic(t *testing.T) {
 			push A
 			push B
 			push C
-			push X
-			dup
-			dup
-
+			push X	; ABCX
+			roll 4	; BCXA
+			pick 1	; BCXAX
+			dup  	; BCXAXX
+			mul		; BCXAR
+			mul		; BCXR
+			roll 4  ; CXRB
+			roll 2  ; CRBX
+			mul		; CRS
+			add		; CR
+			add		; R
+			ret
 		}
 `
-	checkParse(t, "Realistic", code, "0022FFFF")
+	checkParse(t, "Realistic", code, `
+		00 21 03 21 05 21 07 21  15 0f 04 0e 01 05 42 42
+		0f 04 0f 02 42 40 40 10`)
 }
 
 func TestBinary(t *testing.T) {

@@ -1,24 +1,10 @@
 package main
 
 import (
-	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
-
-// bcheck evaluates a stream of bytes against a string of hex
-func bcheck(t *testing.T, b []byte, s string) {
-	assert.Equal(t, len(b), len(s)/2)
-	shouldbe := []byte{}
-	for i := 0; i<len(s); i+=2 {
-		sb := s[i : i+2]
-		sv, err := strconv.ParseInt(sb, 16, 16)
-		assert.Nil(t, err)
-		shouldbe = append(shouldbe, byte(sv))
-	}
-	assert.Equal(t, b, shouldbe)
-}
 
 func TestToBytes(t *testing.T) {
 	bcheck(t, toBytes(1), "0100000000000000")
@@ -31,7 +17,6 @@ func TestToBytesU(t *testing.T) {
 	bcheck(t, toBytesU(0xFFFFFFFFFFFFFFFF), "FFFFFFFFFFFFFFFF")
 	bcheck(t, toBytes(0x1122334455667788), "8877665544332211")
 }
-
 
 func TestZero(t *testing.T) {
 	op, err := newPushOpcode("0")
@@ -144,4 +129,3 @@ func TestPushTimestamp(t *testing.T) {
 	b := op.bytes()
 	bcheck(t, b, "2C801292DB9F0F0000")
 }
-

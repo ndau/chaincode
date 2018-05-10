@@ -1,14 +1,62 @@
 package main
 
 import (
+	"bytes"
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 )
+
+// ErrorPosition defines the raw error position data.
+type ErrorPosition struct {
+	name   string
+	line   int
+	col    int
+	offset int
+}
+
+// ErrorPositioner is an interface that can be used to tell if an error provides
+// position data in the source file.
+type ErrorPositioner interface {
+	ErrorPos() ErrorPosition
+}
+
+func (p *parserError) ErrorPos() ErrorPosition {
+	return ErrorPosition{
+		name:   p.prefix,
+		line:   p.pos.line,
+		col:    p.pos.col,
+		offset: p.pos.offset,
+	}
+}
+
+func describeError(err error, source string) string {
+	if e, ok := err.(ErrorPositioner); ok {
+		lines := strings.Split(source, "\n")
+		ep := e.ErrorPos()
+		return fmt.Sprintf("%s\n%4d: %s\n%s\n", err.Error(), ep.line, lines[ep.line-1], strings.Repeat(" ", ep.col+5)+"^")
+	}
+	fmt.Printf("NOT ErrorPositioner: %#v\n", err)
+	return err.Error()
+}
+
+func describeErrors(err error, source string) string {
+	if el, ok := err.(errList); ok {
+		s := ""
+		for _, e := range el {
+			s += describeError(e, source)
+		}
+		return s
+	}
+	fmt.Printf("NOT errList: %#v\n", err)
+	return describeError(err, source)
+}
 
 func main() {
 	in := os.Stdin
@@ -20,9 +68,13 @@ func main() {
 		defer f.Close()
 		in = f
 	}
-	sn, err := ParseReader("", in)
+
+	var buf bytes.Buffer
+	tee := io.TeeReader(in, &buf)
+
+	sn, err := ParseReader("", tee)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(describeErrors(err, buf.String()))
 	}
 	b := sn.(Script).bytes()
 	fmt.Println(hex.Dump(b))
