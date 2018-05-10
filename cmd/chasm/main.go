@@ -37,6 +37,8 @@ const (
 	OpDup2    byte = 0x06
 	OpSwap    byte = 0x09
 	OpOver    byte = 0x0D
+	OpPick    byte = 0x0E
+	OpRoll    byte = 0x0F
 	OpRet     byte = 0x10
 	OpFail    byte = 0x11
 	OpZero    byte = 0x20
@@ -49,6 +51,7 @@ const (
 	OpPushT   byte = 0x2C
 	OpNow     byte = 0x2D
 	OpRand    byte = 0x2F
+	OpPushL   byte = 0x30
 	OpAdd     byte = 0x40
 	OpSub     byte = 0x41
 	OpMul     byte = 0x42
@@ -166,6 +169,24 @@ func (n UnitaryOpcode) bytes() []byte {
 
 func newUnitaryOpcode(b byte) (UnitaryOpcode, error) {
 	return UnitaryOpcode{opcode: b}, nil
+}
+
+// BinaryOpcode is for opcodes that take one single-byte argument
+type BinaryOpcode struct {
+	opcode byte
+	value  byte
+}
+
+func (n BinaryOpcode) bytes() []byte {
+	return []byte{n.opcode, n.value}
+}
+
+func newBinaryOpcode(b byte, v string) (BinaryOpcode, error) {
+	n, err := strconv.ParseUint(v, 0, 8)
+	if err != nil {
+		return BinaryOpcode{}, err
+	}
+	return BinaryOpcode{opcode: b, value: byte(n)}, nil
 }
 
 // toBytes returns an array of 8 bytes encoding n as a uint in little-endian form

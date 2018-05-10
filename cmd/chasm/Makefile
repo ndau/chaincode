@@ -7,5 +7,5 @@ chasm.go: chasm.peggo
 clean:
 	rm chasm chasm.go
 
-test:
+test: chasm
 	go test -v --race

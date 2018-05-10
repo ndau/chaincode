@@ -136,7 +136,46 @@ func TestUnitaryOpcodes2(t *testing.T) {
 			avg
 			max
 			min
+			pushl
 		}
 `
-	checkParse(t, "Unitary2", code, "006070949596978081828890919293")
+	checkParse(t, "Unitary2", code, "00607094959697808182889091929330")
+}
+
+func TestRealistic(t *testing.T) {
+	t.Skip()
+	code := `
+		; This program pushes a, b, c,
+		; and x on the stack and calculates
+		; a*x*x + b*x + c
+		context: TEST
+		{
+			A = 3
+			B = 5
+			C = 7
+			X = 21
+
+			push A
+			push B
+			push C
+			push X
+			dup
+			dup
+
+		}
+`
+	checkParse(t, "Realistic", code, "0022FFFF")
+}
+
+func TestBinary(t *testing.T) {
+	code := `
+		; comment
+		context: TEST
+		{
+			pick 2
+			pick 12
+			roll 0xA
+		}
+`
+	checkParse(t, "Binary", code, "000E020E0C0F0A")
 }

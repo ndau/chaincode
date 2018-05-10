@@ -40,16 +40,19 @@ Opcode =
     / "dup" { return newUnitaryOpcode(OpDup) }
     / "swap" { return newUnitaryOpcode(OpSwap) }
     / "over" { return newUnitaryOpcode(OpOver) }
+    / "pick" _ b:Byte { return newBinaryOpcode(OpPick, b.(string)) }
+    / "roll" _ b:Byte { return newBinaryOpcode(OpRoll, b.(string)) }
     / "ret" { return newUnitaryOpcode(OpRet) }
     / "fail" { return newUnitaryOpcode(OpFail) }
     / "zero" { return newUnitaryOpcode(OpZero) }
     / "false" { return newUnitaryOpcode(OpFalse) }
-    / "push64" _? v:Value  { return newPush64(v.(string)) }
-    / "push" _? v:Value  { return newPushOpcode(v.(string)) }
+    / "push64" _ v:Value  { return newPush64(v.(string)) }
+    / "push" _ v:Value  { return newPushOpcode(v.(string)) }
     / "one" { return newUnitaryOpcode(OpOne) }
     / "true" { return newUnitaryOpcode(OpTrue) }
     / "neg1" { return newUnitaryOpcode(OpNeg1) }
-    / "pusht" _? ts:Timestamp  { return newPushTimestamp(ts.(string)) }
+    / "pusht" _ ts:Timestamp  { return newPushTimestamp(ts.(string)) }
+    / "pushl" { return newUnitaryOpcode(OpPushL) }
     / "now" { return newUnitaryOpcode(OpNow) }
     / "rand" { return newUnitaryOpcode(OpRand) }
     / "add" { return newUnitaryOpcode(OpAdd) }
@@ -101,6 +104,10 @@ Value =
 
 ConstantRef <- k:Constant                         { return c.state[k.(string)], nil }
 Integer <- '-'? [0-9]+                            { return string(c.text), nil }
+Byte <-
+    ( "0x" [0-9A-Fa-f] [0-9A-Fa-f]?               { return string(c.text), nil }
+    / [0-9]+                                      { return string(c.text), nil }
+    )
 Constant <- [A-Z] [A-Z0-9_]*                      { return string(c.text), nil }
 
 _ <- [ \t]+
