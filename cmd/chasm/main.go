@@ -10,6 +10,7 @@ import (
 	arg "github.com/alexflint/go-arg"
 )
 
+// ChasmBinary defines the "binary" (assembled) format of the assembler
 type ChasmBinary struct {
 	Name    string `json:"name"`
 	Comment string `json:"comment"`
@@ -17,6 +18,7 @@ type ChasmBinary struct {
 	Data    []byte `json:"data"`
 }
 
+// Contexts is a map of context byte to context string
 var Contexts = map[byte]string{
 	CtxTest:        "TEST",
 	CtxNodePayout:  "NODE_PAYOUT",
