@@ -22,7 +22,7 @@ Operation <-
 ConstDef <-
     ( k:Constant _? '=' _? v:Value {
             if key, ok := k.(string); ok {
-                c.state[key] = string(v.([]byte))
+                c.state[key] = v.(string)
                 return v, nil
             }
             return nil, errors.New("Bad const def")
@@ -31,17 +31,41 @@ ConstDef <-
 
 Opcode =
     ( "nop" { return newUnitaryOpcode(OpNop) }
+    / "drop2" { return newUnitaryOpcode(OpDrop2) }
     / "drop" { return newUnitaryOpcode(OpDrop) }
+    / "dup2" { return newUnitaryOpcode(OpDup2) }
+    / "dup" { return newUnitaryOpcode(OpDup) }
+    / "swap" { return newUnitaryOpcode(OpSwap) }
+    / "over" { return newUnitaryOpcode(OpOver) }
+    / "ret" { return newUnitaryOpcode(OpRet) }
+    / "fail" { return newUnitaryOpcode(OpFail) }
+    / "zero" { return newUnitaryOpcode(OpZero) }
+    / "false" { return newUnitaryOpcode(OpFalse) }
+    / "push64" _? v:Value  { return newPush64(v.(string)) }
     / "push" _? v:Value  { return newPushOpcode(v.(string)) }
+    / "one" { return newUnitaryOpcode(OpOne) }
+    / "true" { return newUnitaryOpcode(OpTrue) }
+    / "neg1" { return newUnitaryOpcode(OpNeg1) }
+    / "pusht" _? ts:Timestamp  { return newPushTimestamp(ts.(string)) }
+    / "now" { return newUnitaryOpcode(OpNow) }
+    / "rand" { return newUnitaryOpcode(OpRand) }
+    / "add" { return newUnitaryOpcode(OpAdd) }
+    / "sub" { return newUnitaryOpcode(OpSub) }
+    / "mul" { return newUnitaryOpcode(OpMul) }
+    / "div" { return newUnitaryOpcode(OpDiv) }
+    / "mod" { return newUnitaryOpcode(OpMod) }
+    / "not" { return newUnitaryOpcode(OpNot) }
+    / "neg" { return newUnitaryOpcode(OpNeg) }
+    / "inc" { return newUnitaryOpcode(OpInc) }
+    / "dec" { return newUnitaryOpcode(OpDec) }
+    / "index" { return newUnitaryOpcode(OpIndex) }
+    / "len" { return newUnitaryOpcode(OpLen) }
+    / "append" { return newUnitaryOpcode(OpAppend) }
+    / "extend" { return newUnitaryOpcode(OpExtend) }
+    / "slice" { return newUnitaryOpcode(OpSlice) }
     )
 
-Value =
-    ( Timestamp
-    / Integer
-    / ConstantRef
-    )
-
-Timestamp <- ts:(Date 'T' Time 'Z') { return newPushTimestamp(ts.(string)) }
+Timestamp <- ts:(Date 'T' Time 'Z') { return ts.(string), nil }
 Date <- [0-9] [0-9] [0-9] [0-9] '-' [0-9] [0-9] '-' [0-9] [0-9]
 Time <-  [0-9] [0-9] ':' [0:9] [0-9] '-' [0-9] [0-9]
 
@@ -53,8 +77,13 @@ ContextConstant <-
     / "MARKET_PRICE" { return CtxMarketPrice, nil }
     )
 
+Value =
+    ( Integer
+    / ConstantRef
+    )
+
 ConstantRef <- k:Constant                         { return c.state[k.(string)], nil }
-Integer <- '-'? [0-9]+                            { return c.text, nil }
+Integer <- '-'? [0-9]+                            { return string(c.text), nil }
 Constant <- [A-Z] [A-Z0-9_]*                      { return string(c.text), nil }
 
 _ <- [ \t]+

@@ -76,3 +76,43 @@ func TestConstants(t *testing.T) {
 `
 	checkParse(t, "Constants", code, "0022FFFF")
 }
+
+func TestUnitaryOpcodes(t *testing.T) {
+	code := `
+		; comment
+		context: TEST
+		{
+			nop
+			drop
+			drop2
+			dup
+			dup2
+			swap
+			over
+			ret
+			fail
+			zero
+			false
+			one
+			true
+			neg1
+			now
+			rand
+			add
+			sub
+			mul
+			div
+			mod
+			not
+			neg
+			inc
+			dec
+			index
+			len
+			append
+			extend
+			slice
+		}
+`
+	checkParse(t, "Constants", code, "000001020506090D101120202a2a2b2d2f4041424344454647485051525354")
+}

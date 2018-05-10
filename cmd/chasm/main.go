@@ -32,12 +32,37 @@ func main() {
 const (
 	OpNop    byte = 0x00
 	OpDrop   byte = 0x01
+	OpDrop2  byte = 0x02
+	OpDup    byte = 0x05
+	OpDup2   byte = 0x06
+	OpSwap   byte = 0x09
+	OpOver   byte = 0x0D
+	OpRet    byte = 0x10
+	OpFail   byte = 0x11
 	OpZero   byte = 0x20
+	OpFalse  byte = 0x20
 	OpPushN  byte = 0x20
 	OpPush64 byte = 0x29
 	OpOne    byte = 0x2A
+	OpTrue   byte = 0x2A
 	OpNeg1   byte = 0x2B
 	OpPushT  byte = 0x2C
+	OpNow    byte = 0x2D
+	OpRand   byte = 0x2F
+	OpAdd    byte = 0x40
+	OpSub    byte = 0x41
+	OpMul    byte = 0x42
+	OpDiv    byte = 0x43
+	OpMod    byte = 0x44
+	OpNot    byte = 0x45
+	OpNeg    byte = 0x46
+	OpInc    byte = 0x47
+	OpDec    byte = 0x48
+	OpIndex  byte = 0x50
+	OpLen    byte = 0x51
+	OpAppend byte = 0x52
+	OpExtend byte = 0x53
+	OpSlice  byte = 0x54
 )
 
 // Some masking values
