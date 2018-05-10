@@ -29,6 +29,9 @@ ConstDef <-
         }
     )
 
+// note that opcodes that are spelled as a prefix of some other one
+// like push and push64 need to have the longer one first, as this
+// construct tests in order
 Opcode =
     ( "nop" { return newUnitaryOpcode(OpNop) }
     / "drop2" { return newUnitaryOpcode(OpDrop2) }
@@ -63,6 +66,20 @@ Opcode =
     / "append" { return newUnitaryOpcode(OpAppend) }
     / "extend" { return newUnitaryOpcode(OpExtend) }
     / "slice" { return newUnitaryOpcode(OpSlice) }
+    / "fieldl" { return newUnitaryOpcode(OpFieldL) }
+    / "field" { return newUnitaryOpcode(OpField) }
+    / "choice" { return newUnitaryOpcode(OpChoice) }
+    / "wchoice" { return newUnitaryOpcode(OpWChoice) }
+    / "sort" { return newUnitaryOpcode(OpSort) }
+    / "lookup" { return newUnitaryOpcode(OpLookup) }
+    / "ifz" { return newUnitaryOpcode(OpIfz) }
+    / "ifnz" { return newUnitaryOpcode(OpIfnz) }
+    / "else" { return newUnitaryOpcode(OpElse) }
+    / "end" { return newUnitaryOpcode(OpEnd) }
+    / "sum" { return newUnitaryOpcode(OpSum) }
+    / "avg" { return newUnitaryOpcode(OpAvg) }
+    / "max" { return newUnitaryOpcode(OpMax) }
+    / "min" { return newUnitaryOpcode(OpMin) }
     )
 
 Timestamp <- ts:(Date 'T' Time 'Z') { return ts.(string), nil }

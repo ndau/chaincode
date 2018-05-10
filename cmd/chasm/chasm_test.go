@@ -77,7 +77,7 @@ func TestConstants(t *testing.T) {
 	checkParse(t, "Constants", code, "0022FFFF")
 }
 
-func TestUnitaryOpcodes(t *testing.T) {
+func TestUnitaryOpcodes1(t *testing.T) {
 	code := `
 		; comment
 		context: TEST
@@ -114,5 +114,29 @@ func TestUnitaryOpcodes(t *testing.T) {
 			slice
 		}
 `
-	checkParse(t, "Constants", code, "000001020506090D101120202a2a2b2d2f4041424344454647485051525354")
+	checkParse(t, "Unitary1", code, "000001020506090D101120202a2a2b2d2f4041424344454647485051525354")
+}
+
+func TestUnitaryOpcodes2(t *testing.T) {
+	code := `
+		; comment
+		context: TEST
+		{
+			field
+			fieldl
+			choice
+			wchoice
+			sort
+			lookup
+			ifz
+			ifnz
+			else
+			end
+			sum
+			avg
+			max
+			min
+		}
+`
+	checkParse(t, "Unitary2", code, "006070949596978081828890919293")
 }
