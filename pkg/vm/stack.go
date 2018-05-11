@@ -19,7 +19,11 @@ func stackError(s string) error {
 
 // Clone makes a snapshot copy of a stack
 func (st *Stack) Clone() *Stack {
-	return &Stack{stack: st.stack[:]}
+	newstack := make([]Value, len(st.stack))
+	for i := range st.stack {
+		newstack[i] = st.stack[i]
+	}
+	return &Stack{stack: newstack}
 }
 
 // Depth returns the depth of the stack

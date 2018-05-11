@@ -15,6 +15,7 @@ func main() {
 	var args struct {
 		Input   string   `arg:"-i" help:"File to read from (default stdin)"`
 		History bool     `arg:"-h" help:"Dump history after running"`
+		Trace   bool     `arg:"-t" help:"Trace while running"`
 		Stack   []string `arg:"positional" help:"Values to put on the stack, topmost last"`
 	}
 	arg.MustParse(&args)
@@ -51,7 +52,7 @@ func main() {
 	machine.Init(startingStack)
 	fmt.Println(machine.Stack())
 	fmt.Println("Running")
-	err = machine.Run()
+	err = machine.Run(args.Trace)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -65,7 +66,8 @@ func main() {
 			for i := range st {
 				st1[i] = st[i][4:]
 			}
-			fmt.Printf("PC: %3d STK: %s\n", h.PC, strings.Join(st1, ", "))
+			disasm, _ := machine.Disassemble(h.PC)
+			fmt.Printf("%-40s STK: %s\n", disasm, strings.Join(st1, ", "))
 		}
 	}
 }

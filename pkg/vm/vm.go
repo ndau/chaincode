@@ -2,6 +2,7 @@ package vm
 
 import (
 	"fmt"
+	"strings"
 )
 
 // The VM package implements a virtual machine for chaincode.
@@ -175,11 +176,14 @@ func (vm *ChaincodeVM) Init(values []Value) {
 }
 
 // Run runs a VM from its current state until it ends
-func (vm *ChaincodeVM) Run() error {
+func (vm *ChaincodeVM) Run(debug bool) error {
 	if vm.runstate == RsReady {
 		vm.runstate = RsRunning
 	}
 	for vm.runstate == RsRunning {
+		if debug {
+			fmt.Println(vm)
+		}
 		if err := vm.Step(); err != nil {
 			return err
 		}
@@ -301,11 +305,9 @@ func (vm *ChaincodeVM) Step() error {
 			return vm.runtimeError(err)
 		}
 	case OpPick:
-		n, err := vm.stack.PopAsInt64()
-		if err != nil {
-			return vm.runtimeError(err)
-		}
-		v, err := vm.stack.Get(int(n))
+		n := int(vm.code[vm.pc])
+		vm.pc++
+		v, err := vm.stack.Get(n)
 		if err != nil {
 			return vm.runtimeError(err)
 		}
@@ -313,11 +315,9 @@ func (vm *ChaincodeVM) Step() error {
 			return vm.runtimeError(err)
 		}
 	case OpRoll:
-		n, err := vm.stack.PopAsInt64()
-		if err != nil {
-			return vm.runtimeError(err)
-		}
-		v, err := vm.stack.PopAt(int(n))
+		n := int(vm.code[vm.pc])
+		vm.pc++
+		v, err := vm.stack.PopAt(n)
 		if err != nil {
 			return vm.runtimeError(err)
 		}
@@ -533,4 +533,46 @@ func (vm *ChaincodeVM) Step() error {
 	}
 
 	return nil
+}
+
+// Disassemble returns a single disassembled instruction, along with how many bytes it consumed
+func (vm *ChaincodeVM) Disassemble(pc int) (string, int) {
+	op := vm.code[pc]
+	numExtra := 0
+	switch op {
+	case OpPush1, OpPick, OpRoll:
+		numExtra = 1
+	case OpPush2:
+		numExtra = 2
+	case OpPush3:
+		numExtra = 3
+	case OpPush4:
+		numExtra = 4
+	case OpPush5:
+		numExtra = 5
+	case OpPush6:
+		numExtra = 6
+	case OpPush7:
+		numExtra = 7
+	case OpPush8, OpPush64, OpPushT:
+		numExtra = 8
+	}
+	sa := []string{fmt.Sprintf("%3d  %02x", pc, byte(op))}
+	for i := numExtra; i > 0; i-- {
+		sa = append(sa, fmt.Sprintf("%02x", byte(vm.code[pc+i])))
+	}
+	hex := strings.Join(sa, " ")
+	out := fmt.Sprintf("%-30s  %s", hex, op)
+
+	return out, numExtra + 1
+}
+
+func (vm *ChaincodeVM) String() string {
+	st := strings.Split(vm.stack.String(), "\n")
+	st1 := make([]string, len(st))
+	for i := range st {
+		st1[i] = st[i][4:]
+	}
+	disasm, _ := vm.Disassemble(vm.pc)
+	return fmt.Sprintf("%-40s STK: %s\n", disasm, strings.Join(st1, ", "))
 }

@@ -3,6 +3,8 @@ package vm
 // Opcode is a byte used to identify an opcode; we rely on it being a byte in some cases.
 type Opcode byte
 
+//go:generate stringer -trimprefix Op -type Opcode opcodes.go
+
 // Opcodes
 const (
 	OpNop     Opcode = 0x00
@@ -19,6 +21,14 @@ const (
 	OpZero    Opcode = 0x20
 	OpFalse   Opcode = 0x20
 	OpPushN   Opcode = 0x20
+	OpPush1   Opcode = 0x21
+	OpPush2   Opcode = 0x22
+	OpPush3   Opcode = 0x23
+	OpPush4   Opcode = 0x24
+	OpPush5   Opcode = 0x25
+	OpPush6   Opcode = 0x26
+	OpPush7   Opcode = 0x27
+	OpPush8   Opcode = 0x28
 	OpPush64  Opcode = 0x29
 	OpOne     Opcode = 0x2A
 	OpTrue    Opcode = 0x2A

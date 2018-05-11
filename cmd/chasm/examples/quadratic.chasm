@@ -14,12 +14,12 @@ context: TEST
     push B
     push C
     push X	; ABCX
-    roll 4	; BCXA
+    roll 3	; BCXA
     pick 1	; BCXAX
     dup  	; BCXAXX
     mul		; BCXAR
     mul		; BCXR
-    roll 4  ; CXRB
+    roll 3  ; CXRB
     roll 2  ; CRBX
     mul		; CRS
     add		; CR
