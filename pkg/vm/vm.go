@@ -44,8 +44,8 @@ type HistoryState struct {
 // ChaincodeVM is the reason we're here
 type ChaincodeVM struct {
 	runstate RunState
-	context  byte
-	code     []byte
+	context  Opcode
+	code     []Opcode
 	stack    *Stack
 	// lists    []List
 	pc      int // program counter
@@ -93,7 +93,7 @@ func (e RuntimeError) Error() string {
 	return fmt.Sprintf("[pc=%d] %s", e.pc, e.msg)
 }
 
-func validateNesting(code []byte) error {
+func validateNesting(code []Opcode) error {
 	nesting := 0
 	haselse := []bool{}
 	for _, b := range code {
@@ -151,10 +151,10 @@ func (vm *ChaincodeVM) PreLoad(cb ChasmBinary) error {
 	if !ok {
 		return ValidationError{"invalid context string"}
 	}
-	if _, ok := Contexts[cb.Data[0]]; !ok {
+	if _, ok := Contexts[ContextByte(cb.Data[0])]; !ok {
 		return ValidationError{"invalid context byte"}
 	}
-	if ctx != cb.Data[0] {
+	if ctx != ContextByte(cb.Data[0]) {
 		return ValidationError{"context byte and context string disagree"}
 	}
 	// we seem to be OK
@@ -335,9 +335,10 @@ func (vm *ChaincodeVM) Step() error {
 		}
 	case OpPushN + 1, OpPushN + 2, OpPushN + 3, OpPushN + 4, OpPushN + 5, OpPushN + 6, OpPushN + 7:
 		// use a mask to retrieve the actual count of bytes to fetch
-		nbytes := instr & 0x7
+		nbytes := byte(instr) & 0x7
 		var value int64
-		var b, i byte
+		var i byte
+		var b Opcode
 		for i = 0; i < nbytes; i++ {
 			b = vm.code[vm.pc]
 			vm.pc++

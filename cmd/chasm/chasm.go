@@ -1318,7 +1318,7 @@ func (p *parser) callonScript1() (interface{}, error) {
 }
 
 func (c *current) onPreamble1(cc interface{}) (interface{}, error) {
-	return newPreambleNode(cc.(byte))
+	return newPreambleNode(cc.(vm.ContextByte))
 }
 
 func (p *parser) callonPreamble1() (interface{}, error) {

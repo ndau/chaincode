@@ -7,20 +7,24 @@ import (
 
 // ChasmBinary defines the "binary" (assembled) format of a vm
 type ChasmBinary struct {
-	Name    string `json:"name"`
-	Comment string `json:"comment"`
-	Context string `json:"context"`
-	Data    []byte `json:"data"`
+	Name    string   `json:"name"`
+	Comment string   `json:"comment"`
+	Context string   `json:"context"`
+	Data    []Opcode `json:"data"`
 }
 
 // Serialize takes a stream of bytes (including the context marker) and sends it to
 // a Writer in ChasmBinary format
 func Serialize(name string, comment string, b []byte, w io.Writer) error {
+	opcodes := make([]Opcode, len(b))
+	for i := range b {
+		opcodes[i] = Opcode(b[i])
+	}
 	output := ChasmBinary{
 		Name:    name,
 		Comment: comment,
-		Context: Contexts[b[0]],
-		Data:    b,
+		Context: Contexts[ContextByte(b[0])],
+		Data:    opcodes,
 	}
 	enc := json.NewEncoder(w)
 	enc.SetIndent("", "  ")

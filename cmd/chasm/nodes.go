@@ -57,46 +57,46 @@ func newScript(p interface{}, opcodes interface{}) (Script, error) {
 
 // PreambleNode expresses the information in the preamble (which for now is just a context byte)
 type PreambleNode struct {
-	context byte
+	context vm.ContextByte
 }
 
 func (n PreambleNode) bytes() []byte {
-	return []byte{n.context}
+	return []byte{byte(n.context)}
 }
 
-func newPreambleNode(ctx byte) (PreambleNode, error) {
+func newPreambleNode(ctx vm.ContextByte) (PreambleNode, error) {
 	return PreambleNode{context: ctx}, nil
 }
 
 // UnitaryOpcode is for opcodes that cannot take arguments
 type UnitaryOpcode struct {
-	opcode byte
+	opcode vm.Opcode
 }
 
 func (n UnitaryOpcode) bytes() []byte {
-	return []byte{n.opcode}
+	return []byte{byte(n.opcode)}
 }
 
-func newUnitaryOpcode(b byte) (UnitaryOpcode, error) {
-	return UnitaryOpcode{opcode: b}, nil
+func newUnitaryOpcode(op vm.Opcode) (UnitaryOpcode, error) {
+	return UnitaryOpcode{opcode: op}, nil
 }
 
 // BinaryOpcode is for opcodes that take one single-byte argument
 type BinaryOpcode struct {
-	opcode byte
+	opcode vm.Opcode
 	value  byte
 }
 
 func (n BinaryOpcode) bytes() []byte {
-	return []byte{n.opcode, n.value}
+	return []byte{byte(n.opcode), n.value}
 }
 
-func newBinaryOpcode(b byte, v string) (BinaryOpcode, error) {
+func newBinaryOpcode(op vm.Opcode, v string) (BinaryOpcode, error) {
 	n, err := strconv.ParseUint(v, 0, 8)
 	if err != nil {
 		return BinaryOpcode{}, err
 	}
-	return BinaryOpcode{opcode: b, value: byte(n)}, nil
+	return BinaryOpcode{opcode: op, value: byte(n)}, nil
 }
 
 // toBytes returns an array of 8 bytes encoding n as a uint in little-endian form
@@ -136,11 +136,11 @@ type PushOpcode struct {
 func (n PushOpcode) bytes() []byte {
 	switch n.arg {
 	case 0:
-		return []byte{vm.OpZero}
+		return []byte{byte(vm.OpZero)}
 	case 1:
-		return []byte{vm.OpOne}
+		return []byte{byte(vm.OpOne)}
 	case -1:
-		return []byte{vm.OpNeg1}
+		return []byte{byte(vm.OpNeg1)}
 	default:
 		b := toBytes(n.arg)
 		var suppress byte
@@ -151,7 +151,7 @@ func (n PushOpcode) bytes() []byte {
 			b = b[:len(b)-1]
 		}
 		nbytes := byte(len(b))
-		op := vm.OpPushN | nbytes
+		op := byte(vm.OpPushN) | nbytes
 		b = append([]byte{op}, b...)
 		return b
 	}
@@ -173,7 +173,7 @@ func newPush64(s string) (Push64, error) {
 }
 
 func (n Push64) bytes() []byte {
-	return append([]byte{vm.OpPush64}, toBytesU(n.u)...)
+	return append([]byte{byte(vm.OpPush64)}, toBytesU(n.u)...)
 }
 
 // PushTimestamp is a 64-bit representation of the time since the start of the epoch in microseconds
@@ -190,5 +190,5 @@ func newPushTimestamp(s string) (PushTimestamp, error) {
 }
 
 func (n PushTimestamp) bytes() []byte {
-	return append([]byte{vm.OpPushT}, toBytesU(n.t)...)
+	return append([]byte{byte(vm.OpPushT)}, toBytesU(n.t)...)
 }

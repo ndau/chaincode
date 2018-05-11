@@ -4,17 +4,20 @@ import (
 	"strings"
 )
 
+// ContextByte is a byte used to identify context
+type ContextByte byte
+
 // Constants for Contexts
 const (
-	CtxTest        byte = iota
-	CtxNodePayout  byte = iota
-	CtxEaiTiming   byte = iota
-	CtxNodeQuality byte = iota
-	CtxMarketPrice byte = iota
+	CtxTest        ContextByte = iota
+	CtxNodePayout  ContextByte = iota
+	CtxEaiTiming   ContextByte = iota
+	CtxNodeQuality ContextByte = iota
+	CtxMarketPrice ContextByte = iota
 )
 
-// Contexts is a map of context byte to context string
-var Contexts = map[byte]string{
+// Contexts is a map of ContextByte to context string
+var Contexts = map[ContextByte]string{
 	CtxTest:        "TEST",
 	CtxNodePayout:  "NODE_PAYOUT",
 	CtxEaiTiming:   "EAI_TIMING",
@@ -23,7 +26,7 @@ var Contexts = map[byte]string{
 }
 
 // ContextLookup searches for a context by a given name; returns true if found
-func ContextLookup(s string) (byte, bool) {
+func ContextLookup(s string) (ContextByte, bool) {
 	for k, v := range Contexts {
 		if strings.EqualFold(v, s) {
 			return k, true
