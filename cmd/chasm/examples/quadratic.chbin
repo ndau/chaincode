@@ -1,5 +1,5 @@
 {
-  "name": "stdin",
+  "name": "examples/quadratic.chasm",
   "comment": "test of assembling quadratic",
   "context": "TEST",
   "data": "ACEDIQUhByEVDwQOAQVCQg8EDwJCQEAQ"

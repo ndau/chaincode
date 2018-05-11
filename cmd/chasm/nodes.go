@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"strconv"
-	"time"
 
 	"github.com/oneiro-ndev/chaincode/pkg/vm"
 )
@@ -12,21 +11,6 @@ import (
 const (
 	ByteMask byte = 0xFF
 	HighBit  byte = 0x80
-)
-
-// Constants for Contexts
-const (
-	CtxTest        byte = iota
-	CtxNodePayout  byte = iota
-	CtxEaiTiming   byte = iota
-	CtxNodeQuality byte = iota
-	CtxMarketPrice byte = iota
-)
-
-// Constants for time
-const (
-	EpochStart      = "2018-01-01T00:00:00Z"
-	TimestampFormat = "2006-01-02T15:04:05Z"
 )
 
 func toIfaceSlice(v interface{}) []interface{} {
@@ -198,15 +182,11 @@ type PushTimestamp struct {
 }
 
 func newPushTimestamp(s string) (PushTimestamp, error) {
-	epoch, err := time.Parse(TimestampFormat, EpochStart)
-	if err != nil {
-		panic("Epoch isn't a valid timestamp!")
-	}
-	ts, err := time.Parse(TimestampFormat, s)
+	ts, err := vm.ParseTimestamp(s)
 	if err != nil {
 		return PushTimestamp{}, err
 	}
-	return PushTimestamp{uint64(ts.Sub(epoch).Nanoseconds() / 1000)}, nil // durations are in nanoseconds but we want microseconds
+	return PushTimestamp{ts.T()}, nil
 }
 
 func (n PushTimestamp) bytes() []byte {

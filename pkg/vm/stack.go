@@ -39,7 +39,7 @@ func (st *Stack) Push(v Value) error {
 // Get retrieves the item at index n and returns it
 func (st *Stack) Get(n int) (Value, error) {
 	if len(st.stack) < n {
-		return newNumber(0), stackError("index error")
+		return NewNumber(0), stackError("index error")
 	}
 	last := len(st.stack) - 1
 	retval := st.stack[last-n]
@@ -54,7 +54,7 @@ func (st *Stack) Peek() (Value, error) {
 // Pop removes the top value and returns it
 func (st *Stack) Pop() (Value, error) {
 	if len(st.stack) == 0 {
-		return newNumber(0), stackError("underflow")
+		return NewNumber(0), stackError("underflow")
 	}
 	last := len(st.stack) - 1
 	retval := st.stack[last]
@@ -81,7 +81,7 @@ func (st *Stack) PopAt(n int) (Value, error) {
 		return st.Pop()
 	}
 	if len(st.stack) < n {
-		return newNumber(0), stackError("index error")
+		return NewNumber(0), stackError("index error")
 	}
 	ix := len(st.stack) - n - 1
 	retval := st.stack[ix]

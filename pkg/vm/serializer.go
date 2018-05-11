@@ -26,3 +26,10 @@ func Serialize(name string, comment string, b []byte, w io.Writer) error {
 	enc.SetIndent("", "  ")
 	return enc.Encode(output)
 }
+
+// Deserialize takes a reader and extracts a ChasmBinary from it
+func Deserialize(r io.Reader) (ChasmBinary, error) {
+	var input ChasmBinary
+	err := json.NewDecoder(r).Decode(&input)
+	return input, err
+}

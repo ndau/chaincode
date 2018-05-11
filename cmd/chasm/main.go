@@ -21,7 +21,7 @@ func main() {
 	name := "stdin"
 	in := os.Stdin
 	if args.Input != "" {
-		name := args.Input
+		name = args.Input
 		f, err := os.Open(name)
 		if err != nil {
 			log.Fatal(err)

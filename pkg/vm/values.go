@@ -2,6 +2,7 @@ package vm
 
 import (
 	"strconv"
+	"time"
 )
 
 // ValueType is a byte indicator for a given
@@ -14,6 +15,12 @@ import (
 // 	VtList      ValueType = iota
 // 	VtStruct    ValueType = iota
 // )
+
+// Constants for time
+const (
+	EpochStart      = "2018-01-01T00:00:00Z"
+	TimestampFormat = "2006-01-02T15:04:05Z"
+)
 
 // ValueError is the error type when value conflicts arise
 type ValueError struct {
@@ -34,7 +41,8 @@ type Number struct {
 	v int64
 }
 
-func newNumber(n int64) Number {
+// NewNumber creates a Number object out of an int64
+func NewNumber(n int64) Number {
 	return Number{n}
 }
 
@@ -52,12 +60,33 @@ type Timestamp struct {
 	t uint64
 }
 
-func newTimestamp(n uint64) Timestamp {
+// NewTimestamp creates a timestamp from a uint64 representation of one
+func NewTimestamp(n uint64) Timestamp {
 	return Timestamp{n}
+}
+
+// ParseTimestamp creates a timestamp from an ISO-3933 string
+func ParseTimestamp(s string) (Timestamp, error) {
+	epoch, err := time.Parse(TimestampFormat, EpochStart)
+	if err != nil {
+		panic("Epoch isn't a valid timestamp!")
+	}
+	ts, err := time.Parse(TimestampFormat, s)
+	if err != nil {
+		return NewTimestamp(0), err
+	}
+	// durations are in nanoseconds but we want microseconds
+	uSec := uint64(ts.Sub(epoch).Nanoseconds() / 1000)
+	return NewTimestamp(uSec), nil
 }
 
 func (vt Timestamp) String() string {
 	return strconv.FormatUint(vt.t, 16)
+}
+
+// T returns the timestamp as a uint64 duration in uSec since the start of epoch.
+func (vt Timestamp) T() uint64 {
+	return vt.t
 }
 
 // ID is a Value representing an address on the blockchain
@@ -65,7 +94,8 @@ type ID struct {
 	id uint64
 }
 
-func newID(n uint64) ID {
+// NewID creates an ID
+func NewID(n uint64) ID {
 	return ID{n}
 }
 

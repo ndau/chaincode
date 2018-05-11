@@ -11,7 +11,7 @@ import (
 func TestSinglePushPop(t *testing.T) {
 	st := newStack()
 	assert.Equal(t, st.Depth(), 0)
-	err := st.Push(newNumber(123))
+	err := st.Push(NewNumber(123))
 	assert.Nil(t, err)
 	assert.Equal(t, st.Depth(), 1)
 	v, err := st.Pop()
@@ -24,7 +24,7 @@ func TestMultiPushPop(t *testing.T) {
 	st := newStack()
 	values := []int64{2, 6, -7, 99}
 	for _, v := range values {
-		err := st.Push(newNumber(v))
+		err := st.Push(NewNumber(v))
 		assert.Nil(t, err)
 	}
 	assert.Equal(t, st.Depth(), len(values))

@@ -1,6 +1,8 @@
 package vm
 
-import "fmt"
+import (
+	"fmt"
+)
 
 // The VM package implements a virtual machine for chaincode.
 
@@ -15,7 +17,7 @@ func SetMaxCodeLength(n int) {
 
 // Chaincode defines the contract for the virtual machine
 type Chaincode interface {
-	PreLoad(context byte) error // validates that the code to be loaded is compatible with its stated context
+	PreLoad(cb ChasmBinary) error // validates that the code to be loaded is compatible with its stated context
 	Init(values []Value)
 	Run() (Value, error)
 }
@@ -32,9 +34,10 @@ const (
 	RsError    RunState = iota
 )
 
-type state struct {
-	pc    int
-	stack *Stack
+// HistoryState is a single item in the history of a VM
+type HistoryState struct {
+	PC    int
+	Stack *Stack
 	// lists []List
 }
 
@@ -46,17 +49,17 @@ type ChaincodeVM struct {
 	stack    *Stack
 	// lists    []List
 	pc      int // program counter
-	history []state
+	history []HistoryState
 }
 
-// NewVM creates a new VM and loads code into it (or errors)
-func NewVM(code []byte) (*ChaincodeVM, error) {
+// New creates a new VM and loads a ChasmBinary into it (or errors)
+func New(bin ChasmBinary) (*ChaincodeVM, error) {
 	vm := ChaincodeVM{}
-	if err := vm.PreLoad(code); err != nil {
+	if err := vm.PreLoad(bin); err != nil {
 		return nil, err
 	}
-	vm.context = code[0]
-	vm.code = code[1:]
+	vm.context = bin.Data[0]
+	vm.code = bin.Data[1:]
 	vm.runstate = RsNotReady // not ready to run until we've called Init
 	return &vm, nil
 }
@@ -122,29 +125,40 @@ func validateNesting(code []byte) error {
 	return nil
 }
 
+// Stack returns the current stack of the VM
+func (vm *ChaincodeVM) Stack() *Stack {
+	return vm.stack
+}
+
+// History returns the entire history of this VM's operation
+func (vm *ChaincodeVM) History() []HistoryState {
+	return vm.history
+}
+
 // PreLoad is the validation function called before loading a VM to make sure it
 // has a hope of loading properly
-func (vm *ChaincodeVM) PreLoad(code []byte) error {
-	if len(code) == 0 || code == nil {
-		return ValidationError{"code is empty"}
+func (vm *ChaincodeVM) PreLoad(cb ChasmBinary) error {
+	if cb.Data == nil {
+		return ValidationError{"there is no code"}
 	}
-	if len(code) > maxCodeLength {
+	if len(cb.Data) > maxCodeLength {
 		return ValidationError{"code is too long"}
 	}
-	switch code[0] {
-	case CtxTest:
-		return nil
-	case CtxEaiTiming:
-		return nil
-	case CtxMarketPrice:
-		return nil
-	case CtxNodePayout:
-		return nil
-	case CtxNodeQuality:
-		return nil
-	default:
-		return ValidationError{"invalid context"}
+	if err := validateNesting(cb.Data); err != nil {
+		return err
 	}
+	ctx, ok := ContextLookup(cb.Context)
+	if !ok {
+		return ValidationError{"invalid context string"}
+	}
+	if _, ok := Contexts[cb.Data[0]]; !ok {
+		return ValidationError{"invalid context byte"}
+	}
+	if ctx != cb.Data[0] {
+		return ValidationError{"context byte and context string disagree"}
+	}
+	// we seem to be OK
+	return nil
 }
 
 // Init is called to set up the VM to run
@@ -155,7 +169,7 @@ func (vm *ChaincodeVM) Init(values []Value) {
 	}
 	// TODO: lists
 	// vm.lists = make([]List, 0)
-	vm.history = []state{}
+	vm.history = []HistoryState{}
 	vm.runstate = RsReady
 	vm.pc = 0
 }
@@ -220,9 +234,9 @@ func (vm *ChaincodeVM) Step() error {
 		vm.runstate = RsRunning
 		fallthrough
 	case RsRunning:
-		vm.history = append(vm.history, state{
-			pc:    vm.pc,
-			stack: vm.stack.Clone(),
+		vm.history = append(vm.history, HistoryState{
+			PC:    vm.pc,
+			Stack: vm.stack.Clone(),
 			// lists: vm.lists[:],
 		})
 	}
@@ -316,7 +330,7 @@ func (vm *ChaincodeVM) Step() error {
 		vm.runstate = RsError
 		return vm.runtimeError(newRuntimeError("fail opcode invoked"))
 	case OpZero:
-		if err := vm.stack.Push(newNumber(0)); err != nil {
+		if err := vm.stack.Push(NewNumber(0)); err != nil {
 			return vm.runtimeError(err)
 		}
 	case OpPushN + 1, OpPushN + 2, OpPushN + 3, OpPushN + 4, OpPushN + 5, OpPushN + 6, OpPushN + 7:
@@ -334,16 +348,16 @@ func (vm *ChaincodeVM) Step() error {
 				value |= 0xFF
 			}
 		}
-		if err := vm.stack.Push(newNumber(value)); err != nil {
+		if err := vm.stack.Push(NewNumber(value)); err != nil {
 			return vm.runtimeError(err)
 		}
 	case OpPush64:
 	case OpOne:
-		if err := vm.stack.Push(newNumber(1)); err != nil {
+		if err := vm.stack.Push(NewNumber(1)); err != nil {
 			return vm.runtimeError(err)
 		}
 	case OpNeg1:
-		if err := vm.stack.Push(newNumber(-1)); err != nil {
+		if err := vm.stack.Push(NewNumber(-1)); err != nil {
 			return vm.runtimeError(err)
 		}
 	case OpPushT:
@@ -360,7 +374,7 @@ func (vm *ChaincodeVM) Step() error {
 			return vm.runtimeError(err)
 		}
 		t := n2 + n1
-		if err := vm.stack.Push(newNumber(t)); err != nil {
+		if err := vm.stack.Push(NewNumber(t)); err != nil {
 			return vm.runtimeError(err)
 		}
 	case OpSub:
@@ -373,7 +387,7 @@ func (vm *ChaincodeVM) Step() error {
 			return vm.runtimeError(err)
 		}
 		t := n2 - n1
-		if err := vm.stack.Push(newNumber(t)); err != nil {
+		if err := vm.stack.Push(NewNumber(t)); err != nil {
 			return vm.runtimeError(err)
 		}
 	case OpMul:
@@ -386,7 +400,7 @@ func (vm *ChaincodeVM) Step() error {
 			return vm.runtimeError(err)
 		}
 		t := n2 * n1
-		if err := vm.stack.Push(newNumber(t)); err != nil {
+		if err := vm.stack.Push(NewNumber(t)); err != nil {
 			return vm.runtimeError(err)
 		}
 	case OpDiv:
@@ -399,7 +413,7 @@ func (vm *ChaincodeVM) Step() error {
 			return vm.runtimeError(err)
 		}
 		t := n2 / n1
-		if err := vm.stack.Push(newNumber(t)); err != nil {
+		if err := vm.stack.Push(NewNumber(t)); err != nil {
 			return vm.runtimeError(err)
 		}
 	case OpMod:
@@ -412,7 +426,7 @@ func (vm *ChaincodeVM) Step() error {
 			return vm.runtimeError(err)
 		}
 		t := n2 % n1
-		if err := vm.stack.Push(newNumber(t)); err != nil {
+		if err := vm.stack.Push(NewNumber(t)); err != nil {
 			return vm.runtimeError(err)
 		}
 	case OpNot:
@@ -424,7 +438,7 @@ func (vm *ChaincodeVM) Step() error {
 		if n1 == 0 {
 			t = 1
 		}
-		if err := vm.stack.Push(newNumber(t)); err != nil {
+		if err := vm.stack.Push(NewNumber(t)); err != nil {
 			return vm.runtimeError(err)
 		}
 	case OpNeg:
@@ -433,7 +447,7 @@ func (vm *ChaincodeVM) Step() error {
 			return vm.runtimeError(err)
 		}
 		t := -n1
-		if err := vm.stack.Push(newNumber(t)); err != nil {
+		if err := vm.stack.Push(NewNumber(t)); err != nil {
 			return vm.runtimeError(err)
 		}
 	case OpInc:
@@ -442,7 +456,7 @@ func (vm *ChaincodeVM) Step() error {
 			return vm.runtimeError(err)
 		}
 		t := n1 + 1
-		if err := vm.stack.Push(newNumber(t)); err != nil {
+		if err := vm.stack.Push(NewNumber(t)); err != nil {
 			return vm.runtimeError(err)
 		}
 	case OpDec:
@@ -451,7 +465,7 @@ func (vm *ChaincodeVM) Step() error {
 			return vm.runtimeError(err)
 		}
 		t := n1 - 1
-		if err := vm.stack.Push(newNumber(t)); err != nil {
+		if err := vm.stack.Push(NewNumber(t)); err != nil {
 			return vm.runtimeError(err)
 		}
 	case OpIndex:

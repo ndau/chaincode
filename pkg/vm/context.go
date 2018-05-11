@@ -1,5 +1,9 @@
 package vm
 
+import (
+	"strings"
+)
+
 // Constants for Contexts
 const (
 	CtxTest        byte = iota
@@ -16,4 +20,14 @@ var Contexts = map[byte]string{
 	CtxEaiTiming:   "EAI_TIMING",
 	CtxNodeQuality: "NODE_QUALITY",
 	CtxMarketPrice: "MARKET_PRICE",
+}
+
+// ContextLookup searches for a context by a given name; returns true if found
+func ContextLookup(s string) (byte, bool) {
+	for k, v := range Contexts {
+		if strings.EqualFold(v, s) {
+			return k, true
+		}
+	}
+	return CtxTest, false
 }
