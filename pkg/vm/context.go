@@ -8,3 +8,12 @@ const (
 	CtxNodeQuality byte = iota
 	CtxMarketPrice byte = iota
 )
+
+// Contexts is a map of context byte to context string
+var Contexts = map[byte]string{
+	CtxTest:        "TEST",
+	CtxNodePayout:  "NODE_PAYOUT",
+	CtxEaiTiming:   "EAI_TIMING",
+	CtxNodeQuality: "NODE_QUALITY",
+	CtxMarketPrice: "MARKET_PRICE",
+}

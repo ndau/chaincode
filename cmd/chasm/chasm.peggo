@@ -35,56 +35,56 @@ ConstDef <-
 // like push and push64 need to have the longer one first, as this
 // construct tests in order
 Opcode =
-    ( "nop" { return newUnitaryOpcode(OpNop) }
-    / "drop2" { return newUnitaryOpcode(OpDrop2) }
-    / "drop" { return newUnitaryOpcode(OpDrop) }
-    / "dup2" { return newUnitaryOpcode(OpDup2) }
-    / "dup" { return newUnitaryOpcode(OpDup) }
-    / "swap" { return newUnitaryOpcode(OpSwap) }
-    / "over" { return newUnitaryOpcode(OpOver) }
-    / "pick" _ b:Byte { return newBinaryOpcode(OpPick, b.(string)) }
-    / "roll" _ b:Byte { return newBinaryOpcode(OpRoll, b.(string)) }
-    / "ret" { return newUnitaryOpcode(OpRet) }
-    / "fail" { return newUnitaryOpcode(OpFail) }
-    / "zero" { return newUnitaryOpcode(OpZero) }
-    / "false" { return newUnitaryOpcode(OpFalse) }
+    ( "nop" { return newUnitaryOpcode(vm.OpNop) }
+    / "drop2" { return newUnitaryOpcode(vm.OpDrop2) }
+    / "drop" { return newUnitaryOpcode(vm.OpDrop) }
+    / "dup2" { return newUnitaryOpcode(vm.OpDup2) }
+    / "dup" { return newUnitaryOpcode(vm.OpDup) }
+    / "swap" { return newUnitaryOpcode(vm.OpSwap) }
+    / "over" { return newUnitaryOpcode(vm.OpOver) }
+    / "pick" _ b:Byte { return newBinaryOpcode(vm.OpPick, b.(string)) }
+    / "roll" _ b:Byte { return newBinaryOpcode(vm.OpRoll, b.(string)) }
+    / "ret" { return newUnitaryOpcode(vm.OpRet) }
+    / "fail" { return newUnitaryOpcode(vm.OpFail) }
+    / "zero" { return newUnitaryOpcode(vm.OpZero) }
+    / "false" { return newUnitaryOpcode(vm.OpFalse) }
     / "push64" _ v:Value  { return newPush64(v.(string)) }
     / "push" _ v:Value  { return newPushOpcode(v.(string)) }
-    / "one" { return newUnitaryOpcode(OpOne) }
-    / "true" { return newUnitaryOpcode(OpTrue) }
-    / "neg1" { return newUnitaryOpcode(OpNeg1) }
+    / "one" { return newUnitaryOpcode(vm.OpOne) }
+    / "true" { return newUnitaryOpcode(vm.OpTrue) }
+    / "neg1" { return newUnitaryOpcode(vm.OpNeg1) }
     / "pusht" _ ts:Timestamp  { return newPushTimestamp(ts.(string)) }
-    / "pushl" { return newUnitaryOpcode(OpPushL) }
-    / "now" { return newUnitaryOpcode(OpNow) }
-    / "rand" { return newUnitaryOpcode(OpRand) }
-    / "add" { return newUnitaryOpcode(OpAdd) }
-    / "sub" { return newUnitaryOpcode(OpSub) }
-    / "mul" { return newUnitaryOpcode(OpMul) }
-    / "div" { return newUnitaryOpcode(OpDiv) }
-    / "mod" { return newUnitaryOpcode(OpMod) }
-    / "not" { return newUnitaryOpcode(OpNot) }
-    / "neg" { return newUnitaryOpcode(OpNeg) }
-    / "inc" { return newUnitaryOpcode(OpInc) }
-    / "dec" { return newUnitaryOpcode(OpDec) }
-    / "index" { return newUnitaryOpcode(OpIndex) }
-    / "len" { return newUnitaryOpcode(OpLen) }
-    / "append" { return newUnitaryOpcode(OpAppend) }
-    / "extend" { return newUnitaryOpcode(OpExtend) }
-    / "slice" { return newUnitaryOpcode(OpSlice) }
-    / "fieldl" { return newUnitaryOpcode(OpFieldL) }
-    / "field" { return newUnitaryOpcode(OpField) }
-    / "choice" { return newUnitaryOpcode(OpChoice) }
-    / "wchoice" { return newUnitaryOpcode(OpWChoice) }
-    / "sort" { return newUnitaryOpcode(OpSort) }
-    / "lookup" { return newUnitaryOpcode(OpLookup) }
-    / "ifz" { return newUnitaryOpcode(OpIfz) }
-    / "ifnz" { return newUnitaryOpcode(OpIfnz) }
-    / "else" { return newUnitaryOpcode(OpElse) }
-    / "end" { return newUnitaryOpcode(OpEnd) }
-    / "sum" { return newUnitaryOpcode(OpSum) }
-    / "avg" { return newUnitaryOpcode(OpAvg) }
-    / "max" { return newUnitaryOpcode(OpMax) }
-    / "min" { return newUnitaryOpcode(OpMin) }
+    / "pushl" { return newUnitaryOpcode(vm.OpPushL) }
+    / "now" { return newUnitaryOpcode(vm.OpNow) }
+    / "rand" { return newUnitaryOpcode(vm.OpRand) }
+    / "add" { return newUnitaryOpcode(vm.OpAdd) }
+    / "sub" { return newUnitaryOpcode(vm.OpSub) }
+    / "mul" { return newUnitaryOpcode(vm.OpMul) }
+    / "div" { return newUnitaryOpcode(vm.OpDiv) }
+    / "mod" { return newUnitaryOpcode(vm.OpMod) }
+    / "not" { return newUnitaryOpcode(vm.OpNot) }
+    / "neg" { return newUnitaryOpcode(vm.OpNeg) }
+    / "inc" { return newUnitaryOpcode(vm.OpInc) }
+    / "dec" { return newUnitaryOpcode(vm.OpDec) }
+    / "index" { return newUnitaryOpcode(vm.OpIndex) }
+    / "len" { return newUnitaryOpcode(vm.OpLen) }
+    / "append" { return newUnitaryOpcode(vm.OpAppend) }
+    / "extend" { return newUnitaryOpcode(vm.OpExtend) }
+    / "slice" { return newUnitaryOpcode(vm.OpSlice) }
+    / "fieldl" { return newUnitaryOpcode(vm.OpFieldL) }
+    / "field" { return newUnitaryOpcode(vm.OpField) }
+    / "choice" { return newUnitaryOpcode(vm.OpChoice) }
+    / "wchoice" { return newUnitaryOpcode(vm.OpWChoice) }
+    / "sort" { return newUnitaryOpcode(vm.OpSort) }
+    / "lookup" { return newUnitaryOpcode(vm.OpLookup) }
+    / "ifz" { return newUnitaryOpcode(vm.OpIfz) }
+    / "ifnz" { return newUnitaryOpcode(vm.OpIfnz) }
+    / "else" { return newUnitaryOpcode(vm.OpElse) }
+    / "end" { return newUnitaryOpcode(vm.OpEnd) }
+    / "sum" { return newUnitaryOpcode(vm.OpSum) }
+    / "avg" { return newUnitaryOpcode(vm.OpAvg) }
+    / "max" { return newUnitaryOpcode(vm.OpMax) }
+    / "min" { return newUnitaryOpcode(vm.OpMin) }
     )
 
 Timestamp <- ts:(Date 'T' Time 'Z') { return ts.(string), nil }
@@ -92,11 +92,11 @@ Date <- [0-9] [0-9] [0-9] [0-9] '-' [0-9] [0-9] '-' [0-9] [0-9]
 Time <-  [0-9] [0-9] ':' [0:9] [0-9] '-' [0-9] [0-9]
 
 ContextConstant <-
-    ( "TEST" { return CtxTest, nil }
-    / "NODE_PAYOUT" { return CtxNodePayout, nil }
-    / "EAI_TIMING" { return CtxEaiTiming, nil }
-    / "NODE_QUALITY" { return CtxNodeQuality, nil }
-    / "MARKET_PRICE" { return CtxMarketPrice, nil }
+    ( "TEST" { return vm.CtxTest, nil }
+    / "NODE_PAYOUT" { return vm.CtxNodePayout, nil }
+    / "EAI_TIMING" { return vm.CtxEaiTiming, nil }
+    / "NODE_QUALITY" { return vm.CtxNodeQuality, nil }
+    / "MARKET_PRICE" { return vm.CtxMarketPrice, nil }
     )
 
 Value =

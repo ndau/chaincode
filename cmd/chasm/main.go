@@ -2,30 +2,13 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"
 	"io"
 	"log"
 	"os"
 
 	arg "github.com/alexflint/go-arg"
+	"github.com/oneiro-ndev/chaincode/pkg/vm"
 )
-
-// ChasmBinary defines the "binary" (assembled) format of the assembler
-type ChasmBinary struct {
-	Name    string `json:"name"`
-	Comment string `json:"comment"`
-	Context string `json:"context"`
-	Data    []byte `json:"data"`
-}
-
-// Contexts is a map of context byte to context string
-var Contexts = map[byte]string{
-	CtxTest:        "TEST",
-	CtxNodePayout:  "NODE_PAYOUT",
-	CtxEaiTiming:   "EAI_TIMING",
-	CtxNodeQuality: "NODE_QUALITY",
-	CtxMarketPrice: "MARKET_PRICE",
-}
 
 func main() {
 	var args struct {
@@ -66,13 +49,8 @@ func main() {
 	}
 
 	b := sn.(Script).bytes()
-	output := ChasmBinary{
-		Name:    name,
-		Comment: args.Comment,
-		Context: Contexts[b[0]],
-		Data:    b,
+	err = vm.Serialize(name, args.Comment, b, out)
+	if err != nil {
+		log.Fatal(err)
 	}
-	enc := json.NewEncoder(out)
-	enc.SetIndent("", "  ")
-	enc.Encode(output)
 }

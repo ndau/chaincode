@@ -4,6 +4,8 @@ import (
 	"errors"
 	"strconv"
 	"time"
+
+	"github.com/oneiro-ndev/chaincode/pkg/vm"
 )
 
 // Some masking values
@@ -150,11 +152,11 @@ type PushOpcode struct {
 func (n PushOpcode) bytes() []byte {
 	switch n.arg {
 	case 0:
-		return []byte{OpZero}
+		return []byte{vm.OpZero}
 	case 1:
-		return []byte{OpOne}
+		return []byte{vm.OpOne}
 	case -1:
-		return []byte{OpNeg1}
+		return []byte{vm.OpNeg1}
 	default:
 		b := toBytes(n.arg)
 		var suppress byte
@@ -165,7 +167,7 @@ func (n PushOpcode) bytes() []byte {
 			b = b[:len(b)-1]
 		}
 		nbytes := byte(len(b))
-		op := OpPushN | nbytes
+		op := vm.OpPushN | nbytes
 		b = append([]byte{op}, b...)
 		return b
 	}
@@ -187,7 +189,7 @@ func newPush64(s string) (Push64, error) {
 }
 
 func (n Push64) bytes() []byte {
-	return append([]byte{OpPush64}, toBytesU(n.u)...)
+	return append([]byte{vm.OpPush64}, toBytesU(n.u)...)
 }
 
 // PushTimestamp is a 64-bit representation of the time since the start of the epoch in microseconds
@@ -208,5 +210,5 @@ func newPushTimestamp(s string) (PushTimestamp, error) {
 }
 
 func (n PushTimestamp) bytes() []byte {
-	return append([]byte{OpPushT}, toBytesU(n.t)...)
+	return append([]byte{vm.OpPushT}, toBytesU(n.t)...)
 }
