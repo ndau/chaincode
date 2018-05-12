@@ -101,7 +101,7 @@ func checkStack(t *testing.T, st *Stack, values ...int64) {
 	for i := range values {
 		n, err := st.PopAsInt64()
 		assert.Nil(t, err)
-		assert.Equal(t, n, values[len(values)-i-1])
+		assert.Equal(t, values[len(values)-i-1], n)
 	}
 }
 
@@ -143,10 +143,114 @@ func TestDup(t *testing.T) {
 	checkStack(t, vm.Stack(), 1, 2, 2, 3, 2, 3)
 }
 
-func TestSwapOver(t *testing.T) {
+func TestSwapOverPickRoll(t *testing.T) {
 	vm := buildVM(t, "zero one push1 2 push1 3 swap over pick 4 roll 4")
 	vm.Init(nil)
 	err := vm.Run(false)
 	assert.Nil(t, err)
 	checkStack(t, vm.Stack(), 0, 3, 2, 3, 0, 1)
+}
+
+func TestMath(t *testing.T) {
+	vm := buildVM(t, "push1 55 dup dup add sub push1 7 push1 6 mul dup push1 3 div dup push1 3 mod")
+	vm.Init(nil)
+	err := vm.Run(false)
+	assert.Nil(t, err)
+	checkStack(t, vm.Stack(), -85, 42, 14, 2)
+}
+
+func TestNotNegIncDec(t *testing.T) {
+	vm := buildVM(t, "push1 7 not dup not push1 8 neg push1 4 inc push1 6 dec")
+	vm.Init(nil)
+	err := vm.Run(false)
+	assert.Nil(t, err)
+	checkStack(t, vm.Stack(), 0, 1, -8, 5, 5)
+}
+
+func TestIf1(t *testing.T) {
+	vm := buildVM(t, "zero ifz push1 13 else push1 42 end push1 11")
+	vm.Init(nil)
+	err := vm.Run(false)
+	assert.Nil(t, err)
+	checkStack(t, vm.Stack(), 19, 17)
+}
+
+func TestIf2(t *testing.T) {
+	vm := buildVM(t, "zero ifnz push1 13 else push1 42 end push1 11")
+	vm.Init(nil)
+	err := vm.Run(false)
+	assert.Nil(t, err)
+	checkStack(t, vm.Stack(), 66, 17)
+}
+
+func TestIf3(t *testing.T) {
+	vm := buildVM(t, "one ifz push1 13 else push1 42 end push1 11")
+	vm.Init(nil)
+	err := vm.Run(false)
+	assert.Nil(t, err)
+	checkStack(t, vm.Stack(), 66, 17)
+}
+
+func TestIf4(t *testing.T) {
+	vm := buildVM(t, "one ifnz push1 13 else push1 42 end push1 11")
+	vm.Init(nil)
+	err := vm.Run(false)
+	assert.Nil(t, err)
+	checkStack(t, vm.Stack(), 19, 17)
+}
+
+func TestIf5(t *testing.T) {
+	vm := buildVM(t, "zero ifz push1 13 end push1 11")
+	vm.Init(nil)
+	err := vm.Run(false)
+	assert.Nil(t, err)
+	checkStack(t, vm.Stack(), 19, 17)
+}
+
+func TestIf6(t *testing.T) {
+	vm := buildVM(t, "zero ifnz push1 13 end push1 11")
+	vm.Init(nil)
+	err := vm.Run(false)
+	assert.Nil(t, err)
+	checkStack(t, vm.Stack(), 17)
+}
+
+func TestIf7(t *testing.T) {
+	vm := buildVM(t, "one ifz push1 13 end push1 11")
+	vm.Init(nil)
+	err := vm.Run(false)
+	assert.Nil(t, err)
+	checkStack(t, vm.Stack(), 17)
+}
+
+func TestIf8(t *testing.T) {
+	vm := buildVM(t, "one ifnz push1 13 end push1 11")
+	vm.Init(nil)
+	err := vm.Run(false)
+	assert.Nil(t, err)
+	checkStack(t, vm.Stack(), 19, 17)
+}
+
+func TestIfNested1(t *testing.T) {
+	vm := buildVM(t, "one ifnz push1 13 zero ifz push1 15 else push1 13 end end push1 11")
+	vm.Init(nil)
+	err := vm.Run(false)
+	assert.Nil(t, err)
+	checkStack(t, vm.Stack(), 19, 21, 17)
+}
+
+func TestIfNested2(t *testing.T) {
+	vm := buildVM(t, "one ifz push1 13 zero ifz push1 15 else push1 13 end end push1 11")
+	vm.Init(nil)
+	err := vm.Run(false)
+	assert.Nil(t, err)
+	checkStack(t, vm.Stack(), 17)
+}
+
+func TestIfNested3(t *testing.T) {
+	vm := buildVM(t, "one ifnz push1 13 zero ifnz push1 15 else push1 13 end end push1 11")
+	vm.Init(nil)
+	err := vm.Run(false)
+	assert.Nil(t, err)
+	checkStack(t, vm.Stack(), 19, 19, 17)
 }

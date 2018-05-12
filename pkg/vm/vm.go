@@ -106,10 +106,10 @@ func validateNesting(code []Opcode) error {
 			if nesting == 0 {
 				return ValidationError{"invalid nesting (else without if)"}
 			}
-			if haselse[nesting] {
+			if haselse[nesting-1] {
 				return ValidationError{"invalid nesting (too many elses)"}
 			}
-			haselse[nesting] = true
+			haselse[nesting-1] = true
 		case OpEnd:
 			if nesting == 0 {
 				return ValidationError{"invalid nesting (end without if)"}
@@ -208,8 +208,7 @@ func (vm *ChaincodeVM) skipToMatchingBracket() error {
 			nesting++
 		case OpElse:
 			if nesting == 0 {
-				// we're at the right level, so just skip this instruction and continue
-				vm.pc++ // skip
+				// we're at the right level, so we're done
 				return nil
 			}
 		case OpEnd:
@@ -217,7 +216,6 @@ func (vm *ChaincodeVM) skipToMatchingBracket() error {
 				nesting--
 			} else {
 				// we're at the right level so we're done
-				vm.pc++ // consume this one too
 				return nil
 			}
 		default:
