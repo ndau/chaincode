@@ -244,6 +244,13 @@ func (vm *ChaincodeVM) Step() error {
 			// lists: vm.lists[:],
 		})
 	}
+
+	// Check to see if we're still in runnable code
+	if vm.pc >= len(vm.code) {
+		vm.runstate = RsComplete
+		return nil
+	}
+
 	// fetch the instruction
 	instr := vm.code[vm.pc]
 	// we always increment the pc immediately; we may also add to it if an instruction has additional data
@@ -537,6 +544,9 @@ func (vm *ChaincodeVM) Step() error {
 
 // Disassemble returns a single disassembled instruction, along with how many bytes it consumed
 func (vm *ChaincodeVM) Disassemble(pc int) (string, int) {
+	if pc >= len(vm.code) {
+		return "END", 0
+	}
 	op := vm.code[pc]
 	numExtra := 0
 	switch op {

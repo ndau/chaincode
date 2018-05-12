@@ -84,7 +84,7 @@ func (st *Stack) PopAt(n int) (Value, error) {
 	if n == 0 {
 		return st.Pop()
 	}
-	if len(st.stack) < n {
+	if len(st.stack) <= n {
 		return NewNumber(0), stackError("index error")
 	}
 	ix := len(st.stack) - n - 1
