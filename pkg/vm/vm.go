@@ -486,13 +486,73 @@ func (vm *ChaincodeVM) Step() error {
 		if err := vm.stack.Push(NewNumber(t)); err != nil {
 			return vm.runtimeError(err)
 		}
-	case OpIndex:
-	case OpLen:
-	case OpAppend:
-	case OpExtend:
-	case OpSlice:
-	case OpField:
-	case OpFieldL:
+	case OpEq:
+		v1, err := vm.stack.Pop()
+		if err != nil {
+			return vm.runtimeError(err)
+		}
+		v2, err := vm.stack.Pop()
+		if err != nil {
+			return vm.runtimeError(err)
+		}
+		r, err := v1.Compare(v2)
+		if err != nil {
+			return vm.runtimeError(errors.New("comparing incompatible types"))
+		}
+		var result int64
+		if r == 0 {
+			result = 1
+		}
+		if err := vm.stack.Push(NewNumber(result)); err != nil {
+			return vm.runtimeError(err)
+		}
+	case OpGt:
+		v1, err := vm.stack.Pop()
+		if err != nil {
+			return vm.runtimeError(err)
+		}
+		v2, err := vm.stack.Pop()
+		if err != nil {
+			return vm.runtimeError(err)
+		}
+		r, err := v1.Compare(v2)
+		if err != nil {
+			return vm.runtimeError(errors.New("comparing incompatible types"))
+		}
+		var result int64
+		if r > 0 {
+			result = 1
+		}
+		if err := vm.stack.Push(NewNumber(result)); err != nil {
+			return vm.runtimeError(err)
+		}
+	case OpLt:
+		v1, err := vm.stack.Pop()
+		if err != nil {
+			return vm.runtimeError(err)
+		}
+		v2, err := vm.stack.Pop()
+		if err != nil {
+			return vm.runtimeError(err)
+		}
+		r, err := v1.Compare(v2)
+		if err != nil {
+			return vm.runtimeError(errors.New("comparing incompatible types"))
+		}
+		var result int64
+		if r < 0 {
+			result = 1
+		}
+		if err := vm.stack.Push(NewNumber(result)); err != nil {
+			return vm.runtimeError(err)
+		}
+	// case OpIndex:
+	// case OpLen:
+	// case OpAppend:
+	// case OpExtend:
+	// case OpSlice:
+	// case OpField:
+	// case OpFieldL:
 	case OpIfz:
 		t, err := vm.stack.Pop()
 		if err != nil {
@@ -538,14 +598,14 @@ func (vm *ChaincodeVM) Step() error {
 		}
 	case OpEnd:
 		// this is a nop
-	case OpSum:
-	case OpAvg:
-	case OpMax:
-	case OpMin:
-	case OpChoice:
-	case OpWChoice:
-	case OpSort:
-	case OpLookup:
+	// case OpSum:
+	// case OpAvg:
+	// case OpMax:
+	// case OpMin:
+	// case OpChoice:
+	// case OpWChoice:
+	// case OpSort:
+	// case OpLookup:
 	default:
 		return vm.runtimeError(errors.New("unimplemented opcode"))
 	}

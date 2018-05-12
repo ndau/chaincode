@@ -49,6 +49,9 @@ var opcodeMap = map[string]Opcode{
 	"neg":     OpNeg,
 	"inc":     OpInc,
 	"dec":     OpDec,
+	"eq":      OpEq,
+	"lt":      OpLt,
+	"gt":      OpGt,
 	"index":   OpIndex,
 	"len":     OpLen,
 	"append":  OpAppend,
@@ -272,4 +275,35 @@ func TestIfNested3(t *testing.T) {
 	err := vm.Run(false)
 	assert.Nil(t, err)
 	checkStack(t, vm.Stack(), 19, 19, 17)
+}
+
+func TestCompares1(t *testing.T) {
+	vm := buildVM(t, "one neg1 eq one neg1 lt one neg1 gt")
+	vm.Init(nil)
+	err := vm.Run(false)
+	assert.Nil(t, err)
+	checkStack(t, vm.Stack(), 0, 1, 0)
+}
+
+func TestCompares2(t *testing.T) {
+	vm := buildVM(t, "one one eq one one lt one one gt")
+	vm.Init(nil)
+	err := vm.Run(false)
+	assert.Nil(t, err)
+	checkStack(t, vm.Stack(), 1, 0, 0)
+}
+
+func TestCompares3(t *testing.T) {
+	vm := buildVM(t, "neg1 one eq neg1 one lt neg1 one gt")
+	vm.Init(nil)
+	err := vm.Run(false)
+	assert.Nil(t, err)
+	checkStack(t, vm.Stack(), 0, 0, 1)
+}
+
+func TestCompares4(t *testing.T) {
+	vm := buildVM(t, "neg1 push64 1 2 3 4 5 6 7 8 eq")
+	vm.Init(nil)
+	err := vm.Run(false)
+	assert.NotNil(t, err)
 }

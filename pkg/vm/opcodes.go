@@ -46,6 +46,9 @@ const (
 	OpNeg     Opcode = 0x46
 	OpInc     Opcode = 0x47
 	OpDec     Opcode = 0x48
+	OpEq      Opcode = 0x49
+	OpGt      Opcode = 0x4A
+	OpLt      Opcode = 0x4B
 	OpIndex   Opcode = 0x50
 	OpLen     Opcode = 0x51
 	OpAppend  Opcode = 0x52
@@ -55,7 +58,7 @@ const (
 	OpFieldL  Opcode = 0x70
 	OpIfz     Opcode = 0x80
 	OpIfnz    Opcode = 0x81
-	OpElse    Opcode = 0x82
+	OpElse    Opcode = 0x87
 	OpEnd     Opcode = 0x88
 	OpSum     Opcode = 0x90
 	OpAvg     Opcode = 0x91

@@ -7,7 +7,7 @@
 
 Script <- EOL* p:Preamble code:Code EOF { return newScript(p, code) }
 
-Preamble <-  _? "context" _? ":" _? cc:ContextConstant EOL { return newPreambleNode(cc.(byte)) }
+Preamble <-  _? "context" _? ":" _? cc:ContextConstant EOL { return newPreambleNode(cc.(vm.ContextByte)) }
 
 Code <-  EOL* _? '{' s:Line+ _? '}' EOL* { return s, nil }
 
@@ -66,6 +66,9 @@ Opcode =
     / "neg" { return newUnitaryOpcode(vm.OpNeg) }
     / "inc" { return newUnitaryOpcode(vm.OpInc) }
     / "dec" { return newUnitaryOpcode(vm.OpDec) }
+    / "eq" { return newUnitaryOpcode(vm.OpEq) }
+    / "gt" { return newUnitaryOpcode(vm.OpGt) }
+    / "lt" { return newUnitaryOpcode(vm.OpLt) }
     / "index" { return newUnitaryOpcode(vm.OpIndex) }
     / "len" { return newUnitaryOpcode(vm.OpLen) }
     / "append" { return newUnitaryOpcode(vm.OpAppend) }

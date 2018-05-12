@@ -33,6 +33,7 @@ func (e ValueError) Error() string {
 
 // Value objects are what is managed by the VM
 type Value interface {
+	Compare(rhs Value) (int, error)
 	String() string
 }
 
@@ -44,6 +45,21 @@ type Number struct {
 // NewNumber creates a Number object out of an int64
 func NewNumber(n int64) Number {
 	return Number{n}
+}
+
+// Compare implements comparison for Number
+func (vt Number) Compare(rhs Value) (int, error) {
+	switch other := rhs.(type) {
+	case Number:
+		if vt.v < other.v {
+			return -1, nil
+		} else if vt.v > other.v {
+			return 1, nil
+		}
+		return 0, nil
+	default:
+		return 0, ValueError{"comparing incompatible types"}
+	}
 }
 
 func (vt Number) String() string {
@@ -80,6 +96,21 @@ func ParseTimestamp(s string) (Timestamp, error) {
 	return NewTimestamp(uSec), nil
 }
 
+// Compare implements comparison for Timestamp
+func (vt Timestamp) Compare(rhs Value) (int, error) {
+	switch other := rhs.(type) {
+	case Timestamp:
+		if vt.t < other.t {
+			return -1, nil
+		} else if vt.t > other.t {
+			return 1, nil
+		}
+		return 0, nil
+	default:
+		return 0, ValueError{"comparing incompatible types"}
+	}
+}
+
 func (vt Timestamp) String() string {
 	return strconv.FormatUint(vt.t, 16)
 }
@@ -97,6 +128,21 @@ type ID struct {
 // NewID creates an ID
 func NewID(n uint64) ID {
 	return ID{n}
+}
+
+// Compare implements comparison for ID
+func (vt ID) Compare(rhs Value) (int, error) {
+	switch other := rhs.(type) {
+	case ID:
+		if vt.id < other.id {
+			return -1, nil
+		} else if vt.id > other.id {
+			return 1, nil
+		}
+		return 0, nil
+	default:
+		return 0, ValueError{"comparing incompatible types"}
+	}
 }
 
 func (vt ID) String() string {
