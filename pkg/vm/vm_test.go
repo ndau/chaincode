@@ -120,11 +120,30 @@ func TestNop(t *testing.T) {
 }
 
 func TestPush(t *testing.T) {
-	vm := buildVM(t, "neg1 zero one push1 45 push2 01 01 ret")
+	vm := buildVM(t, "neg1 zero one push1 45 push2 01 02 ret")
 	vm.Init(nil)
 	err := vm.Run(false)
 	assert.Nil(t, err)
-	checkStack(t, vm.Stack(), -1, 0, 1, 69, 257)
+	checkStack(t, vm.Stack(), -1, 0, 1, 69, 513)
+}
+
+func TestBigPush(t *testing.T) {
+	vm := buildVM(t, "push3 1 2 3 push7 1 2 3 4 5 6 7 push8 fb ff ff ff ff ff ff ff")
+	vm.Init(nil)
+	err := vm.Run(false)
+	assert.Nil(t, err)
+	checkStack(t, vm.Stack(), 197121, 1976943448883713, -5)
+}
+
+func TestPush64(t *testing.T) {
+	vm := buildVM(t, "push64 1 2 3 4 5 6 7 8")
+	vm.Init(nil)
+	err := vm.Run(false)
+	assert.Nil(t, err)
+	v, err := vm.Stack().Pop()
+	assert.Nil(t, err)
+	assert.IsType(t, NewID(0), v)
+	assert.Equal(t, NewID(578437695752307201), v)
 }
 
 func TestDrop(t *testing.T) {

@@ -1,6 +1,7 @@
 package vm
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 )
@@ -338,9 +339,9 @@ func (vm *ChaincodeVM) Step() error {
 		if err := vm.stack.Push(NewNumber(0)); err != nil {
 			return vm.runtimeError(err)
 		}
-	case OpPushN + 1, OpPushN + 2, OpPushN + 3, OpPushN + 4, OpPushN + 5, OpPushN + 6, OpPushN + 7:
+	case OpPush1, OpPush2, OpPush3, OpPush4, OpPush5, OpPush6, OpPush7, OpPush8:
 		// use a mask to retrieve the actual count of bytes to fetch
-		nbytes := byte(instr) & 0x7
+		nbytes := byte(instr) & 0xF
 		var value int64
 		var i byte
 		var b Opcode
@@ -358,6 +359,17 @@ func (vm *ChaincodeVM) Step() error {
 			return vm.runtimeError(err)
 		}
 	case OpPush64:
+		var value uint64
+		var i byte
+		var b Opcode
+		for i = 0; i < 8; i++ {
+			b = vm.code[vm.pc]
+			vm.pc++
+			value |= uint64(b) << (i * 8)
+		}
+		if err := vm.stack.Push(NewID(value)); err != nil {
+			return vm.runtimeError(err)
+		}
 	case OpOne:
 		if err := vm.stack.Push(NewNumber(1)); err != nil {
 			return vm.runtimeError(err)
@@ -535,6 +547,7 @@ func (vm *ChaincodeVM) Step() error {
 	case OpSort:
 	case OpLookup:
 	default:
+		return vm.runtimeError(errors.New("unimplemented opcode"))
 	}
 
 	return nil
