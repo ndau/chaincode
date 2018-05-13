@@ -131,7 +131,7 @@ func TestUnitaryOpcodes2(t *testing.T) {
 		}
 `
 	checkParse(t, "Unitary2", code,
-		"00607094959697808182889091929330")
+		"00607094959697808187889091929330")
 }
 
 func TestBinary(t *testing.T) {

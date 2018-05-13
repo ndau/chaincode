@@ -7,12 +7,6 @@ import (
 	"github.com/oneiro-ndev/chaincode/pkg/vm"
 )
 
-// Some masking values
-const (
-	ByteMask byte = 0xFF
-	HighBit  byte = 0x80
-)
-
 func toIfaceSlice(v interface{}) []interface{} {
 	if v == nil {
 		return nil
@@ -99,28 +93,6 @@ func newBinaryOpcode(op vm.Opcode, v string) (BinaryOpcode, error) {
 	return BinaryOpcode{opcode: op, value: byte(n)}, nil
 }
 
-// toBytes returns an array of 8 bytes encoding n as a uint in little-endian form
-func toBytesU(n uint64) []byte {
-	b := []byte{}
-	a := n
-	for nbytes := 0; nbytes < 8; nbytes++ {
-		b = append(b, byte(a)&ByteMask)
-		a >>= 8
-	}
-	return b
-}
-
-// toBytes returns an array of 8 bytes encoding n as a signed value in little-endian form
-func toBytes(n int64) []byte {
-	b := []byte{}
-	a := n
-	for nbytes := 0; nbytes < 8; nbytes++ {
-		b = append(b, byte(a)&ByteMask)
-		a >>= 8
-	}
-	return b
-}
-
 // PushOpcode constructs push operations with the appropriate number of bytes to express
 // the specified value. It has special cases for the special opcodes zero, one, and neg1.
 type PushOpcode struct {
@@ -142,7 +114,7 @@ func (n PushOpcode) bytes() []byte {
 	case -1:
 		return []byte{byte(vm.OpNeg1)}
 	default:
-		b := toBytes(n.arg)
+		b := vm.ToBytes(n.arg)
 		var suppress byte
 		if n.arg < 0 {
 			suppress = byte(0xFF)
@@ -173,7 +145,7 @@ func newPush64(s string) (Push64, error) {
 }
 
 func (n Push64) bytes() []byte {
-	return append([]byte{byte(vm.OpPush64)}, toBytesU(n.u)...)
+	return append([]byte{byte(vm.OpPush64)}, vm.ToBytesU(n.u)...)
 }
 
 // PushTimestamp is a 64-bit representation of the time since the start of the epoch in microseconds
@@ -190,5 +162,5 @@ func newPushTimestamp(s string) (PushTimestamp, error) {
 }
 
 func (n PushTimestamp) bytes() []byte {
-	return append([]byte{byte(vm.OpPushT)}, toBytesU(n.t)...)
+	return append([]byte{byte(vm.OpPushT)}, vm.ToBytesU(n.t)...)
 }

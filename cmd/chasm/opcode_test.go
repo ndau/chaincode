@@ -3,19 +3,20 @@ package main
 import (
 	"testing"
 
+	"github.com/oneiro-ndev/chaincode/pkg/vm"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestToBytes(t *testing.T) {
-	bcheck(t, toBytes(1), "0100000000000000")
-	bcheck(t, toBytes(-1), "FFFFFFFFFFFFFFFF")
-	bcheck(t, toBytes(0x1122334455667788), "8877665544332211")
+	bcheck(t, vm.ToBytes(1), "0100000000000000")
+	bcheck(t, vm.ToBytes(-1), "FFFFFFFFFFFFFFFF")
+	bcheck(t, vm.ToBytes(0x1122334455667788), "8877665544332211")
 }
 
 func TestToBytesU(t *testing.T) {
-	bcheck(t, toBytesU(1), "0100000000000000")
-	bcheck(t, toBytesU(0xFFFFFFFFFFFFFFFF), "FFFFFFFFFFFFFFFF")
-	bcheck(t, toBytes(0x1122334455667788), "8877665544332211")
+	bcheck(t, vm.ToBytesU(1), "0100000000000000")
+	bcheck(t, vm.ToBytesU(0xFFFFFFFFFFFFFFFF), "FFFFFFFFFFFFFFFF")
+	bcheck(t, vm.ToBytes(0x1122334455667788), "8877665544332211")
 }
 
 func TestZero(t *testing.T) {

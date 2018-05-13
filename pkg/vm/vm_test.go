@@ -36,10 +36,10 @@ var opcodeMap = map[string]Opcode{
 	"one":     OpOne,
 	"true":    OpTrue,
 	"neg1":    OpNeg1,
-	"pushT":   OpPushT,
+	"pusht":   OpPushT,
 	"now":     OpNow,
 	"rand":    OpRand,
-	"pushL":   OpPushL,
+	"pushl":   OpPushL,
 	"add":     OpAdd,
 	"sub":     OpSub,
 	"mul":     OpMul,
@@ -68,18 +68,34 @@ var opcodeMap = map[string]Opcode{
 	"max":     OpMax,
 	"min":     OpMin,
 	"choice":  OpChoice,
-	"wChoice": OpWChoice,
+	"wchoice": OpWChoice,
 	"sort":    OpSort,
 	"lookup":  OpLookup,
 }
 
 func miniAsm(s string) []Opcode {
 	wsp := regexp.MustCompile("[ \t\r\n]")
-	words := wsp.Split(strings.ToLower(s), -1)
+	tsp := regexp.MustCompile("[0-9-]+T[0-9:]+Z")
+	words := wsp.Split(strings.ToLower(strings.TrimSpace(s)), -1)
 	opcodes := []Opcode{0}
 	for _, w := range words {
-		if op, ok := opcodeMap[w]; ok {
+		if w == "" {
+			continue
+		}
+		if op, ok := opcodeMap[strings.ToLower(w)]; ok {
 			opcodes = append(opcodes, op)
+			continue
+		}
+		// see if it's a timestamp
+		if tsp.MatchString(strings.ToUpper(w)) {
+			t, err := ParseTimestamp(strings.ToUpper(w))
+			if err != nil {
+				panic(err)
+			}
+			bytes := ToBytesU(t.t)
+			for _, byt := range bytes {
+				opcodes = append(opcodes, Opcode(byt))
+			}
 			continue
 		}
 		// otherwise it should be a hex value
@@ -306,4 +322,24 @@ func TestCompares4(t *testing.T) {
 	vm.Init(nil)
 	err := vm.Run(false)
 	assert.NotNil(t, err)
+}
+
+func TestTimestamp(t *testing.T) {
+	vm := buildVM(t, `
+		pusht 2018-07-18T00:00:00Z
+		pusht 2018-01-01T00:00:00Z
+		sub
+		push3 40 42 0f
+		div
+		push1 3C
+		dup
+		mul
+		push1 18
+		mul
+		div
+		`)
+	vm.Init(nil)
+	err := vm.Run(false)
+	assert.Nil(t, err)
+	checkStack(t, vm.Stack(), 198)
 }

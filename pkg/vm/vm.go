@@ -358,7 +358,7 @@ func (vm *ChaincodeVM) Step() error {
 		if err := vm.stack.Push(NewNumber(value)); err != nil {
 			return vm.runtimeError(err)
 		}
-	case OpPush64:
+	case OpPush64, OpPushT, OpNow:
 		var value uint64
 		var i byte
 		var b Opcode
@@ -367,7 +367,16 @@ func (vm *ChaincodeVM) Step() error {
 			vm.pc++
 			value |= uint64(b) << (i * 8)
 		}
-		if err := vm.stack.Push(NewID(value)); err != nil {
+		var v Value
+		switch instr {
+		case OpPush64:
+			v = NewID(value)
+		case OpPushT:
+			v = NewTimestamp(value)
+		case OpNow:
+			v = NewTimestamp(0) // TODO: Put NOW in place
+		}
+		if err := vm.stack.Push(v); err != nil {
 			return vm.runtimeError(err)
 		}
 	case OpOne:
@@ -378,11 +387,9 @@ func (vm *ChaincodeVM) Step() error {
 		if err := vm.stack.Push(NewNumber(-1)); err != nil {
 			return vm.runtimeError(err)
 		}
-	case OpPushT:
-	case OpNow:
 	case OpRand:
 	case OpPushL:
-	case OpAdd:
+	case OpAdd, OpMul, OpDiv, OpMod:
 		n1, err := vm.stack.PopAsInt64()
 		if err != nil {
 			return vm.runtimeError(err)
@@ -391,102 +398,79 @@ func (vm *ChaincodeVM) Step() error {
 		if err != nil {
 			return vm.runtimeError(err)
 		}
-		t := n2 + n1
+		var t int64
+		switch instr {
+		case OpAdd:
+			t = n2 + n1
+		case OpMul:
+			t = n2 * n1
+		case OpDiv:
+			if n1 == 0 {
+				return vm.runtimeError(errors.New("divide by zero"))
+			}
+			t = n2 / n1
+		case OpMod:
+			t = n2 % n1
+		}
 		if err := vm.stack.Push(NewNumber(t)); err != nil {
 			return vm.runtimeError(err)
 		}
 	case OpSub:
-		n1, err := vm.stack.PopAsInt64()
+		// Subtraction is special because you can also subtract timestamps
+		v1, err := vm.stack.Pop()
 		if err != nil {
 			return vm.runtimeError(err)
 		}
-		n2, err := vm.stack.PopAsInt64()
+		v2, err := vm.stack.Pop()
 		if err != nil {
 			return vm.runtimeError(err)
 		}
-		t := n2 - n1
+		var t int64
+		switch n1 := v1.(type) {
+		case Number:
+			n2, ok := v2.(Number)
+			if !ok {
+				return ValueError{"incompatible types"}
+			}
+			t = n2.v - n1.v
+		case Timestamp:
+			n2, ok := v2.(Timestamp)
+			if !ok {
+				return ValueError{"incompatible types"}
+			}
+			t = int64(n2.t - n1.t)
+		case ID:
+			n2, ok := v2.(ID)
+			if !ok {
+				return ValueError{"incompatible types"}
+			}
+			t = int64(n2.id - n1.id)
+		}
 		if err := vm.stack.Push(NewNumber(t)); err != nil {
 			return vm.runtimeError(err)
 		}
-	case OpMul:
-		n1, err := vm.stack.PopAsInt64()
-		if err != nil {
-			return vm.runtimeError(err)
-		}
-		n2, err := vm.stack.PopAsInt64()
-		if err != nil {
-			return vm.runtimeError(err)
-		}
-		t := n2 * n1
-		if err := vm.stack.Push(NewNumber(t)); err != nil {
-			return vm.runtimeError(err)
-		}
-	case OpDiv:
-		n1, err := vm.stack.PopAsInt64()
-		if err != nil {
-			return vm.runtimeError(err)
-		}
-		n2, err := vm.stack.PopAsInt64()
-		if err != nil {
-			return vm.runtimeError(err)
-		}
-		t := n2 / n1
-		if err := vm.stack.Push(NewNumber(t)); err != nil {
-			return vm.runtimeError(err)
-		}
-	case OpMod:
-		n1, err := vm.stack.PopAsInt64()
-		if err != nil {
-			return vm.runtimeError(err)
-		}
-		n2, err := vm.stack.PopAsInt64()
-		if err != nil {
-			return vm.runtimeError(err)
-		}
-		t := n2 % n1
-		if err := vm.stack.Push(NewNumber(t)); err != nil {
-			return vm.runtimeError(err)
-		}
-	case OpNot:
+	case OpNot, OpNeg, OpInc, OpDec:
 		n1, err := vm.stack.PopAsInt64()
 		if err != nil {
 			return vm.runtimeError(err)
 		}
 		var t int64
-		if n1 == 0 {
-			t = 1
+		switch instr {
+		case OpNot:
+			if n1 == 0 {
+				t = 1
+			}
+		case OpNeg:
+			t = -n1
+		case OpInc:
+			t = n1 + 1
+		case OpDec:
+			t = n1 - 1
 		}
 		if err := vm.stack.Push(NewNumber(t)); err != nil {
 			return vm.runtimeError(err)
 		}
-	case OpNeg:
-		n1, err := vm.stack.PopAsInt64()
-		if err != nil {
-			return vm.runtimeError(err)
-		}
-		t := -n1
-		if err := vm.stack.Push(NewNumber(t)); err != nil {
-			return vm.runtimeError(err)
-		}
-	case OpInc:
-		n1, err := vm.stack.PopAsInt64()
-		if err != nil {
-			return vm.runtimeError(err)
-		}
-		t := n1 + 1
-		if err := vm.stack.Push(NewNumber(t)); err != nil {
-			return vm.runtimeError(err)
-		}
-	case OpDec:
-		n1, err := vm.stack.PopAsInt64()
-		if err != nil {
-			return vm.runtimeError(err)
-		}
-		t := n1 - 1
-		if err := vm.stack.Push(NewNumber(t)); err != nil {
-			return vm.runtimeError(err)
-		}
-	case OpEq:
+	case OpEq, OpGt, OpLt:
 		v1, err := vm.stack.Pop()
 		if err != nil {
 			return vm.runtimeError(err)
@@ -500,52 +484,24 @@ func (vm *ChaincodeVM) Step() error {
 			return vm.runtimeError(errors.New("comparing incompatible types"))
 		}
 		var result int64
-		if r == 0 {
-			result = 1
+		switch instr {
+		case OpEq:
+			if r == 0 {
+				result = 1
+			}
+		case OpGt:
+			if r > 0 {
+				result = 1
+			}
+		case OpLt:
+			if r < 0 {
+				result = 1
+			}
 		}
 		if err := vm.stack.Push(NewNumber(result)); err != nil {
 			return vm.runtimeError(err)
 		}
-	case OpGt:
-		v1, err := vm.stack.Pop()
-		if err != nil {
-			return vm.runtimeError(err)
-		}
-		v2, err := vm.stack.Pop()
-		if err != nil {
-			return vm.runtimeError(err)
-		}
-		r, err := v1.Compare(v2)
-		if err != nil {
-			return vm.runtimeError(errors.New("comparing incompatible types"))
-		}
-		var result int64
-		if r > 0 {
-			result = 1
-		}
-		if err := vm.stack.Push(NewNumber(result)); err != nil {
-			return vm.runtimeError(err)
-		}
-	case OpLt:
-		v1, err := vm.stack.Pop()
-		if err != nil {
-			return vm.runtimeError(err)
-		}
-		v2, err := vm.stack.Pop()
-		if err != nil {
-			return vm.runtimeError(err)
-		}
-		r, err := v1.Compare(v2)
-		if err != nil {
-			return vm.runtimeError(errors.New("comparing incompatible types"))
-		}
-		var result int64
-		if r < 0 {
-			result = 1
-		}
-		if err := vm.stack.Push(NewNumber(result)); err != nil {
-			return vm.runtimeError(err)
-		}
+
 	// case OpIndex:
 	// case OpLen:
 	// case OpAppend:
