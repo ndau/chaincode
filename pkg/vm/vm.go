@@ -413,6 +413,9 @@ func (vm *ChaincodeVM) Step() error {
 			}
 			t = n2 / n1
 		case OpMod:
+			if n1 == 0 {
+				return vm.runtimeError(errors.New("divide by zero"))
+			}
 			t = n2 % n1
 		}
 		if err := vm.stack.Push(NewNumber(t)); err != nil {
@@ -510,34 +513,24 @@ func (vm *ChaincodeVM) Step() error {
 		if err != nil {
 			return vm.runtimeError(err)
 		}
-		l, err := vm.stack.Pop()
+		l, err := vm.stack.PopAsList()
 		if err != nil {
 			return vm.runtimeError(err)
 		}
-		switch v := l.(type) {
-		case List:
-			if n >= v.Len() {
-				return vm.runtimeError(ValueError{"list index out of bounds"})
-			}
-			if err := vm.stack.Push(v[n]); err != nil {
-				return vm.runtimeError(err)
-			}
-		default:
-			return vm.runtimeError(ValueError{"index of non-list"})
+		if n >= l.Len() {
+			return vm.runtimeError(ValueError{"list index out of bounds"})
+		}
+		if err := vm.stack.Push(l[n]); err != nil {
+			return vm.runtimeError(err)
 		}
 
 	case OpLen:
-		t, err := vm.stack.Pop()
+		l, err := vm.stack.PopAsList()
 		if err != nil {
 			return vm.runtimeError(err)
 		}
-		switch v := t.(type) {
-		case List:
-			if err := vm.stack.Push(NewNumber(int64(len(v)))); err != nil {
-				return vm.runtimeError(err)
-			}
-		default:
-			return vm.runtimeError(ValueError{"len of non-list"})
+		if err := vm.stack.Push(NewNumber(int64(len(l)))); err != nil {
+			return vm.runtimeError(err)
 		}
 
 	case OpAppend:
@@ -545,22 +538,50 @@ func (vm *ChaincodeVM) Step() error {
 		if err != nil {
 			return vm.runtimeError(err)
 		}
-		v2, err := vm.stack.Pop()
+		l, err := vm.stack.PopAsList()
 		if err != nil {
 			return vm.runtimeError(err)
 		}
-		switch l := v2.(type) {
-		case List:
-			newlist := l.Append(v)
-			if err := vm.stack.Push(newlist); err != nil {
-				return vm.runtimeError(err)
-			}
-		default:
-			return vm.runtimeError(ValueError{"append to non-list"})
+		newlist := l.Append(v)
+		if err := vm.stack.Push(newlist); err != nil {
+			return vm.runtimeError(err)
 		}
 
-	// case OpExtend:
-	// case OpSlice:
+	case OpExtend:
+		l1, err := vm.stack.PopAsList()
+		if err != nil {
+			return vm.runtimeError(err)
+		}
+		l2, err := vm.stack.PopAsList()
+		if err != nil {
+			return vm.runtimeError(err)
+		}
+		newlist := l2.Extend(l1)
+		if err := vm.stack.Push(newlist); err != nil {
+			return vm.runtimeError(err)
+		}
+
+	case OpSlice:
+		end, err := vm.stack.PopAsInt64()
+		if err != nil {
+			return vm.runtimeError(err)
+		}
+		begin, err := vm.stack.PopAsInt64()
+		if err != nil {
+			return vm.runtimeError(err)
+		}
+		l, err := vm.stack.PopAsList()
+		if err != nil {
+			return vm.runtimeError(err)
+		}
+		if begin < 0 || begin > l.Len() || end < 0 || end > l.Len() || begin > end {
+			return vm.runtimeError(ValueError{"index out of range in slice"})
+		}
+		newlist := l[begin:end]
+		if err := vm.stack.Push(newlist); err != nil {
+			return vm.runtimeError(err)
+		}
+
 	// case OpField:
 	// case OpFieldL:
 	case OpIfz:
@@ -608,8 +629,40 @@ func (vm *ChaincodeVM) Step() error {
 		}
 	case OpEnd:
 		// this is a nop
-	// case OpSum:
-	// case OpAvg:
+	case OpSum:
+		l, err := vm.stack.PopAsList()
+		if err != nil {
+			return vm.runtimeError(err)
+		}
+		sum := func(prev, current Value) Value {
+			p := prev.(Number).v
+			c := current.(Number).v
+			return NewNumber(p + c)
+		}
+		result := l.Reduce(sum, NewNumber(0))
+		if err := vm.stack.Push(result); err != nil {
+			return vm.runtimeError(err)
+		}
+
+	case OpAvg:
+		l, err := vm.stack.PopAsList()
+		if err != nil {
+			return vm.runtimeError(err)
+		}
+		if l.Len() == 0 {
+			return vm.runtimeError(ValueError{"average of empty list"})
+		}
+		sum := func(prev, current Value) Value {
+			p := prev.(Number).v
+			c := current.(Number).v
+			return NewNumber(p + c)
+		}
+		result := l.Reduce(sum, NewNumber(0))
+		avg := result.(Number).v / l.Len()
+		if err := vm.stack.Push(NewNumber(avg)); err != nil {
+			return vm.runtimeError(err)
+		}
+
 	// case OpMax:
 	// case OpMin:
 	// case OpChoice:

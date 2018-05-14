@@ -79,6 +79,19 @@ func (st *Stack) PopAsInt64() (int64, error) {
 	return vn.AsInt64(), nil
 }
 
+// PopAsList retrieves the top entry on the stack as a List or errors
+func (st *Stack) PopAsList() (List, error) {
+	v, err := st.Pop()
+	if err != nil {
+		return NewList(), err
+	}
+	l, ok := v.(List)
+	if !ok {
+		return NewList(), stackError("top was not list")
+	}
+	return l, nil
+}
+
 // PopAt removes the nth value and returns it
 func (st *Stack) PopAt(n int) (Value, error) {
 	if n == 0 {

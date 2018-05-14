@@ -227,3 +227,26 @@ func (vt List) Len() int64 {
 func (vt List) Append(v Value) List {
 	return append(vt, v)
 }
+
+// Extend generates a new List by appending one List to the end of another
+func (vt List) Extend(other List) List {
+	return append(vt, other...)
+}
+
+// Map applies a function to each element of the list and returns a List of the results
+func (vt List) Map(f func(Value) Value) List {
+	result := NewList()
+	for _, v := range vt {
+		result = result.Append(f(v))
+	}
+	return result
+}
+
+// Reduce pplies a function to each element of the list and returns an aggregated result
+func (vt List) Reduce(f func(prev, item Value) Value, init Value) Value {
+	result := init
+	for _, v := range vt {
+		result = f(result, v)
+	}
+	return result
+}

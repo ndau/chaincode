@@ -95,6 +95,17 @@ func TestMath(t *testing.T) {
 	checkStack(t, vm.Stack(), -85, 42, 14, 2)
 }
 
+func TestMathErrors(t *testing.T) {
+	vm := buildVM(t, "push1 55 zero div")
+	vm.Init(nil)
+	err := vm.Run(false)
+	assert.NotNil(t, err)
+	vm = buildVM(t, "push1 55 zero mod")
+	vm.Init(nil)
+	err = vm.Run(false)
+	assert.NotNil(t, err)
+}
+
 func TestNotNegIncDec(t *testing.T) {
 	vm := buildVM(t, "push1 7 not dup not push1 8 neg push1 4 inc push1 6 dec")
 	vm.Init(nil)
@@ -242,10 +253,49 @@ func TestTimestamp(t *testing.T) {
 	checkStack(t, vm.Stack(), 198)
 }
 
-func TestList(t *testing.T) {
+func TestList1(t *testing.T) {
 	vm := buildVM(t, "pushl one append push1 7 append dup len swap one index")
 	vm.Init(nil)
 	err := vm.Run(false)
 	assert.Nil(t, err)
 	checkStack(t, vm.Stack(), 2, 7)
+}
+
+func TestExtend(t *testing.T) {
+	vm := buildVM(t, "pushl one append push1 7 append dup zero append swap extend dup len swap push1 2 index")
+	vm.Init(nil)
+	err := vm.Run(false)
+	assert.Nil(t, err)
+	checkStack(t, vm.Stack(), 5, 0)
+}
+
+func TestSlice(t *testing.T) {
+	vm := buildVM(t, "pushl zero append one append push1 2 append one push1 3 slice len")
+	vm.Init(nil)
+	err := vm.Run(false)
+	assert.Nil(t, err)
+	checkStack(t, vm.Stack(), 2)
+}
+
+func TestSum(t *testing.T) {
+	vm := buildVM(t, "pushl zero append one append push1 2 append push1 3 append sum")
+	vm.Init(nil)
+	err := vm.Run(false)
+	assert.Nil(t, err)
+	checkStack(t, vm.Stack(), 6)
+}
+
+func TestAvg(t *testing.T) {
+	vm := buildVM(t, "pushl one append push1 7 append push1 16 append avg")
+	vm.Init(nil)
+	err := vm.Run(false)
+	assert.Nil(t, err)
+	checkStack(t, vm.Stack(), 10)
+}
+
+func TestAvgFail(t *testing.T) {
+	vm := buildVM(t, "pushl avg")
+	vm.Init(nil)
+	err := vm.Run(false)
+	assert.NotNil(t, err)
 }
