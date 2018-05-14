@@ -1,7 +1,6 @@
 package vm
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 )
@@ -64,35 +63,6 @@ func New(bin ChasmBinary) (*ChaincodeVM, error) {
 	vm.code = bin.Data[1:]
 	vm.runstate = RsNotReady // not ready to run until we've called Init
 	return &vm, nil
-}
-
-// ValidationError is returned when the code is invalid and cannot be loaded or run
-type ValidationError struct {
-	msg string
-}
-
-func (e ValidationError) Error() string {
-	return e.msg
-}
-
-// RuntimeError is returned when the vm encounters an error during execution
-type RuntimeError struct {
-	pc  int
-	msg string
-}
-
-// PC sets the program counter value for an error
-func (e RuntimeError) PC(pc int) RuntimeError {
-	e.pc = pc
-	return e
-}
-
-func newRuntimeError(s string) error {
-	return RuntimeError{pc: -1, msg: s}
-}
-
-func (e RuntimeError) Error() string {
-	return fmt.Sprintf("[pc=%d] %s", e.pc, e.msg)
 }
 
 func validateNesting(code []Opcode) error {
@@ -193,10 +163,8 @@ func (vm *ChaincodeVM) Run(debug bool) error {
 }
 
 func (vm *ChaincodeVM) runtimeError(err error) error {
-	if e, ok := err.(RuntimeError); ok {
-		return e.PC(vm.pc - 1)
-	}
-	return err
+	rte := wrapRuntimeError(err)
+	return rte.PC(vm.pc - 1)
 }
 
 func (vm *ChaincodeVM) skipToMatchingBracket() error {
@@ -409,12 +377,12 @@ func (vm *ChaincodeVM) Step() error {
 			t = n2 * n1
 		case OpDiv:
 			if n1 == 0 {
-				return vm.runtimeError(errors.New("divide by zero"))
+				return vm.runtimeError(newRuntimeError("divide by zero"))
 			}
 			t = n2 / n1
 		case OpMod:
 			if n1 == 0 {
-				return vm.runtimeError(errors.New("divide by zero"))
+				return vm.runtimeError(newRuntimeError("divide by zero"))
 			}
 			t = n2 % n1
 		}
@@ -436,19 +404,19 @@ func (vm *ChaincodeVM) Step() error {
 		case Number:
 			n2, ok := v2.(Number)
 			if !ok {
-				return vm.runtimeError(ValueError{"incompatible types"})
+				return vm.runtimeError(newRuntimeError("incompatible types"))
 			}
 			t = n2.v - n1.v
 		case Timestamp:
 			n2, ok := v2.(Timestamp)
 			if !ok {
-				return vm.runtimeError(ValueError{"incompatible types"})
+				return vm.runtimeError(newRuntimeError("incompatible types"))
 			}
 			t = int64(n2.t - n1.t)
 		case ID:
 			n2, ok := v2.(ID)
 			if !ok {
-				return vm.runtimeError(ValueError{"incompatible types"})
+				return vm.runtimeError(newRuntimeError("incompatible types"))
 			}
 			t = int64(n2.id - n1.id)
 		}
@@ -487,7 +455,7 @@ func (vm *ChaincodeVM) Step() error {
 		}
 		r, err := v1.Compare(v2)
 		if err != nil {
-			return vm.runtimeError(errors.New("comparing incompatible types"))
+			return vm.runtimeError(newRuntimeError("comparing incompatible types"))
 		}
 		var result int64
 		switch instr {
@@ -518,7 +486,7 @@ func (vm *ChaincodeVM) Step() error {
 			return vm.runtimeError(err)
 		}
 		if n >= l.Len() {
-			return vm.runtimeError(ValueError{"list index out of bounds"})
+			return vm.runtimeError(newRuntimeError("list index out of bounds"))
 		}
 		if err := vm.stack.Push(l[n]); err != nil {
 			return vm.runtimeError(err)
@@ -575,7 +543,7 @@ func (vm *ChaincodeVM) Step() error {
 			return vm.runtimeError(err)
 		}
 		if begin < 0 || begin > l.Len() || end < 0 || end > l.Len() || begin > end {
-			return vm.runtimeError(ValueError{"index out of range in slice"})
+			return vm.runtimeError(newRuntimeError("index out of range in slice"))
 		}
 		newlist := l[begin:end]
 		if err := vm.stack.Push(newlist); err != nil {
@@ -650,7 +618,7 @@ func (vm *ChaincodeVM) Step() error {
 			return vm.runtimeError(err)
 		}
 		if l.Len() == 0 {
-			return vm.runtimeError(ValueError{"average of empty list"})
+			return vm.runtimeError(newRuntimeError("average of empty list"))
 		}
 		sum := func(prev, current Value) Value {
 			p := prev.(Number).v
@@ -670,7 +638,7 @@ func (vm *ChaincodeVM) Step() error {
 	// case OpSort:
 	// case OpLookup:
 	default:
-		return vm.runtimeError(errors.New("unimplemented opcode"))
+		return vm.runtimeError(newRuntimeError("unimplemented opcode"))
 	}
 
 	return nil
