@@ -343,3 +343,11 @@ func TestTimestamp(t *testing.T) {
 	assert.Nil(t, err)
 	checkStack(t, vm.Stack(), 198)
 }
+
+func TestList(t *testing.T) {
+	vm := buildVM(t, "pushl one append push1 7 append dup len swap one index")
+	vm.Init(nil)
+	err := vm.Run(false)
+	assert.Nil(t, err)
+	checkStack(t, vm.Stack(), 2, 7)
+}

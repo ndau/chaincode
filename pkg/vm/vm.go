@@ -389,6 +389,9 @@ func (vm *ChaincodeVM) Step() error {
 		}
 	case OpRand:
 	case OpPushL:
+		if err := vm.stack.Push(NewList()); err != nil {
+			return vm.runtimeError(err)
+		}
 	case OpAdd, OpMul, OpDiv, OpMod:
 		n1, err := vm.stack.PopAsInt64()
 		if err != nil {
@@ -430,19 +433,19 @@ func (vm *ChaincodeVM) Step() error {
 		case Number:
 			n2, ok := v2.(Number)
 			if !ok {
-				return ValueError{"incompatible types"}
+				return vm.runtimeError(ValueError{"incompatible types"})
 			}
 			t = n2.v - n1.v
 		case Timestamp:
 			n2, ok := v2.(Timestamp)
 			if !ok {
-				return ValueError{"incompatible types"}
+				return vm.runtimeError(ValueError{"incompatible types"})
 			}
 			t = int64(n2.t - n1.t)
 		case ID:
 			n2, ok := v2.(ID)
 			if !ok {
-				return ValueError{"incompatible types"}
+				return vm.runtimeError(ValueError{"incompatible types"})
 			}
 			t = int64(n2.id - n1.id)
 		}
@@ -502,9 +505,60 @@ func (vm *ChaincodeVM) Step() error {
 			return vm.runtimeError(err)
 		}
 
-	// case OpIndex:
-	// case OpLen:
-	// case OpAppend:
+	case OpIndex:
+		n, err := vm.stack.PopAsInt64()
+		if err != nil {
+			return vm.runtimeError(err)
+		}
+		l, err := vm.stack.Pop()
+		if err != nil {
+			return vm.runtimeError(err)
+		}
+		switch v := l.(type) {
+		case List:
+			if n >= v.Len() {
+				return vm.runtimeError(ValueError{"list index out of bounds"})
+			}
+			if err := vm.stack.Push(v[n]); err != nil {
+				return vm.runtimeError(err)
+			}
+		default:
+			return vm.runtimeError(ValueError{"index of non-list"})
+		}
+
+	case OpLen:
+		t, err := vm.stack.Pop()
+		if err != nil {
+			return vm.runtimeError(err)
+		}
+		switch v := t.(type) {
+		case List:
+			if err := vm.stack.Push(NewNumber(int64(len(v)))); err != nil {
+				return vm.runtimeError(err)
+			}
+		default:
+			return vm.runtimeError(ValueError{"len of non-list"})
+		}
+
+	case OpAppend:
+		v, err := vm.stack.Pop()
+		if err != nil {
+			return vm.runtimeError(err)
+		}
+		v2, err := vm.stack.Pop()
+		if err != nil {
+			return vm.runtimeError(err)
+		}
+		switch l := v2.(type) {
+		case List:
+			newlist := l.Append(v)
+			if err := vm.stack.Push(newlist); err != nil {
+				return vm.runtimeError(err)
+			}
+		default:
+			return vm.runtimeError(ValueError{"append to non-list"})
+		}
+
 	// case OpExtend:
 	// case OpSlice:
 	// case OpField:
