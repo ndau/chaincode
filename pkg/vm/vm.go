@@ -683,13 +683,21 @@ func (vm *ChaincodeVM) Step() error {
 		}
 		fix := vm.code[vm.pc]
 		vm.pc++
+		// note - error handling is weak
+		hadErr := false
 		less := func(i, j int) bool {
-			fi, _ := src[i].(Struct).Field(int(fix))
-			fj, _ := src[j].(Struct).Field(int(fix))
-			cmp, _ := fi.Compare(fj)
+			fi, e1 := src[i].(Struct).Field(int(fix))
+			fj, e2 := src[j].(Struct).Field(int(fix))
+			cmp, e3 := fi.Compare(fj)
+			if e1 != nil || e2 != nil || e3 != nil {
+				hadErr = true
+			}
 			return cmp == -1
 		}
 		sort.Slice(src, less)
+		if hadErr {
+			return vm.runtimeError(newRuntimeError("sort error"))
+		}
 		if err := vm.stack.Push(src); err != nil {
 			return vm.runtimeError(err)
 		}
