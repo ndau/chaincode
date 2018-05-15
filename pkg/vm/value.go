@@ -1,9 +1,15 @@
 package vm
 
-// Constants for time
+// This is a special type for the constants that define the different kinds of values
+// we can have.
+type ValueType int
+
 const (
-	EpochStart      = "2018-01-01T00:00:00Z"
-	TimestampFormat = "2006-01-02T15:04:05Z"
+	NumberT    ValueType = iota
+	IDT        ValueType = iota
+	TimestampT ValueType = iota
+	ListT      ValueType = iota
+	StructT    ValueType = iota
 )
 
 // Value objects are what is managed by the VM

@@ -5,6 +5,12 @@ import (
 	"time"
 )
 
+// Constants for time
+const (
+	EpochStart      = "2018-01-01T00:00:00Z"
+	TimestampFormat = "2006-01-02T15:04:05Z"
+)
+
 // Timestamp is a Value type representing duration since the epoch
 type Timestamp struct {
 	t uint64

@@ -92,6 +92,19 @@ func (st *Stack) PopAsList() (List, error) {
 	return l, nil
 }
 
+// PopAsStruct retrieves the top entry on the stack as a Struct or errors
+func (st *Stack) PopAsStruct() (Struct, error) {
+	v, err := st.Pop()
+	if err != nil {
+		return NewStruct(), err
+	}
+	l, ok := v.(Struct)
+	if !ok {
+		return NewStruct(), stackError("top was not struct")
+	}
+	return l, nil
+}
+
 // PopAt removes the nth value and returns it
 func (st *Stack) PopAt(n int) (Value, error) {
 	if n == 0 {

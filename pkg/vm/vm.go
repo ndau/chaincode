@@ -134,7 +134,7 @@ func (vm *ChaincodeVM) PreLoad(cb ChasmBinary) error {
 }
 
 // Init is called to set up the VM to run
-func (vm *ChaincodeVM) Init(values []Value) {
+func (vm *ChaincodeVM) Init(values ...Value) {
 	vm.stack = newStack()
 	for _, v := range values {
 		vm.stack.Push(v)
@@ -510,6 +510,10 @@ func (vm *ChaincodeVM) Step() error {
 		if err != nil {
 			return vm.runtimeError(err)
 		}
+		// Limit list size
+		if l.Len()+1 > MaxListSize {
+			return vm.runtimeError(newRuntimeError("resulting list too large"))
+		}
 		newlist := l.Append(v)
 		if err := vm.stack.Push(newlist); err != nil {
 			return vm.runtimeError(err)
@@ -524,6 +528,11 @@ func (vm *ChaincodeVM) Step() error {
 		if err != nil {
 			return vm.runtimeError(err)
 		}
+		// Limit list size
+		if l1.Len()+l2.Len() > MaxListSize {
+			return vm.runtimeError(newRuntimeError("resulting list too large"))
+		}
+
 		newlist := l2.Extend(l1)
 		if err := vm.stack.Push(newlist); err != nil {
 			return vm.runtimeError(err)
@@ -550,7 +559,21 @@ func (vm *ChaincodeVM) Step() error {
 			return vm.runtimeError(err)
 		}
 
-	// case OpField:
+	case OpField:
+		st, err := vm.stack.PopAsStruct()
+		if err != nil {
+			return vm.runtimeError(err)
+		}
+		ix := vm.code[vm.pc]
+		vm.pc++
+		f, err := st.Field(int(ix))
+		if err != nil {
+			return vm.runtimeError(err)
+		}
+		if err := vm.stack.Push(f); err != nil {
+			return vm.runtimeError(err)
+		}
+
 	// case OpFieldL:
 	case OpIfz:
 		t, err := vm.stack.Pop()

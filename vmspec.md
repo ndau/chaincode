@@ -2,9 +2,13 @@
 
 The virtual machine is a simple stack machine that is expected to evaluate an expression. It lacks any constructs that would enable looping (although it does have some aggregation operations).
 
-It is invoked with a stack that contains specific values in well-known locations. These values are part of the contract for each invocation.
+Because we expect that vm scripts will end up as data on the blockchain, a compact representation of the VM is important. Consequently, the VM compiles to a bytecode representation.
 
-The function's return value is always the top item on the stack at exit (if multiple values should be returned, they must be returned in a list). The type and range of the return value is well-defined in advance; violation of these specifications is an error. Since errors have no way of being expressed further other than logging them, the function contract also defines the semantic interpretation of errors (for example, in some contexts, an error can be interpreted as a zero result).
+Memory size is not as important, so the VM manipulates a typed stack, where the stack values can be any of a number of different datatypes.
+
+When invoked, the VM's stack may already contain specific values in well-known locations. These values are part of the contract for each invocation (known as a context).
+
+<!-- The function's return value is always the top item on the stack at exit (if multiple values should be returned, they must be returned in a list). The type and range of the return value is well-defined in advance; violation of these specifications is an error. Since errors have no way of being expressed further other than logging them, the function contract also defines the semantic interpretation of errors (for example, in some contexts, an error can be interpreted as a zero result). -->
 
 ## Data types
 

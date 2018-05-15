@@ -2,6 +2,8 @@ package vm
 
 import "strings"
 
+const MaxListSize = 1024 // max number of List elements that can result from append or extend
+
 // List maintains a single list object
 type List []Value
 
@@ -66,7 +68,7 @@ func (vt List) Map(f func(Value) Value) List {
 	return result
 }
 
-// Reduce pplies a function to each element of the list and returns an aggregated result
+// Reduce applies a function to each element of the list and returns an aggregated result
 func (vt List) Reduce(f func(prev, item Value) Value, init Value) Value {
 	result := init
 	for _, v := range vt {
