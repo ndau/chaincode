@@ -2,6 +2,7 @@ package vm
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 )
 
@@ -675,7 +676,24 @@ func (vm *ChaincodeVM) Step() error {
 	// case OpMin:
 	// case OpChoice:
 	// case OpWChoice:
-	// case OpSort:
+	case OpSort:
+		src, err := vm.stack.PopAsList()
+		if err != nil {
+			return vm.runtimeError(err)
+		}
+		fix := vm.code[vm.pc]
+		vm.pc++
+		less := func(i, j int) bool {
+			fi, _ := src[i].(Struct).Field(int(fix))
+			fj, _ := src[j].(Struct).Field(int(fix))
+			cmp, _ := fi.Compare(fj)
+			return cmp == -1
+		}
+		sort.Slice(src, less)
+		if err := vm.stack.Push(src); err != nil {
+			return vm.runtimeError(err)
+		}
+
 	// case OpLookup:
 	default:
 		return vm.runtimeError(newRuntimeError("unimplemented opcode"))

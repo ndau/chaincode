@@ -341,3 +341,16 @@ func TestFieldLFail(t *testing.T) {
 	err := vm.Run(false)
 	assert.NotNil(t, err)
 }
+
+func TestSort(t *testing.T) {
+	vm := buildVM(t, "sort 2 push1 3 index field 1")
+	l := NewList()
+	for i := int64(0); i < 5; i++ {
+		st := NewStruct(NewNumber(2*i), NewNumber(3*i+1), NewNumber(4*(6-i)))
+		l = l.Append(st)
+	}
+	vm.Init(l)
+	err := vm.Run(false)
+	assert.Nil(t, err)
+	checkStack(t, vm.Stack(), 4)
+}

@@ -2,7 +2,8 @@ package vm
 
 import "strings"
 
-const MaxListSize = 1024 // max number of List elements that can result from append or extend
+// MaxListSize is the max number of List elements that can result from append or extend
+const MaxListSize = 1024
 
 // List maintains a single list object
 type List []Value

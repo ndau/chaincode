@@ -1,9 +1,10 @@
 package vm
 
-// This is a special type for the constants that define the different kinds of values
+// ValueType is a special type for the constants that define the different kinds of values
 // we can have.
 type ValueType int
 
+// These are ValueType constants
 const (
 	NumberT    ValueType = iota
 	IDT        ValueType = iota
