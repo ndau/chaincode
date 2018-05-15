@@ -564,9 +564,9 @@ func (vm *ChaincodeVM) Step() error {
 		if err != nil {
 			return vm.runtimeError(err)
 		}
-		ix := vm.code[vm.pc]
+		fix := vm.code[vm.pc]
 		vm.pc++
-		f, err := st.Field(int(ix))
+		f, err := st.Field(int(fix))
 		if err != nil {
 			return vm.runtimeError(err)
 		}
@@ -574,7 +574,24 @@ func (vm *ChaincodeVM) Step() error {
 			return vm.runtimeError(err)
 		}
 
-	// case OpFieldL:
+	case OpFieldL:
+		src, err := vm.stack.PopAsList()
+		if err != nil {
+			return vm.runtimeError(err)
+		}
+		fix := vm.code[vm.pc]
+		vm.pc++
+		extract := func(v Value) (Value, error) {
+			return v.(Struct).Field(int(fix))
+		}
+		result, err := src.Map(extract)
+		if err != nil {
+			return vm.runtimeError(err)
+		}
+		if err := vm.stack.Push(result); err != nil {
+			return vm.runtimeError(err)
+		}
+
 	case OpIfz:
 		t, err := vm.stack.Pop()
 		if err != nil {

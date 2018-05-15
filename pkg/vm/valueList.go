@@ -60,12 +60,16 @@ func (vt List) Extend(other List) List {
 }
 
 // Map applies a function to each element of the list and returns a List of the results
-func (vt List) Map(f func(Value) Value) List {
+func (vt List) Map(f func(Value) (Value, error)) (List, error) {
 	result := NewList()
 	for _, v := range vt {
-		result = result.Append(f(v))
+		r, err := f(v)
+		if err != nil {
+			return result, err
+		}
+		result = result.Append(r)
 	}
-	return result
+	return result, nil
 }
 
 // Reduce applies a function to each element of the list and returns an aggregated result

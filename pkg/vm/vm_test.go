@@ -316,3 +316,28 @@ func TestFieldFail(t *testing.T) {
 	err := vm.Run(false)
 	assert.NotNil(t, err)
 }
+
+func TestFieldL(t *testing.T) {
+	vm := buildVM(t, "fieldl 2 one index")
+	l := NewList()
+	for i := int64(0); i < 5; i++ {
+		st := NewStruct(NewNumber(3*i), NewNumber(3*i+1), NewNumber(3*i+2))
+		l = l.Append(st)
+	}
+	vm.Init(l)
+	err := vm.Run(false)
+	assert.Nil(t, err)
+	checkStack(t, vm.Stack(), 5)
+}
+
+func TestFieldLFail(t *testing.T) {
+	vm := buildVM(t, "fieldl 9 one index")
+	l := NewList()
+	for i := int64(0); i < 5; i++ {
+		st := NewStruct(NewNumber(3*i), NewNumber(3*i+1), NewNumber(3*i+2))
+		l = l.Append(st)
+	}
+	vm.Init(l)
+	err := vm.Run(false)
+	assert.NotNil(t, err)
+}
