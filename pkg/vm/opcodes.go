@@ -56,8 +56,11 @@ const (
 	OpSlice   Opcode = 0x54
 	OpField   Opcode = 0x60
 	OpFieldL  Opcode = 0x70
-	OpIfz     Opcode = 0x80
-	OpIfnz    Opcode = 0x81
+	OpDef     Opcode = 0x80
+	OpCall    Opcode = 0x81
+	OpIfz     Opcode = 0x82
+	OpIfnz    Opcode = 0x83
+	OpDeco    Opcode = 0x84
 	OpElse    Opcode = 0x87
 	OpEnd     Opcode = 0x88
 	OpSum     Opcode = 0x90

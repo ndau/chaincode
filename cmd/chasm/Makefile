@@ -1,4 +1,4 @@
-chasm: chasm.go main.go
+chasm: chasm.go main.go ../../pkg/vm/opcodes.go
 	go build
 
 chasm.go: chasm.peggo

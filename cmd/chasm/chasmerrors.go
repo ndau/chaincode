@@ -34,7 +34,9 @@ func describeError(err error, source string) string {
 	if e, ok := err.(ErrorPositioner); ok {
 		lines := strings.Split(source, "\n")
 		ep := e.ErrorPos()
-		return fmt.Sprintf("%s\n%4d: %s\n%s\n", err.Error(), ep.line, lines[ep.line-1], strings.Repeat(" ", ep.col+5)+"^")
+		ntabs := strings.Count(lines[ep.line-1], "\t")
+		prefix := "     " + strings.Repeat("\t", ntabs) + strings.Repeat(" ", ep.col-ntabs)
+		return fmt.Sprintf("%s\n%4d: %s\n%s\n", err.Error(), ep.line, lines[ep.line-1], prefix+"^")
 	}
 	fmt.Printf("NOT ErrorPositioner: %#v\n", err)
 	return err.Error()

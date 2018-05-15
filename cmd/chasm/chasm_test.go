@@ -8,67 +8,85 @@ func TestSimple1(t *testing.T) {
 	code := `
 		; comment
 		context: TEST
-		{
+		func foo {
 		nop
 		}
 `
-	checkParse(t, "Simple1", code, "0000")
+	checkParse(t, "Simple1", code, "00 8000 00 88")
 }
 
 func TestSimple2(t *testing.T) {
 	code := `
 		; comment
 		context: TEST
-		{
+		func foo {
 			nop ; nop instruction
 			drop ; drop nothing
 		}
 `
-	checkParse(t, "Simple2", code, "000001")
+	checkParse(t, "Simple2", code, "00 8000 0001 88")
 }
 
 func TestSimplePush(t *testing.T) {
 	code := `
 		; comment
 		context: TEST
-		{
+		func foo {
 			push 0
 		}
 `
-	checkParse(t, "SimplePush", code, "0020")
+	checkParse(t, "SimplePush", code, "00 8000 20 88")
+}
+
+func TestFunc(t *testing.T) {
+	code := `
+		; comment
+		context: TEST
+		func foo {
+			zero
+			call bar 1
+		}
+		func buzz {
+		}
+		func bar {
+			one
+			add
+		}
+`
+	checkParse(t, "Func", code, "00 8000 20 810201 88 8001 88 8002 2a 40 88")
 }
 
 func TestSeveralPushes(t *testing.T) {
 	code := `
 		; comment
 		context: TEST
-		{
+		func foo {
 			push -1
 			push 1
 			push 2
 			push 12
 		}
 `
-	checkParse(t, "SeveralPushes", code, "002b2a2102210c")
+	checkParse(t, "SeveralPushes", code, "00 8000 2b2a2102210c 88")
 }
 
 func TestConstants(t *testing.T) {
 	code := `
 		; comment
 		context: TEST
-		{
+		func foo {
 			K = 65535
 			push K
 		}
 `
-	checkParse(t, "Constants", code, "0022FFFF")
+	checkParse(t, "Constants", code, "00 8000 22FFFF 88")
 }
 
 func TestUnitaryOpcodes1(t *testing.T) {
 	code := `
 		; comment
 		context: TEST
-		{
+		func foo {
 			nop
 			drop
 			drop2
@@ -102,17 +120,19 @@ func TestUnitaryOpcodes1(t *testing.T) {
 		}
 `
 	checkParse(t, "Unitary1", code, `
-		0000 0102 0506 090D
+		00 8000
+		00 0102 0506 090D
 		1011 2020 2a2a 2b2d
 		2f40 4142 4344 4546
-		4748 5051 5253 54`)
+		4748 5051 5253 54
+		88`)
 }
 
 func TestUnitaryOpcodes2(t *testing.T) {
 	code := `
 		; comment
 		context: TEST
-		{
+		func foo {
 			field
 			fieldl
 			choice
@@ -131,20 +151,20 @@ func TestUnitaryOpcodes2(t *testing.T) {
 		}
 `
 	checkParse(t, "Unitary2", code,
-		"00607094959697808187889091929330")
+		"00 8000 607094959697828387889091929330 88")
 }
 
 func TestBinary(t *testing.T) {
 	code := `
 		; comment
 		context: TEST
-		{
+		func foo {
 			pick 2
 			pick 12
 			roll 0xA
 		}
 `
-	checkParse(t, "Binary", code, "000E020E0C0F0A")
+	checkParse(t, "Binary", code, "00 8000 0E020E0C0F0A 88")
 }
 
 func TestRealistic(t *testing.T) {
@@ -153,7 +173,7 @@ func TestRealistic(t *testing.T) {
 		; and x on the stack and calculates
 		; a*x*x + b*x + c
 		context: TEST
-		{
+		func foo {
 			A = 3
 			B = 5
 			C = 7
@@ -177,6 +197,6 @@ func TestRealistic(t *testing.T) {
 		}
 `
 	checkParse(t, "Realistic", code, `
-		00 21 03 21 05 21 07 21  15 0f 04 0e 01 05 42 42
-		0f 04 0f 02 42 40 40 10`)
+		00 80 00 21 03 21 05 21 07 21  15 0f 04 0e 01 05 42 42
+		0f 04 0f 02 42 40 40 10 88`)
 }

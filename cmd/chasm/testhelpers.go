@@ -30,11 +30,19 @@ func bcheck(t *testing.T, b []byte, s string) {
 
 // checkParse makes sure that the result of a parse is a given stream of bytes
 func checkParse(t *testing.T, name string, code string, result string) {
-	sn, err := Parse(name, []byte(code))
+	functions := make(map[string]int)
+	sn, err := Parse(
+		name,
+		[]byte(code),
+		GlobalStore("functions", functions),
+		GlobalStore("functionCounter", int(0)),
+		GlobalStore("constants", make(map[string]string)),
+	)
 	if err != nil {
 		fmt.Println(describeErrors(err, code))
 	}
 	assert.Nil(t, err)
-	b := sn.(Script).bytes()
+	sn.(*Script).fixup(functions)
+	b := sn.(*Script).bytes()
 	bcheck(t, b, result)
 }

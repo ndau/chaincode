@@ -1,15 +1,23 @@
 {
     package main
 
-    // this holds constants that are being defined
-    var constants = make(map[string]string)
 }
 
 Script <- EOL* p:Preamble code:Code EOF { return newScript(p, code) }
 
 Preamble <-  _? "context" _? ":" _? cc:ContextConstant EOL { return newPreambleNode(cc.(vm.ContextByte)) }
 
-Code <-  EOL* _? '{' s:Line+ _? '}' EOL* { return s, nil }
+Code <-  EOL* f:FunctionDef+ { return f, nil }
+
+FunctionDef <- _? "func" _ n:FunctionName _? '{' s:Line+ _? '}' EOL*  {
+        fm := c.globalStore["functions"].(map[string]int)
+        name := n.(string)
+        ctr := c.globalStore["functionCounter"].(int)
+        fm[name] = ctr
+        ctr++
+        c.globalStore["functionCounter"] = ctr
+        return newFunctionDef(name, s)
+    }
 
 Line <-
     ( _? op:Operation EOL { return op, nil }
@@ -24,7 +32,8 @@ Operation <-
 ConstDef <-
     ( k:Constant _? '=' _? v:Value {
             if key, ok := k.(string); ok {
-                constants[key] = v.(string)
+                cm := c.globalStore["constants"].(map[string]string)
+                cm[key] = v.(string)
                 return v, nil
             }
             return nil, errors.New("Bad const def")
@@ -80,6 +89,7 @@ Opcode =
     / "wchoice" { return newUnitaryOpcode(vm.OpWChoice) }
     / "sort" { return newUnitaryOpcode(vm.OpSort) }
     / "lookup" { return newUnitaryOpcode(vm.OpLookup) }
+    / "call" _ n:FunctionName _ b:Byte { return newCallOpcode(vm.OpCall, n.(string), b.(string)) }
     / "ifz" { return newUnitaryOpcode(vm.OpIfz) }
     / "ifnz" { return newUnitaryOpcode(vm.OpIfnz) }
     / "else" { return newUnitaryOpcode(vm.OpElse) }
@@ -107,13 +117,15 @@ Value =
     / ConstantRef
     )
 
-ConstantRef <- k:Constant                         { return constants[k.(string)], nil }
+ConstantRef <- k:Constant                         { cm := c.globalStore["constants"].(map[string]string); return cm[k.(string)], nil }
 Integer <- '-'? [0-9]+                            { return string(c.text), nil }
 Byte <-
     ( "0x" [0-9A-Fa-f] [0-9A-Fa-f]?               { return string(c.text), nil }
     / [0-9]+                                      { return string(c.text), nil }
     )
 Constant <- [A-Z] [A-Z0-9_]*                      { return string(c.text), nil }
+FunctionName <- [A-Za-z] [A-Za-z0-9_]+            { return string(c.text), nil }
+
 
 _ <- [ \t]+
 

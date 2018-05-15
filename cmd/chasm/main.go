@@ -48,7 +48,7 @@ func main() {
 		out = f
 	}
 
-	b := sn.(Script).bytes()
+	b := sn.(*Script).bytes()
 	err = vm.Serialize(name, args.Comment, b, out)
 	if err != nil {
 		log.Fatal(err)
