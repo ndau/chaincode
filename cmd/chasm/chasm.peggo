@@ -90,10 +90,11 @@ Opcode =
     / "sort" { return newUnitaryOpcode(vm.OpSort) }
     / "lookup" { return newUnitaryOpcode(vm.OpLookup) }
     / "call" _ n:FunctionName _ b:Byte { return newCallOpcode(vm.OpCall, n.(string), b.(string)) }
+    / "enddef" { return newUnitaryOpcode(vm.OpEndDef) }
     / "ifz" { return newUnitaryOpcode(vm.OpIfz) }
     / "ifnz" { return newUnitaryOpcode(vm.OpIfnz) }
     / "else" { return newUnitaryOpcode(vm.OpElse) }
-    / "end" { return newUnitaryOpcode(vm.OpEnd) }
+    / "endif" { return newUnitaryOpcode(vm.OpEndIf) }
     / "sum" { return newUnitaryOpcode(vm.OpSum) }
     / "avg" { return newUnitaryOpcode(vm.OpAvg) }
     / "max" { return newUnitaryOpcode(vm.OpMax) }

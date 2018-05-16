@@ -50,6 +50,19 @@ func (st *Stack) Get(n int) (Value, error) {
 	return retval, nil
 }
 
+// TopN retrieves the top N items on the stack and returns a new stack with them
+func (st *Stack) TopN(n int) (*Stack, error) {
+	if n == 0 {
+		return &Stack{[]Value{}}, nil
+	}
+	if len(st.stack) < n {
+		return nil, stackError("index error")
+	}
+	retval := st.stack[len(st.stack)-n:]
+	st.stack = st.stack[:len(st.stack)-n]
+	return &Stack{retval}, nil
+}
+
 // Peek retrieves the top value and returns it
 func (st *Stack) Peek() (Value, error) {
 	return st.Get(0)

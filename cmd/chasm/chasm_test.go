@@ -142,7 +142,7 @@ func TestUnitaryOpcodes2(t *testing.T) {
 			ifz
 			ifnz
 			else
-			end
+			endif
 			sum
 			avg
 			max
@@ -151,7 +151,7 @@ func TestUnitaryOpcodes2(t *testing.T) {
 		}
 `
 	checkParse(t, "Unitary2", code,
-		"00 8000 607094959697828387889091929330 88")
+		"00 8000 607094959697 898a8e8f9091929330 88")
 }
 
 func TestBinary(t *testing.T) {
@@ -162,9 +162,13 @@ func TestBinary(t *testing.T) {
 			pick 2
 			pick 12
 			roll 0xA
+			call bar 0
+		}
+		func bar {
+			nop
 		}
 `
-	checkParse(t, "Binary", code, "00 8000 0E020E0C0F0A 88")
+	checkParse(t, "Binary", code, "00 8000 0E020E0C0F0A 810100 88 8001 00 88")
 }
 
 func TestRealistic(t *testing.T) {

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 )
 
@@ -34,9 +35,14 @@ func describeError(err error, source string) string {
 	if e, ok := err.(ErrorPositioner); ok {
 		lines := strings.Split(source, "\n")
 		ep := e.ErrorPos()
-		ntabs := strings.Count(lines[ep.line-1], "\t")
-		prefix := "     " + strings.Repeat("\t", ntabs) + strings.Repeat(" ", ep.col-ntabs)
-		return fmt.Sprintf("%s\n%4d: %s\n%s\n", err.Error(), ep.line, lines[ep.line-1], prefix+"^")
+		// get the line with the error
+		line := lines[ep.line-1]
+		// now create a second line with the same whitespace prefix, plus replace all
+		// the non-whitespace chars with a space, then add a caret (^) to point to the error
+		caretline := line[:ep.col]
+		nonspace := regexp.MustCompile("[^ \t]")
+		caretline = nonspace.ReplaceAllString(caretline, " ") + "^"
+		return fmt.Sprintf("%s\n%4d: %s\n     %s %v\n", err.Error(), ep.line, line, caretline, ep)
 	}
 	fmt.Printf("NOT ErrorPositioner: %#v\n", err)
 	return err.Error()

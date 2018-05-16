@@ -58,11 +58,12 @@ const (
 	OpFieldL  Opcode = 0x70
 	OpDef     Opcode = 0x80
 	OpCall    Opcode = 0x81
-	OpIfz     Opcode = 0x82
-	OpIfnz    Opcode = 0x83
-	OpDeco    Opcode = 0x84
-	OpElse    Opcode = 0x87
-	OpEnd     Opcode = 0x88
+	OpDeco    Opcode = 0x82
+	OpEndDef  Opcode = 0x88
+	OpIfz     Opcode = 0x89
+	OpIfnz    Opcode = 0x8A
+	OpElse    Opcode = 0x8E
+	OpEndIf   Opcode = 0x8F
 	OpSum     Opcode = 0x90
 	OpAvg     Opcode = 0x91
 	OpMax     Opcode = 0x92

@@ -101,7 +101,7 @@ func (n *FunctionDef) bytes() []byte {
 	for _, op := range n.nodes {
 		b = append(b, op.bytes()...)
 	}
-	b = append(b, byte(vm.OpEnd))
+	b = append(b, byte(vm.OpEndDef))
 	return b
 }
 

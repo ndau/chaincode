@@ -49,9 +49,10 @@ type ChaincodeVM struct {
 	context  Opcode
 	code     []Opcode
 	stack    *Stack
-	// lists    []List
-	pc      int // program counter
-	history []HistoryState
+	pc       int // program counter
+	history  []HistoryState
+	infunc   int   // the number of the func we're currently in
+	offsets  []int // byte offsets of the functions
 }
 
 // New creates a new VM and loads a ChasmBinary into it (or errors)
@@ -64,6 +65,25 @@ func New(bin ChasmBinary) (*ChaincodeVM, error) {
 	vm.code = bin.Data[1:]
 	vm.runstate = RsNotReady // not ready to run until we've called Init
 	return &vm, nil
+}
+
+// CreateForFunc creates a new VM from this one that is used to run a function
+func (vm *ChaincodeVM) CreateForFunc(funcnum int, newpc int, nstack int) (*ChaincodeVM, error) {
+	newstack, err := vm.stack.TopN(nstack)
+	if err != nil {
+		return nil, err
+	}
+	newvm := ChaincodeVM{
+		context:  vm.context,
+		code:     vm.code,
+		runstate: vm.runstate,
+		offsets:  vm.offsets,
+		history:  []HistoryState{},
+		infunc:   funcnum,
+		pc:       newpc,
+		stack:    newstack,
+	}
+	return &newvm, nil
 }
 
 // extraBytes returns the number of extra bytes associated with a given opcode
@@ -92,7 +112,8 @@ func extraBytes(op Opcode) int {
 
 // this validates a VM to make sure that its structural elements (if, else, def, end)
 // are well-formed.
-// It's a state machine
+// It uses a state machine to generate transitions that depend on the current state and
+// the opcode it's evaluating.
 
 type structureState int
 
@@ -116,36 +137,42 @@ type tr struct {
 
 // validateStructure reads the script and checks to make sure that the nested
 // elements are properly nested and not out of order or missing.
-func validateStructure(code []Opcode) error {
+func validateStructure(code []Opcode) ([]int, error) {
 	transitions := map[tr]structureState{
-		tr{StNull, OpDef}:  StDefPlus,
-		tr{StNull, OpIfz}:  StError,
-		tr{StNull, OpIfnz}: StError,
-		tr{StNull, OpElse}: StError,
-		tr{StNull, OpEnd}:  StError,
-		tr{StDef, OpDef}:   StError,
-		tr{StDef, OpIfz}:   StIfPlus,
-		tr{StDef, OpIfnz}:  StIfPlus,
-		tr{StDef, OpElse}:  StError,
-		tr{StDef, OpEnd}:   StNull,
-		tr{StIf, OpDef}:    StError,
-		tr{StIf, OpIfz}:    StIfPlus,
-		tr{StIf, OpIfnz}:   StIfPlus,
-		tr{StIf, OpElse}:   StElse,
-		tr{StIf, OpEnd}:    StIfMinus,
-		tr{StElse, OpDef}:  StError,
-		tr{StElse, OpIfz}:  StIfPlus,
-		tr{StElse, OpIfnz}: StIfPlus,
-		tr{StElse, OpElse}: StError,
-		tr{StElse, OpEnd}:  StIfMinus,
+		tr{StNull, OpDef}:    StDefPlus,
+		tr{StNull, OpIfz}:    StError,
+		tr{StNull, OpIfnz}:   StError,
+		tr{StNull, OpElse}:   StError,
+		tr{StNull, OpEndIf}:  StError,
+		tr{StNull, OpEndDef}: StError,
+		tr{StDef, OpDef}:     StError,
+		tr{StDef, OpIfz}:     StIfPlus,
+		tr{StDef, OpIfnz}:    StIfPlus,
+		tr{StDef, OpElse}:    StError,
+		tr{StNull, OpEndIf}:  StError,
+		tr{StDef, OpEndDef}:  StNull,
+		tr{StIf, OpDef}:      StError,
+		tr{StIf, OpIfz}:      StIfPlus,
+		tr{StIf, OpIfnz}:     StIfPlus,
+		tr{StIf, OpElse}:     StElse,
+		tr{StIf, OpEndIf}:    StIfMinus,
+		tr{StNull, OpEndDef}: StError,
+		tr{StElse, OpDef}:    StError,
+		tr{StElse, OpIfz}:    StIfPlus,
+		tr{StElse, OpIfnz}:   StIfPlus,
+		tr{StElse, OpElse}:   StError,
+		tr{StElse, OpEndIf}:  StIfMinus,
+		tr{StNull, OpEndDef}: StError,
 	}
 
 	var state structureState
 	var depth int
 	var nfuncs int
 	var skipcount int
+	var offsets = []int{}
 
 	for offset, b := range code {
+		// some opcodes have operands and we need to be sure those are skipped
 		if skipcount > 0 {
 			skipcount--
 			continue
@@ -159,12 +186,13 @@ func validateStructure(code []Opcode) error {
 		case StDefPlus:
 			funcnum := int(code[offset+1])
 			if funcnum != nfuncs {
-				return ValidationError{fmt.Sprintf("def should have been %d, found %d", nfuncs, funcnum)}
+				return offsets, ValidationError{fmt.Sprintf("def should have been %d, found %d", nfuncs, funcnum)}
 			}
+			offsets = append(offsets, int(offset+2)) // skip the def opcode, which is 2 bytes
 			nfuncs++
 			newstate = StDef
 		case StError:
-			return ValidationError{fmt.Sprintf("invalid structure at offset %d", offset)}
+			return offsets, ValidationError{fmt.Sprintf("invalid structure at offset %d", offset)}
 		case StIfPlus:
 			depth++
 			newstate = StIf
@@ -178,13 +206,16 @@ func validateStructure(code []Opcode) error {
 		}
 		state = newstate
 	}
+	if skipcount != 0 {
+		return offsets, ValidationError{"missing operands"}
+	}
 	if state != StNull {
-		return ValidationError{"missing end"}
+		return offsets, ValidationError{"missing end"}
 	}
 	if nfuncs < 1 {
-		return ValidationError{"missing def"}
+		return offsets, ValidationError{"missing def"}
 	}
-	return nil
+	return offsets, nil
 }
 
 // Stack returns the current stack of the VM
@@ -201,14 +232,18 @@ func (vm *ChaincodeVM) History() []HistoryState {
 // has a hope of loading properly
 func (vm *ChaincodeVM) PreLoad(cb ChasmBinary) error {
 	if cb.Data == nil {
-		return ValidationError{"there is no code"}
+		return ValidationError{"missing code"}
 	}
 	if len(cb.Data) > maxCodeLength {
 		return ValidationError{"code is too long"}
 	}
-	if err := validateStructure(cb.Data); err != nil {
+	// make sure the executable part of the code is valid
+	offsets, err := validateStructure(cb.Data[1:])
+	if err != nil {
 		return err
 	}
+	vm.offsets = offsets
+
 	ctx, ok := ContextLookup(cb.Context)
 	if !ok {
 		return ValidationError{"invalid context string"}
@@ -238,6 +273,9 @@ func (vm *ChaincodeVM) Init(values ...Value) {
 
 // Run runs a VM from its current state until it ends
 func (vm *ChaincodeVM) Run(debug bool) error {
+	if debug {
+		vm.DisassembleAll()
+	}
 	if vm.runstate == RsReady {
 		vm.runstate = RsRunning
 	}
@@ -245,7 +283,7 @@ func (vm *ChaincodeVM) Run(debug bool) error {
 		if debug {
 			fmt.Println(vm)
 		}
-		if err := vm.Step(); err != nil {
+		if err := vm.Step(debug); err != nil {
 			return err
 		}
 	}
@@ -257,6 +295,7 @@ func (vm *ChaincodeVM) runtimeError(err error) error {
 	return rte.PC(vm.pc - 1)
 }
 
+// This is only run on VMs that have been validated
 func (vm *ChaincodeVM) skipToMatchingBracket() error {
 	for {
 		instr := vm.code[vm.pc]
@@ -270,7 +309,7 @@ func (vm *ChaincodeVM) skipToMatchingBracket() error {
 				// we're at the right level, so we're done
 				return nil
 			}
-		case OpEnd:
+		case OpEndIf:
 			if nesting > 0 {
 				nesting--
 			} else {
@@ -287,7 +326,7 @@ func (vm *ChaincodeVM) skipToMatchingBracket() error {
 }
 
 // Step executes a single instruction
-func (vm *ChaincodeVM) Step() error {
+func (vm *ChaincodeVM) Step(debug bool) error {
 	switch vm.runstate {
 	default:
 		return newRuntimeError("vm is not in runnable state!")
@@ -691,9 +730,34 @@ func (vm *ChaincodeVM) Step() error {
 		// function that has a larger number than itself (this prevents recursion). It constructs a
 		// new stack for the function and populates it by popping off the specified number of
 		// values from the caller's stack.
-		// funcnum := vm.code[vm.pc]
-		// nargs := vm.code[vm.pc+1]
-		// vm.pc += 2
+		funcnum := int(vm.code[vm.pc])
+		nargs := int(vm.code[vm.pc+1])
+		vm.pc += 2
+		if funcnum <= vm.infunc || funcnum >= len(vm.offsets) {
+			return vm.runtimeError(newRuntimeError("invalid function number (no recursion allowed)"))
+		}
+		newpc := vm.offsets[funcnum]
+
+		childvm, err := vm.CreateForFunc(funcnum, newpc, nargs)
+		if err != nil {
+			return vm.runtimeError(err)
+		}
+		err = childvm.Run(debug)
+		// no matter what, we want the history
+		vm.history = append(vm.history, childvm.history...)
+		if err != nil {
+			return vm.runtimeError(err)
+		}
+		// we've called the child function, now get back its return value
+		retval, err := childvm.stack.Pop()
+		if err != nil {
+			return vm.runtimeError(err)
+		}
+		vm.stack.Push(retval)
+
+	case OpEndDef:
+		// we hit this at the end of a function that hasn't used OpRet or OpFail
+		vm.runstate = RsComplete
 
 	case OpIfz:
 		t, err := vm.stack.Pop()
@@ -738,8 +802,9 @@ func (vm *ChaincodeVM) Step() error {
 		if err := vm.skipToMatchingBracket(); err != nil {
 			return vm.runtimeError(err)
 		}
-	case OpEnd:
-		// this is a nop
+	case OpEndIf:
+		// OpEndIf is a no-op (it is only hit when it ends an if block that evaluated to true
+		// and there was no Else clause
 	case OpSum:
 		l, err := vm.stack.PopAsList()
 		if err != nil {
@@ -810,6 +875,17 @@ func (vm *ChaincodeVM) Step() error {
 	}
 
 	return nil
+}
+
+// DisassembleAll dumps a disassembly of the whole VM
+func (vm *ChaincodeVM) DisassembleAll() {
+	fmt.Println("--DISASSEMBLY--")
+	for pc := 0; pc < len(vm.code); {
+		s, delta := vm.Disassemble(pc)
+		pc += delta
+		fmt.Println(s)
+	}
+	fmt.Println("---------------")
 }
 
 // Disassemble returns a single disassembled instruction, along with how many bytes it consumed
