@@ -4,7 +4,7 @@ package vm
 
 import "strconv"
 
-const _Opcode_name = "NopDropDrop2DupDup2SwapOverPickRollRetFailZeroPush1Push2Push3Push4Push5Push6Push7Push8Push64OneNeg1PushTNowRandPushLAddSubMulDivModNotNegIncDecEqGtLtIndexLenAppendExtendSliceFieldFieldLIfzIfnzElseEndSumAvgMaxMinChoiceWChoiceSortLookup"
+const _Opcode_name = "NopDropDrop2DupDup2SwapOverPickRollRetFailZeroPush1Push2Push3Push4Push5Push6Push7Push8Push64OneNeg1PushTNowRandPushLAddSubMulDivModNotNegIncDecEqGtLtIndexLenAppendExtendSliceFieldFieldLDefCallIfzIfnzDecoElseEndSumAvgMaxMinChoiceWChoiceSortLookup"
 
 var _Opcode_map = map[Opcode]string{
 	0:   _Opcode_name[0:3],
@@ -55,16 +55,19 @@ var _Opcode_map = map[Opcode]string{
 	112: _Opcode_name[179:185],
 	128: _Opcode_name[185:188],
 	129: _Opcode_name[188:192],
-	135: _Opcode_name[192:196],
-	136: _Opcode_name[196:199],
-	144: _Opcode_name[199:202],
-	145: _Opcode_name[202:205],
-	146: _Opcode_name[205:208],
-	147: _Opcode_name[208:211],
-	148: _Opcode_name[211:217],
-	149: _Opcode_name[217:224],
-	150: _Opcode_name[224:228],
-	151: _Opcode_name[228:234],
+	130: _Opcode_name[192:195],
+	131: _Opcode_name[195:199],
+	132: _Opcode_name[199:203],
+	135: _Opcode_name[203:207],
+	136: _Opcode_name[207:210],
+	144: _Opcode_name[210:213],
+	145: _Opcode_name[213:216],
+	146: _Opcode_name[216:219],
+	147: _Opcode_name[219:222],
+	148: _Opcode_name[222:228],
+	149: _Opcode_name[228:235],
+	150: _Opcode_name[235:239],
+	151: _Opcode_name[239:245],
 }
 
 func (i Opcode) String() string {

@@ -14,6 +14,13 @@ func buildVM(t *testing.T, s string) *ChaincodeVM {
 	return vm
 }
 
+func buildVMfail(t *testing.T, s string) {
+	ops := miniAsm(s)
+	bin := ChasmBinary{"test", "", "TEST", ops}
+	_, err := New(bin)
+	assert.NotNil(t, err)
+}
+
 func checkStack(t *testing.T, st *Stack, values ...int64) {
 	for i := range values {
 		n, err := st.PopAsInt64()
@@ -29,7 +36,7 @@ func TestMiniAsmBasics(t *testing.T) {
 }
 
 func TestNop(t *testing.T) {
-	vm := buildVM(t, "nop")
+	vm := buildVM(t, "def 0 nop end")
 	vm.Init()
 	err := vm.Run(false)
 	assert.Nil(t, err)
@@ -37,7 +44,7 @@ func TestNop(t *testing.T) {
 }
 
 func TestPush(t *testing.T) {
-	vm := buildVM(t, "neg1 zero one push1 45 push2 01 02 ret")
+	vm := buildVM(t, "def 0 neg1 zero one push1 45 push2 01 02 ret end")
 	vm.Init()
 	err := vm.Run(false)
 	assert.Nil(t, err)
@@ -45,7 +52,7 @@ func TestPush(t *testing.T) {
 }
 
 func TestBigPush(t *testing.T) {
-	vm := buildVM(t, "push3 1 2 3 push7 1 2 3 4 5 6 7 push8 fb ff ff ff ff ff ff ff")
+	vm := buildVM(t, "def 0 push3 1 2 3 push7 1 2 3 4 5 6 7 push8 fb ff ff ff ff ff ff ff end")
 	vm.Init()
 	err := vm.Run(false)
 	assert.Nil(t, err)
@@ -53,7 +60,7 @@ func TestBigPush(t *testing.T) {
 }
 
 func TestPush64(t *testing.T) {
-	vm := buildVM(t, "push64 1 2 3 4 5 6 7 8")
+	vm := buildVM(t, "def 0 push64 1 2 3 4 5 6 7 8 end")
 	vm.Init()
 	err := vm.Run(false)
 	assert.Nil(t, err)
@@ -64,7 +71,7 @@ func TestPush64(t *testing.T) {
 }
 
 func TestDrop(t *testing.T) {
-	vm := buildVM(t, "push1 7 nop one zero neg1 drop drop2")
+	vm := buildVM(t, "def 0 push1 7 nop one zero neg1 drop drop2 end")
 	vm.Init()
 	err := vm.Run(false)
 	assert.Nil(t, err)
@@ -72,7 +79,7 @@ func TestDrop(t *testing.T) {
 }
 
 func TestDup(t *testing.T) {
-	vm := buildVM(t, "one push1 2 dup push1 3 dup2")
+	vm := buildVM(t, "def 0 one push1 2 dup push1 3 dup2 end")
 	vm.Init()
 	err := vm.Run(false)
 	assert.Nil(t, err)
@@ -80,7 +87,7 @@ func TestDup(t *testing.T) {
 }
 
 func TestSwapOverPickRoll(t *testing.T) {
-	vm := buildVM(t, "zero one push1 2 push1 3 swap over pick 4 roll 4")
+	vm := buildVM(t, "def 0 zero one push1 2 push1 3 swap over pick 4 roll 4 end")
 	vm.Init()
 	err := vm.Run(false)
 	assert.Nil(t, err)
@@ -88,7 +95,7 @@ func TestSwapOverPickRoll(t *testing.T) {
 }
 
 func TestMath(t *testing.T) {
-	vm := buildVM(t, "push1 55 dup dup add sub push1 7 push1 6 mul dup push1 3 div dup push1 3 mod")
+	vm := buildVM(t, "def 0 push1 55 dup dup add sub push1 7 push1 6 mul dup push1 3 div dup push1 3 mod end")
 	vm.Init()
 	err := vm.Run(false)
 	assert.Nil(t, err)
@@ -96,18 +103,18 @@ func TestMath(t *testing.T) {
 }
 
 func TestMathErrors(t *testing.T) {
-	vm := buildVM(t, "push1 55 zero div")
+	vm := buildVM(t, "def 0 push1 55 zero div end")
 	vm.Init()
 	err := vm.Run(false)
 	assert.NotNil(t, err)
-	vm = buildVM(t, "push1 55 zero mod")
+	vm = buildVM(t, "def 0 push1 55 zero mod end")
 	vm.Init()
 	err = vm.Run(false)
 	assert.NotNil(t, err)
 }
 
 func TestNotNegIncDec(t *testing.T) {
-	vm := buildVM(t, "push1 7 not dup not push1 8 neg push1 4 inc push1 6 dec")
+	vm := buildVM(t, "def 0 push1 7 not dup not push1 8 neg push1 4 inc push1 6 dec end")
 	vm.Init()
 	err := vm.Run(false)
 	assert.Nil(t, err)
@@ -115,7 +122,7 @@ func TestNotNegIncDec(t *testing.T) {
 }
 
 func TestIf1(t *testing.T) {
-	vm := buildVM(t, "zero ifz push1 13 else push1 42 end push1 11")
+	vm := buildVM(t, "def 0 zero ifz push1 13 else push1 42 end push1 11 end")
 	vm.Init()
 	err := vm.Run(false)
 	assert.Nil(t, err)
@@ -123,7 +130,7 @@ func TestIf1(t *testing.T) {
 }
 
 func TestIf2(t *testing.T) {
-	vm := buildVM(t, "zero ifnz push1 13 else push1 42 end push1 11")
+	vm := buildVM(t, "def 0 zero ifnz push1 13 else push1 42 end push1 11 end")
 	vm.Init()
 	err := vm.Run(false)
 	assert.Nil(t, err)
@@ -131,7 +138,7 @@ func TestIf2(t *testing.T) {
 }
 
 func TestIf3(t *testing.T) {
-	vm := buildVM(t, "one ifz push1 13 else push1 42 end push1 11")
+	vm := buildVM(t, "def 0 one ifz push1 13 else push1 42 end push1 11 end")
 	vm.Init()
 	err := vm.Run(false)
 	assert.Nil(t, err)
@@ -139,7 +146,7 @@ func TestIf3(t *testing.T) {
 }
 
 func TestIf4(t *testing.T) {
-	vm := buildVM(t, "one ifnz push1 13 else push1 42 end push1 11")
+	vm := buildVM(t, "def 0 one ifnz push1 13 else push1 42 end push1 11 end")
 	vm.Init()
 	err := vm.Run(false)
 	assert.Nil(t, err)
@@ -147,7 +154,7 @@ func TestIf4(t *testing.T) {
 }
 
 func TestIf5(t *testing.T) {
-	vm := buildVM(t, "zero ifz push1 13 end push1 11")
+	vm := buildVM(t, "def 0 zero ifz push1 13 end push1 11 end")
 	vm.Init()
 	err := vm.Run(false)
 	assert.Nil(t, err)
@@ -155,7 +162,7 @@ func TestIf5(t *testing.T) {
 }
 
 func TestIf6(t *testing.T) {
-	vm := buildVM(t, "zero ifnz push1 13 end push1 11")
+	vm := buildVM(t, "def 0 zero ifnz push1 13 end push1 11 end")
 	vm.Init()
 	err := vm.Run(false)
 	assert.Nil(t, err)
@@ -163,7 +170,7 @@ func TestIf6(t *testing.T) {
 }
 
 func TestIf7(t *testing.T) {
-	vm := buildVM(t, "one ifz push1 13 end push1 11")
+	vm := buildVM(t, "def 0 one ifz push1 13 end push1 11 end")
 	vm.Init()
 	err := vm.Run(false)
 	assert.Nil(t, err)
@@ -171,7 +178,7 @@ func TestIf7(t *testing.T) {
 }
 
 func TestIf8(t *testing.T) {
-	vm := buildVM(t, "one ifnz push1 13 end push1 11")
+	vm := buildVM(t, "def 0 one ifnz push1 13 end push1 11 end")
 	vm.Init()
 	err := vm.Run(false)
 	assert.Nil(t, err)
@@ -179,7 +186,7 @@ func TestIf8(t *testing.T) {
 }
 
 func TestIfNested1(t *testing.T) {
-	vm := buildVM(t, "one ifnz push1 13 zero ifz push1 15 else push1 13 end end push1 11")
+	vm := buildVM(t, "def 0 one ifnz push1 13 zero ifz push1 15 else push1 13 end end push1 11 end")
 	vm.Init()
 	err := vm.Run(false)
 	assert.Nil(t, err)
@@ -187,7 +194,7 @@ func TestIfNested1(t *testing.T) {
 }
 
 func TestIfNested2(t *testing.T) {
-	vm := buildVM(t, "one ifz push1 13 zero ifz push1 15 else push1 13 end end push1 11")
+	vm := buildVM(t, "def 0 one ifz push1 13 zero ifz push1 15 else push1 13 end end push1 11 end")
 	vm.Init()
 	err := vm.Run(false)
 	assert.Nil(t, err)
@@ -195,7 +202,7 @@ func TestIfNested2(t *testing.T) {
 }
 
 func TestIfNested3(t *testing.T) {
-	vm := buildVM(t, "one ifnz push1 13 zero ifnz push1 15 else push1 13 end end push1 11")
+	vm := buildVM(t, "def 0 one ifnz push1 13 zero ifnz push1 15 else push1 13 end end push1 11 end")
 	vm.Init()
 	err := vm.Run(false)
 	assert.Nil(t, err)
@@ -203,7 +210,7 @@ func TestIfNested3(t *testing.T) {
 }
 
 func TestCompares1(t *testing.T) {
-	vm := buildVM(t, "one neg1 eq one neg1 lt one neg1 gt")
+	vm := buildVM(t, "def 0 one neg1 eq one neg1 lt one neg1 gt end")
 	vm.Init()
 	err := vm.Run(false)
 	assert.Nil(t, err)
@@ -211,7 +218,7 @@ func TestCompares1(t *testing.T) {
 }
 
 func TestCompares2(t *testing.T) {
-	vm := buildVM(t, "one one eq one one lt one one gt")
+	vm := buildVM(t, "def 0 one one eq one one lt one one gt end")
 	vm.Init()
 	err := vm.Run(false)
 	assert.Nil(t, err)
@@ -219,7 +226,7 @@ func TestCompares2(t *testing.T) {
 }
 
 func TestCompares3(t *testing.T) {
-	vm := buildVM(t, "neg1 one eq neg1 one lt neg1 one gt")
+	vm := buildVM(t, "def 0 neg1 one eq neg1 one lt neg1 one gt end")
 	vm.Init()
 	err := vm.Run(false)
 	assert.Nil(t, err)
@@ -227,7 +234,7 @@ func TestCompares3(t *testing.T) {
 }
 
 func TestCompares4(t *testing.T) {
-	vm := buildVM(t, "neg1 push64 1 2 3 4 5 6 7 8 eq")
+	vm := buildVM(t, "def 0 neg1 push64 1 2 3 4 5 6 7 8 eq end")
 	vm.Init()
 	err := vm.Run(false)
 	assert.NotNil(t, err)
@@ -235,6 +242,7 @@ func TestCompares4(t *testing.T) {
 
 func TestTimestamp(t *testing.T) {
 	vm := buildVM(t, `
+		def 0
 		pusht 2018-07-18T00:00:00Z
 		pusht 2018-01-01T00:00:00Z
 		sub
@@ -246,6 +254,7 @@ func TestTimestamp(t *testing.T) {
 		push1 18
 		mul
 		div
+		end
 		`)
 	vm.Init()
 	err := vm.Run(false)
@@ -254,7 +263,7 @@ func TestTimestamp(t *testing.T) {
 }
 
 func TestList1(t *testing.T) {
-	vm := buildVM(t, "pushl one append push1 7 append dup len swap one index")
+	vm := buildVM(t, "def 0 pushl one append push1 7 append dup len swap one index end")
 	vm.Init()
 	err := vm.Run(false)
 	assert.Nil(t, err)
@@ -262,7 +271,7 @@ func TestList1(t *testing.T) {
 }
 
 func TestExtend(t *testing.T) {
-	vm := buildVM(t, "pushl one append push1 7 append dup zero append swap extend dup len swap push1 2 index")
+	vm := buildVM(t, "def 0 pushl one append push1 7 append dup zero append swap extend dup len swap push1 2 index end")
 	vm.Init()
 	err := vm.Run(false)
 	assert.Nil(t, err)
@@ -270,7 +279,7 @@ func TestExtend(t *testing.T) {
 }
 
 func TestSlice(t *testing.T) {
-	vm := buildVM(t, "pushl zero append one append push1 2 append one push1 3 slice len")
+	vm := buildVM(t, "def 0 pushl zero append one append push1 2 append one push1 3 slice len end")
 	vm.Init()
 	err := vm.Run(false)
 	assert.Nil(t, err)
@@ -278,7 +287,7 @@ func TestSlice(t *testing.T) {
 }
 
 func TestSum(t *testing.T) {
-	vm := buildVM(t, "pushl zero append one append push1 2 append push1 3 append sum")
+	vm := buildVM(t, "def 0 pushl zero append one append push1 2 append push1 3 append sum end")
 	vm.Init()
 	err := vm.Run(false)
 	assert.Nil(t, err)
@@ -286,7 +295,7 @@ func TestSum(t *testing.T) {
 }
 
 func TestAvg(t *testing.T) {
-	vm := buildVM(t, "pushl one append push1 7 append push1 16 append avg")
+	vm := buildVM(t, "def 0 pushl one append push1 7 append push1 16 append avg end")
 	vm.Init()
 	err := vm.Run(false)
 	assert.Nil(t, err)
@@ -294,14 +303,14 @@ func TestAvg(t *testing.T) {
 }
 
 func TestAvgFail(t *testing.T) {
-	vm := buildVM(t, "pushl avg")
+	vm := buildVM(t, "def 0 pushl avg end")
 	vm.Init()
 	err := vm.Run(false)
 	assert.NotNil(t, err)
 }
 
 func TestField(t *testing.T) {
-	vm := buildVM(t, "field 2")
+	vm := buildVM(t, "def 0 field 2 end")
 	st := NewStruct(NewNumber(3), NewNumber(9), NewNumber(27))
 	vm.Init(st)
 	err := vm.Run(false)
@@ -310,7 +319,7 @@ func TestField(t *testing.T) {
 }
 
 func TestFieldFail(t *testing.T) {
-	vm := buildVM(t, "field 9")
+	vm := buildVM(t, "def 0 field 9 end")
 	st := NewStruct(NewNumber(3), NewNumber(9), NewNumber(27))
 	vm.Init(st)
 	err := vm.Run(false)
@@ -318,7 +327,7 @@ func TestFieldFail(t *testing.T) {
 }
 
 func TestFieldL(t *testing.T) {
-	vm := buildVM(t, "fieldl 2 one index")
+	vm := buildVM(t, "def 0 fieldl 2 one index end")
 	l := NewList()
 	for i := int64(0); i < 5; i++ {
 		st := NewStruct(NewNumber(3*i), NewNumber(3*i+1), NewNumber(3*i+2))
@@ -331,7 +340,7 @@ func TestFieldL(t *testing.T) {
 }
 
 func TestFieldLFail(t *testing.T) {
-	vm := buildVM(t, "fieldl 9 one index")
+	vm := buildVM(t, "def 0 fieldl 9 one index end")
 	l := NewList()
 	for i := int64(0); i < 5; i++ {
 		st := NewStruct(NewNumber(3*i), NewNumber(3*i+1), NewNumber(3*i+2))
@@ -343,7 +352,7 @@ func TestFieldLFail(t *testing.T) {
 }
 
 func TestSortFields(t *testing.T) {
-	vm := buildVM(t, "sort 2 push1 3 index field 1")
+	vm := buildVM(t, "def 0 sort 2 push1 3 index field 1 end")
 	l := NewList()
 	for i := int64(0); i < 5; i++ {
 		st := NewStruct(NewNumber(2*i), NewNumber(3*i+1), NewNumber(4*(6-i)))
@@ -356,7 +365,7 @@ func TestSortFields(t *testing.T) {
 }
 
 func TestSortFail(t *testing.T) {
-	vm := buildVM(t, "sort 6 push1 3 index field 1")
+	vm := buildVM(t, "def 0 sort 6 push1 3 index field 1 end")
 	l := NewList()
 	for i := int64(0); i < 5; i++ {
 		st := NewStruct(NewNumber(2*i), NewNumber(3*i+1), NewNumber(4*(6-i)))
@@ -365,4 +374,14 @@ func TestSortFail(t *testing.T) {
 	vm.Init(l)
 	err := vm.Run(false)
 	assert.NotNil(t, err)
+}
+
+func TestNestingFail1(t *testing.T) {
+	buildVMfail(t, "def 1 nop end")
+	buildVMfail(t, "def 0 nop end def 0 nop end")
+	buildVMfail(t, "def 0 nop end def 2 nop end")
+	buildVMfail(t, "def 0 ifz end")
+	buildVMfail(t, "def 0 ifnz end")
+	buildVMfail(t, "def 0 end end")
+	buildVMfail(t, "def 0 ifz else else end end")
 }

@@ -73,6 +73,8 @@ var opcodeMap = map[string]Opcode{
 	"slice":   OpSlice,
 	"field":   OpField,
 	"fieldl":  OpFieldL,
+	"def":     OpDef,
+	"call":    OpCall,
 	"ifz":     OpIfz,
 	"ifnz":    OpIfnz,
 	"else":    OpElse,

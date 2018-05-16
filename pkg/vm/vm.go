@@ -66,35 +66,124 @@ func New(bin ChasmBinary) (*ChaincodeVM, error) {
 	return &vm, nil
 }
 
-func validateNesting(code []Opcode) error {
-	nesting := 0
-	haselse := []bool{}
-	for _, b := range code {
-		switch b {
-		case OpIfnz, OpIfz:
-			nesting++
-			haselse = append(haselse, false)
-		case OpElse:
-			if nesting == 0 {
-				return ValidationError{"invalid nesting (else without if)"}
-			}
-			if haselse[nesting-1] {
-				return ValidationError{"invalid nesting (too many elses)"}
-			}
-			haselse[nesting-1] = true
-		case OpEnd:
-			if nesting == 0 {
-				return ValidationError{"invalid nesting (end without if)"}
-			}
-			nesting--
-			haselse = haselse[:len(haselse)-1]
-		default:
+// extraBytes returns the number of extra bytes associated with a given opcode
+func extraBytes(op Opcode) int {
+	numExtra := 0
+	switch op {
+	case OpPush1, OpPick, OpRoll, OpDef:
+		numExtra = 1
+	case OpPush2, OpCall:
+		numExtra = 2
+	case OpPush3:
+		numExtra = 3
+	case OpPush4:
+		numExtra = 4
+	case OpPush5:
+		numExtra = 5
+	case OpPush6:
+		numExtra = 6
+	case OpPush7:
+		numExtra = 7
+	case OpPush8, OpPush64, OpPushT:
+		numExtra = 8
+	}
+	return numExtra
+}
+
+// this validates a VM to make sure that its structural elements (if, else, def, end)
+// are well-formed.
+// It's a state machine
+
+type structureState int
+
+// These are the states in the state machine
+// The Plus and Minus are temporary states to adjust nesting
+const (
+	StNull    structureState = iota
+	StDef     structureState = iota
+	StDefPlus structureState = iota
+	StIf      structureState = iota
+	StIfPlus  structureState = iota
+	StIfMinus structureState = iota
+	StElse    structureState = iota
+	StError   structureState = iota
+)
+
+type tr struct {
+	current structureState
+	opcode  Opcode
+}
+
+// validateStructure reads the script and checks to make sure that the nested
+// elements are properly nested and not out of order or missing.
+func validateStructure(code []Opcode) error {
+	transitions := map[tr]structureState{
+		tr{StNull, OpDef}:  StDefPlus,
+		tr{StNull, OpIfz}:  StError,
+		tr{StNull, OpIfnz}: StError,
+		tr{StNull, OpElse}: StError,
+		tr{StNull, OpEnd}:  StError,
+		tr{StDef, OpDef}:   StError,
+		tr{StDef, OpIfz}:   StIfPlus,
+		tr{StDef, OpIfnz}:  StIfPlus,
+		tr{StDef, OpElse}:  StError,
+		tr{StDef, OpEnd}:   StNull,
+		tr{StIf, OpDef}:    StError,
+		tr{StIf, OpIfz}:    StIfPlus,
+		tr{StIf, OpIfnz}:   StIfPlus,
+		tr{StIf, OpElse}:   StElse,
+		tr{StIf, OpEnd}:    StIfMinus,
+		tr{StElse, OpDef}:  StError,
+		tr{StElse, OpIfz}:  StIfPlus,
+		tr{StElse, OpIfnz}: StIfPlus,
+		tr{StElse, OpElse}: StError,
+		tr{StElse, OpEnd}:  StIfMinus,
+	}
+
+	var state structureState
+	var depth int
+	var nfuncs int
+	var skipcount int
+
+	for offset, b := range code {
+		if skipcount > 0 {
+			skipcount--
+			continue
 		}
+		skipcount = extraBytes(b)
+		newstate, found := transitions[tr{state, b}]
+		if !found {
+			continue
+		}
+		switch newstate {
+		case StDefPlus:
+			funcnum := int(code[offset+1])
+			if funcnum != nfuncs {
+				return ValidationError{fmt.Sprintf("def should have been %d, found %d", nfuncs, funcnum)}
+			}
+			nfuncs++
+			newstate = StDef
+		case StError:
+			return ValidationError{fmt.Sprintf("invalid structure at offset %d", offset)}
+		case StIfPlus:
+			depth++
+			newstate = StIf
+		case StIfMinus:
+			depth--
+			if depth == 0 {
+				newstate = StDef
+			} else {
+				newstate = StIf
+			}
+		}
+		state = newstate
 	}
-	if nesting != 0 {
-		return ValidationError{"invalid nesting (if without end)"}
+	if state != StNull {
+		return ValidationError{"missing end"}
 	}
-	// we think we're ok to try to load this
+	if nfuncs < 1 {
+		return ValidationError{"missing def"}
+	}
 	return nil
 }
 
@@ -117,7 +206,7 @@ func (vm *ChaincodeVM) PreLoad(cb ChasmBinary) error {
 	if len(cb.Data) > maxCodeLength {
 		return ValidationError{"code is too long"}
 	}
-	if err := validateNesting(cb.Data); err != nil {
+	if err := validateStructure(cb.Data); err != nil {
 		return err
 	}
 	ctx, ok := ContextLookup(cb.Context)
@@ -144,7 +233,7 @@ func (vm *ChaincodeVM) Init(values ...Value) {
 	// vm.lists = make([]List, 0)
 	vm.history = []HistoryState{}
 	vm.runstate = RsReady
-	vm.pc = 0
+	vm.pc = 2 // skip the def 0 at the start
 }
 
 // Run runs a VM from its current state until it ends
@@ -593,6 +682,19 @@ func (vm *ChaincodeVM) Step() error {
 			return vm.runtimeError(err)
 		}
 
+	case OpDef:
+		// if we try to execute a def statement there has been an error and we should abort
+		return vm.runtimeError(newRuntimeError("tried to execute def"))
+
+	case OpCall:
+		// The call opcode tracks the number of the current routine, and will only call a
+		// function that has a larger number than itself (this prevents recursion). It constructs a
+		// new stack for the function and populates it by popping off the specified number of
+		// values from the caller's stack.
+		// funcnum := vm.code[vm.pc]
+		// nargs := vm.code[vm.pc+1]
+		// vm.pc += 2
+
 	case OpIfz:
 		t, err := vm.stack.Pop()
 		if err != nil {
@@ -716,25 +818,7 @@ func (vm *ChaincodeVM) Disassemble(pc int) (string, int) {
 		return "END", 0
 	}
 	op := vm.code[pc]
-	numExtra := 0
-	switch op {
-	case OpPush1, OpPick, OpRoll:
-		numExtra = 1
-	case OpPush2:
-		numExtra = 2
-	case OpPush3:
-		numExtra = 3
-	case OpPush4:
-		numExtra = 4
-	case OpPush5:
-		numExtra = 5
-	case OpPush6:
-		numExtra = 6
-	case OpPush7:
-		numExtra = 7
-	case OpPush8, OpPush64, OpPushT:
-		numExtra = 8
-	}
+	numExtra := extraBytes(op)
 	sa := []string{fmt.Sprintf("%3d  %02x", pc, byte(op))}
 	for i := numExtra; i > 0; i-- {
 		sa = append(sa, fmt.Sprintf("%02x", byte(vm.code[pc+i])))
