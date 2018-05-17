@@ -2,6 +2,7 @@ package vm
 
 import (
 	"fmt"
+	"math"
 	"sort"
 	"strings"
 )
@@ -851,42 +852,54 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 	case OpEndIf:
 		// OpEndIf is a no-op (it is only hit when it ends an if block that evaluated to true
 		// and there was no Else clause
-	case OpSum:
+
+	case OpSum, OpAvg, OpMax, OpMin:
 		l, err := vm.stack.PopAsList()
 		if err != nil {
 			return vm.runtimeError(err)
 		}
+
+		// Define helper functions for the Reduce function
 		sum := func(prev, current Value) Value {
 			p := prev.(Number).v
 			c := current.(Number).v
 			return NewNumber(p + c)
 		}
-		result := l.Reduce(sum, NewNumber(0))
+		max := func(prev, current Value) Value {
+			cmp, _ := prev.Compare(current)
+			if cmp < 0 {
+				return current
+			} else {
+				return prev
+			}
+		}
+		min := func(prev, current Value) Value {
+			cmp, _ := current.Compare(prev)
+			if cmp < 0 {
+				return current
+			} else {
+				return prev
+			}
+		}
+
+		var result Value
+		switch instr {
+		case OpSum:
+			result = l.Reduce(sum, NewNumber(0))
+		case OpAvg:
+			if l.Len() == 0 {
+				return vm.runtimeError(newRuntimeError("average of empty list"))
+			}
+			result = NewNumber(l.Reduce(sum, NewNumber(0)).(Number).v / l.Len())
+		case OpMin:
+			result = l.Reduce(min, NewNumber(math.MaxInt64))
+		case OpMax:
+			result = l.Reduce(max, NewNumber(math.MinInt64))
+		}
 		if err := vm.stack.Push(result); err != nil {
 			return vm.runtimeError(err)
 		}
 
-	case OpAvg:
-		l, err := vm.stack.PopAsList()
-		if err != nil {
-			return vm.runtimeError(err)
-		}
-		if l.Len() == 0 {
-			return vm.runtimeError(newRuntimeError("average of empty list"))
-		}
-		sum := func(prev, current Value) Value {
-			p := prev.(Number).v
-			c := current.(Number).v
-			return NewNumber(p + c)
-		}
-		result := l.Reduce(sum, NewNumber(0))
-		avg := result.(Number).v / l.Len()
-		if err := vm.stack.Push(NewNumber(avg)); err != nil {
-			return vm.runtimeError(err)
-		}
-
-	// case OpMax:
-	// case OpMin:
 	// case OpChoice:
 	// case OpWChoice:
 	case OpSort:

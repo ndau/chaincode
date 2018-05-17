@@ -302,6 +302,22 @@ func TestAvg(t *testing.T) {
 	checkStack(t, vm.Stack(), 10)
 }
 
+func TestMin(t *testing.T) {
+	vm := buildVM(t, "def 0 pushl one append push1 2 append push1 3 append min enddef")
+	vm.Init()
+	err := vm.Run(false)
+	assert.Nil(t, err)
+	checkStack(t, vm.Stack(), 1)
+}
+
+func TestMax(t *testing.T) {
+	vm := buildVM(t, "def 0 pushl one append push1 2 append push1 3 append max enddef")
+	vm.Init()
+	err := vm.Run(false)
+	assert.Nil(t, err)
+	checkStack(t, vm.Stack(), 3)
+}
+
 func TestAvgFail(t *testing.T) {
 	vm := buildVM(t, "def 0 pushl avg enddef")
 	vm.Init()
