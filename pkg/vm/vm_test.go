@@ -394,3 +394,36 @@ func TestCall1(t *testing.T) {
 	assert.Nil(t, err)
 	checkStack(t, vm.Stack(), 3)
 }
+
+func TestCall2(t *testing.T) {
+	vm := buildVM(t, `
+		def 0 one call 1 1 enddef
+		def 1 push1 2 call 2 2 enddef
+		def 2 add enddef
+	`)
+	vm.Init()
+	err := vm.Run(false)
+	assert.Nil(t, err)
+	checkStack(t, vm.Stack(), 3)
+}
+
+func TestCallFail1(t *testing.T) {
+	vm := buildVM(t, "def 0 one call 2 1 enddef def 1 push1 2 add enddef")
+	vm.Init()
+	err := vm.Run(false)
+	assert.NotNil(t, err)
+}
+
+func TestCallFail2(t *testing.T) {
+	vm := buildVM(t, "def 0 one call 1 2 enddef def 1 push1 2 add enddef")
+	vm.Init()
+	err := vm.Run(false)
+	assert.NotNil(t, err)
+}
+
+func TestCallFail3(t *testing.T) {
+	vm := buildVM(t, "def 0 one call 1 1 enddef def 1 push1 2 add drop enddef")
+	vm.Init()
+	err := vm.Run(false)
+	assert.NotNil(t, err)
+}
