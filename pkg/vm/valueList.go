@@ -37,6 +37,11 @@ func (vt List) Compare(rhs Value) (int, error) {
 	}
 }
 
+// IsScalar indicates if this Value is a scalar value type
+func (vt List) IsScalar() bool {
+	return false
+}
+
 func (vt List) String() string {
 	sa := make([]string, len(vt))
 	for i, v := range vt {

@@ -13,18 +13,18 @@ When invoked, the VM's stack may already contain specific values in well-known l
 ## Data types
 
 ### Numbers
-Numbers are 64-bit values; always integers. Overflow of a 64-bit value is an error.
+Numbers are 64-bit signed values; always integers. Overflow of a 64-bit value is an error.
 
 ### Timestamps
-Timestamps are a 64-bit number of microseconds since the epoch. They can be added and subtracted but not multiplied or divided.
-
-### Structs
-Structs are opaque references to an object with fields in a specific order. Fields are identified by a field index which is the following byte. Fields also conform to the native data types.
-
-Structs cannot be created or modified by functions.
+Timestamps are a 64-bit unsigned number of microseconds since the epoch. They can be added and subtracted but not multiplied or divided.
 
 ### Lists
-Lists are opaque references to a linear array of any of the datatypes. All items in a list must be the same type. Duplicating the reference does not copy the list. Slices create new lists.
+Lists are opaque references to a linear array of any of the datatypes. Duplicating the reference copies the list. Slices create new lists.
+
+### Structs
+Structs are opaque references to an object with fields in a specific order. Fields are identified by a field index which is always the following byte to the opcode (this limits the number of fields in a struct to 256). Fields also conform to the native data types.
+
+Structs cannot be created by the VM, only by its callers. However, they can be modified in a limited way by the `deco` opcode.
 
 ## Script Structure
 Every script has a one-byte preamble defining its context. The context implies:
@@ -36,6 +36,8 @@ Contexts will be published; a change in any of these parameters will require cre
 
 The remainder of the bytes in a script are the opcodes.
 
+All opcodes must be defined within functions defined using the `def` and `enddef` opcode pair. The parameter to `def` is the function index, and in a given script the functions must be defined in sequential numeric order, starting with 0. The zero function is considered "main" and execution of a script starts there. Functions are called using the `call` opcode, which has the restriction that it can only call functions whose number is strictly greater than the currently executing function (this constraint prevents recursion).
+
 ### Opcodes
 (see opcodes file)
 
@@ -45,8 +47,9 @@ Before being executed, programs are examined.
 
 Programs must conform to the following:
 * Be no longer than MAX_LENGTH in bytes
-* Every block must have a corresponding end and at most one else opcode
-* Nested ifs must terminate before the termination of the parent clause
+* Every opcode must be defined within a function; functions must have matching `def` and `enddef` opcodes.
+* Every conditional block must have a corresponding `endif` and at most one `else` opcode
+* Nested conditionals must terminate before the termination of the parent clause
 * The context identifies the expected type and order of the values on the stack, as well as intended return type. If anything fails to match with the runtime environment, the script fails.
 
 Programs that fail to pass these validity checks will not be run and will be treated as if they errored on execution.

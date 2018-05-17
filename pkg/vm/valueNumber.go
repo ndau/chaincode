@@ -27,6 +27,11 @@ func (vt Number) Compare(rhs Value) (int, error) {
 	}
 }
 
+// IsScalar indicates if this Value is a scalar value type
+func (vt Number) IsScalar() bool {
+	return true
+}
+
 func (vt Number) String() string {
 	return strconv.FormatInt(vt.v, 10)
 }

@@ -51,6 +51,11 @@ func (vt Timestamp) Compare(rhs Value) (int, error) {
 	}
 }
 
+// IsScalar indicates if this Value is a scalar value type
+func (vt Timestamp) IsScalar() bool {
+	return true
+}
+
 func (vt Timestamp) String() string {
 	return strconv.FormatUint(vt.t, 16)
 }

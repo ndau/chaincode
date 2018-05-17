@@ -51,6 +51,11 @@ func (vt Struct) Compare(rhs Value) (int, error) {
 	}
 }
 
+// IsScalar indicates if this Value is a scalar value type
+func (vt Struct) IsScalar() bool {
+	return true
+}
+
 func (vt Struct) String() string {
 	sa := make([]string, len(vt.fields))
 	for i, v := range vt.fields {

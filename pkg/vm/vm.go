@@ -518,7 +518,7 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		if err := vm.stack.Push(NewNumber(-1)); err != nil {
 			return vm.runtimeError(err)
 		}
-	case OpRand:
+	// case OpRand:
 	case OpPushL:
 		if err := vm.stack.Push(NewList()); err != nil {
 			return vm.runtimeError(err)
@@ -796,6 +796,10 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 			if err != nil {
 				return err
 			}
+			// in order to prevent memory bombs, deco cannot add non-scalars
+			if !retval.IsScalar() {
+				return vm.runtimeError(newRuntimeError("deco can only add scalars"))
+			}
 			newlist = newlist.Append(s.Append(retval))
 		}
 		if err := vm.stack.Push(newlist); err != nil {
@@ -869,17 +873,15 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 			cmp, _ := prev.Compare(current)
 			if cmp < 0 {
 				return current
-			} else {
-				return prev
 			}
+			return prev
 		}
 		min := func(prev, current Value) Value {
 			cmp, _ := current.Compare(prev)
 			if cmp < 0 {
 				return current
-			} else {
-				return prev
 			}
+			return prev
 		}
 
 		var result Value
