@@ -88,8 +88,9 @@ func (vm *ChaincodeVM) CreateForFunc(funcnum int, newpc int, nstack int) (*Chain
 }
 
 // extraBytes returns the number of extra bytes associated with a given opcode
-func extraBytes(op Opcode) int {
+func extraBytes(code []Opcode, offset int) int {
 	numExtra := 0
+	op := code[offset]
 	switch op {
 	case OpPush1, OpPick, OpRoll, OpDef, OpField, OpFieldL:
 		numExtra = 1
@@ -105,8 +106,10 @@ func extraBytes(op Opcode) int {
 		numExtra = 6
 	case OpPush7:
 		numExtra = 7
-	case OpPush8, OpPush64, OpPushT:
+	case OpPush8, OpPushT:
 		numExtra = 8
+	case OpPushB:
+		numExtra = int(code[offset+1]) + 1
 	}
 	return numExtra
 }
@@ -178,7 +181,7 @@ func validateStructure(code []Opcode) ([]int, error) {
 			skipcount--
 			continue
 		}
-		skipcount = extraBytes(b)
+		skipcount = extraBytes(code, offset)
 		newstate, found := transitions[tr{state, b}]
 		if !found {
 			continue
@@ -489,7 +492,7 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		if err := vm.stack.Push(NewNumber(value)); err != nil {
 			return vm.runtimeError(err)
 		}
-	case OpPush64, OpPushT, OpNow:
+	case OpPushT, OpNow:
 		var value uint64
 		var i byte
 		var b Opcode
@@ -500,13 +503,23 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		}
 		var v Value
 		switch instr {
-		case OpPush64:
-			v = NewID(value)
 		case OpPushT:
 			v = NewTimestamp(value)
 		case OpNow:
 			v = NewTimestamp(0) // TODO: Put NOW in place
 		}
+		if err := vm.stack.Push(v); err != nil {
+			return vm.runtimeError(err)
+		}
+	case OpPushB:
+		n := int(vm.code[vm.pc])
+		vm.pc++
+		b := make([]byte, n)
+		for i := 0; i < n; i++ {
+			b[i] = byte(vm.code[vm.pc])
+			vm.pc++
+		}
+		v := NewID(b)
 		if err := vm.stack.Push(v); err != nil {
 			return vm.runtimeError(err)
 		}
@@ -576,12 +589,6 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 				return vm.runtimeError(newRuntimeError("incompatible types"))
 			}
 			t = int64(n2.t - n1.t)
-		case ID:
-			n2, ok := v2.(ID)
-			if !ok {
-				return vm.runtimeError(newRuntimeError("incompatible types"))
-			}
-			t = int64(n2.id - n1.id)
 		}
 		if err := vm.stack.Push(NewNumber(t)); err != nil {
 			return vm.runtimeError(err)
@@ -955,7 +962,7 @@ func (vm *ChaincodeVM) Disassemble(pc int) (string, int) {
 		return "END", 0
 	}
 	op := vm.code[pc]
-	numExtra := extraBytes(op)
+	numExtra := extraBytes(vm.code, pc)
 	sa := []string{fmt.Sprintf("%3d  %02x", pc, byte(op))}
 	for i := numExtra; i > 0; i-- {
 		sa = append(sa, fmt.Sprintf("%02x", byte(vm.code[pc+i])))

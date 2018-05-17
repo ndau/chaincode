@@ -216,18 +216,39 @@ func newPushOpcode(s string) (*PushOpcode, error) {
 	return &PushOpcode{arg: v}, err
 }
 
-// Push64 is a 64-bit unsigned value
-type Push64 struct {
-	u uint64
+// PushB is an array of bytes
+type PushB struct {
+	b []byte
 }
 
-func newPush64(s string) (*Push64, error) {
-	v, err := strconv.ParseUint(s, 0, 64)
-	return &Push64{u: v}, err
+// func newPushB(s string) (*PushB, error) {
+// 	v, err := strconv.ParseUint(s, 0, 64)
+// 	return &PushB{u: v}, err
+// }
+
+func newPushB(iface interface{}) (*PushB, error) {
+	ia := toIfaceSlice(iface)
+	out := make([]byte, len(ia))
+
+	for i, item := range ia {
+		if b, ok := item.([]byte); ok {
+			out[i] = b[0]
+		} else {
+			s := item.(string)
+			// fmt.Printf("%#v\n", sa)
+			v, err := strconv.ParseUint(s, 0, 8)
+			if err != nil {
+				return nil, err
+			}
+			out[i] = byte(v)
+		}
+	}
+	return &PushB{out}, nil
 }
 
-func (n *Push64) bytes() []byte {
-	return append([]byte{byte(vm.OpPush64)}, vm.ToBytesU(n.u)...)
+func (n *PushB) bytes() []byte {
+	out := append([]byte{byte(vm.OpPushB)}, byte(len(n.b)))
+	return append(out, n.b...)
 }
 
 // PushTimestamp is a 64-bit representation of the time since the start of the epoch in microseconds

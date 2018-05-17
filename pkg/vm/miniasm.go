@@ -46,7 +46,7 @@ var opcodeMap = map[string]Opcode{
 	"push6":   OpPush6,
 	"push7":   OpPush7,
 	"push8":   OpPush8,
-	"push64":  OpPush64,
+	"pushb":   OpPushB,
 	"one":     OpOne,
 	"true":    OpTrue,
 	"neg1":    OpNeg1,
@@ -96,7 +96,9 @@ func miniAsm(s string) []Opcode {
 	wsp := regexp.MustCompile("[ \t\r\n]")
 	// timestamp
 	tsp := regexp.MustCompile("[0-9-]+T[0-9:]+Z")
-	words := wsp.Split(strings.ToLower(strings.TrimSpace(s)), -1)
+	// quoted string without spaces (this is a mini assembler!)
+	qsp := regexp.MustCompile(`"[^" ]+"`)
+	words := wsp.Split(strings.TrimSpace(s), -1)
 	opcodes := []Opcode{0}
 	for _, w := range words {
 		// skip empty words
@@ -115,6 +117,15 @@ func miniAsm(s string) []Opcode {
 				panic(err)
 			}
 			bytes := ToBytesU(t.t)
+			for _, byt := range bytes {
+				opcodes = append(opcodes, Opcode(byt))
+			}
+			continue
+		}
+		// see if it's a quoted string
+		if qsp.MatchString(w) {
+			bytes := w[1 : len(w)-1]
+			opcodes = append(opcodes, Opcode(len(bytes)))
 			for _, byt := range bytes {
 				opcodes = append(opcodes, Opcode(byt))
 			}

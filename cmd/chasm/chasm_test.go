@@ -38,6 +38,18 @@ func TestSimplePush(t *testing.T) {
 	checkParse(t, "SimplePush", code, "00 8000 20 88")
 }
 
+func TestPushB(t *testing.T) {
+	code := `
+		; comment
+		context: TEST
+		func foo {
+			pushb 5 1 2 3 4 5 6 7 8 9 10
+			pushb "HI!"
+		}
+`
+	checkParse(t, "SimplePush", code, "00 8000 29 0b 050102030405060708090a 29 03 484921 88")
+}
+
 func TestFunc(t *testing.T) {
 	code := `
 		; comment

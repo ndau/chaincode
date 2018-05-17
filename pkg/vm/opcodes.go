@@ -29,7 +29,7 @@ const (
 	OpPush6   Opcode = 0x26
 	OpPush7   Opcode = 0x27
 	OpPush8   Opcode = 0x28
-	OpPush64  Opcode = 0x29
+	OpPushB   Opcode = 0x29
 	OpOne     Opcode = 0x2A
 	OpTrue    Opcode = 0x2A
 	OpNeg1    Opcode = 0x2B

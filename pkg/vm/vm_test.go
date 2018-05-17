@@ -59,15 +59,26 @@ func TestBigPush(t *testing.T) {
 	checkStack(t, vm.Stack(), 197121, 1976943448883713, -5)
 }
 
-func TestPush64(t *testing.T) {
-	vm := buildVM(t, "def 0 push64 1 2 3 4 5 6 7 8 enddef")
+func TestPushB1(t *testing.T) {
+	vm := buildVM(t, "def 0 pushb 09 41 42 43 44 45 46 47 48 49 enddef")
 	vm.Init()
 	err := vm.Run(false)
 	assert.Nil(t, err)
 	v, err := vm.Stack().Pop()
 	assert.Nil(t, err)
-	assert.IsType(t, NewID(0), v)
-	assert.Equal(t, NewID(578437695752307201), v)
+	assert.IsType(t, NewID(nil), v)
+	assert.Equal(t, NewID([]byte{65, 66, 67, 68, 69, 70, 71, 72, 73}), v)
+}
+
+func TestPushB2(t *testing.T) {
+	vm := buildVM(t, `def 0 pushb "ABCDEFGHI" enddef`)
+	vm.Init()
+	err := vm.Run(false)
+	assert.Nil(t, err)
+	v, err := vm.Stack().Pop()
+	assert.Nil(t, err)
+	assert.IsType(t, NewID(nil), v)
+	assert.Equal(t, NewID([]byte{65, 66, 67, 68, 69, 70, 71, 72, 73}), v)
 }
 
 func TestDrop(t *testing.T) {
@@ -234,7 +245,7 @@ func TestCompares3(t *testing.T) {
 }
 
 func TestCompares4(t *testing.T) {
-	vm := buildVM(t, "def 0 neg1 push64 1 2 3 4 5 6 7 8 eq enddef")
+	vm := buildVM(t, "def 0 neg1 pushb 8 1 2 3 4 5 6 7 8 eq enddef")
 	vm.Init()
 	err := vm.Run(false)
 	assert.NotNil(t, err)

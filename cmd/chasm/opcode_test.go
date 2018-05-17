@@ -117,12 +117,12 @@ func TestPush8BytesPositive(t *testing.T) {
 	bcheck(t, b, "28BEBAFECAEA1DAD1B")
 }
 
-func TestPush64(t *testing.T) {
-	op, err := newPush64("0xFFEEDDCCBBAA0011")
-	assert.Nil(t, err)
-	b := op.bytes()
-	bcheck(t, b, "291100AABBCCDDEEFF")
-}
+// func TestPush64(t *testing.T) {
+// 	op, err := newPush64("0xFFEEDDCCBBAA0011")
+// 	assert.Nil(t, err)
+// 	b := op.bytes()
+// 	bcheck(t, b, "291100AABBCCDDEEFF")
+// }
 
 func TestPushTimestamp(t *testing.T) {
 	op, err := newPushTimestamp("2018-07-18T20:00:58Z")

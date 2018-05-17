@@ -39,6 +39,10 @@ func describeError(err error, source string) string {
 		line := lines[ep.line-1]
 		// now create a second line with the same whitespace prefix, plus replace all
 		// the non-whitespace chars with a space, then add a caret (^) to point to the error
+		// c := ep.col
+		if ep.col >= len(line) {
+			ep.col = len(line) - 1
+		}
 		caretline := line[:ep.col]
 		nonspace := regexp.MustCompile("[^ \t]")
 		caretline = nonspace.ReplaceAllString(caretline, " ") + "^"

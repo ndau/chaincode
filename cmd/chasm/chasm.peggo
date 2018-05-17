@@ -57,7 +57,7 @@ Opcode =
     / "fail" { return newUnitaryOpcode(vm.OpFail) }
     / "zero" { return newUnitaryOpcode(vm.OpZero) }
     / "false" { return newUnitaryOpcode(vm.OpFalse) }
-    / "push64" _ v:Value  { return newPush64(v.(string)) }
+    / "pushb" _ ba:Bytes  { return newPushB(ba) }
     / "push" _ v:Value  { return newPushOpcode(v.(string)) }
     / "one" { return newUnitaryOpcode(vm.OpOne) }
     / "true" { return newUnitaryOpcode(vm.OpTrue) }
@@ -120,9 +120,14 @@ Value =
 
 ConstantRef <- k:Constant                         { cm := c.globalStore["constants"].(map[string]string); return cm[k.(string)], nil }
 Integer <- '-'? [0-9]+                            { return string(c.text), nil }
+Bytes <-
+    ( b:Byte+                                     { return b, nil }
+    / _? '"' s:[^"]+ '"'                          { return s, nil }
+    )
+
 Byte <-
-    ( "0x" [0-9A-Fa-f] [0-9A-Fa-f]?               { return string(c.text), nil }
-    / [0-9]+                                      { return string(c.text), nil }
+    ( _? "0x" [0-9A-Fa-f] [0-9A-Fa-f]?               { return strings.TrimSpace(string(c.text)), nil }
+    / _? [0-9]+                                      { return strings.TrimSpace(string(c.text)), nil }
     )
 Constant <- [A-Z] [A-Z0-9_]*                      { return string(c.text), nil }
 FunctionName <- [A-Za-z] [A-Za-z0-9_]+            { return string(c.text), nil }

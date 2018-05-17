@@ -18,6 +18,9 @@ Numbers are 64-bit signed values; always integers. Overflow of a 64-bit value is
 ### Timestamps
 Timestamps are a 64-bit unsigned number of microseconds since the epoch. They can be added and subtracted but not multiplied or divided.
 
+### ID
+ID is the term for an arbitrary array of bytes. They can be compared only with other IDs and mathematical operations have no meaning.
+
 ### Lists
 Lists are opaque references to a linear array of any of the datatypes. Duplicating the reference copies the list. Slices create new lists.
 
