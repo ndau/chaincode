@@ -6,15 +6,20 @@ import (
 )
 
 // Struct maintains a single struct object; it maintains an array of fields
-// Structs can only have an id
 type Struct struct {
 	id     byte
 	fields []Value
 }
 
-// NewStruct creates a new, empty struct.
+// NewStruct creates a new struct with an arbitrary set of fields.
 func NewStruct(vs ...Value) Struct {
 	return Struct{fields: vs}
+}
+
+// Append adds a new field to the end of the Struct and returns it as a new Struct
+func (vt Struct) Append(v Value) Struct {
+	vt.fields = append(vt.fields, v)
+	return vt
 }
 
 // Field retrieves the field at a given index

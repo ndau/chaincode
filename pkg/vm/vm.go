@@ -90,9 +90,9 @@ func (vm *ChaincodeVM) CreateForFunc(funcnum int, newpc int, nstack int) (*Chain
 func extraBytes(op Opcode) int {
 	numExtra := 0
 	switch op {
-	case OpPush1, OpPick, OpRoll, OpDef:
+	case OpPush1, OpPick, OpRoll, OpDef, OpField, OpFieldL:
 		numExtra = 1
-	case OpPush2, OpCall:
+	case OpPush2, OpCall, OpDeco:
 		numExtra = 2
 	case OpPush3:
 		numExtra = 3
@@ -149,20 +149,20 @@ func validateStructure(code []Opcode) ([]int, error) {
 		tr{StDef, OpIfz}:     StIfPlus,
 		tr{StDef, OpIfnz}:    StIfPlus,
 		tr{StDef, OpElse}:    StError,
-		tr{StNull, OpEndIf}:  StError,
+		tr{StDef, OpEndIf}:   StError,
 		tr{StDef, OpEndDef}:  StNull,
 		tr{StIf, OpDef}:      StError,
 		tr{StIf, OpIfz}:      StIfPlus,
 		tr{StIf, OpIfnz}:     StIfPlus,
 		tr{StIf, OpElse}:     StElse,
 		tr{StIf, OpEndIf}:    StIfMinus,
-		tr{StNull, OpEndDef}: StError,
+		tr{StIf, OpEndDef}:   StError,
 		tr{StElse, OpDef}:    StError,
 		tr{StElse, OpIfz}:    StIfPlus,
 		tr{StElse, OpIfnz}:   StIfPlus,
 		tr{StElse, OpElse}:   StError,
 		tr{StElse, OpEndIf}:  StIfMinus,
-		tr{StNull, OpEndDef}: StError,
+		tr{StElse, OpEndDef}: StError,
 	}
 
 	var state structureState
@@ -323,6 +323,39 @@ func (vm *ChaincodeVM) skipToMatchingBracket() error {
 			}
 		}
 	}
+}
+
+// callFunction calls the function numbered by funcnum, copying nargs to a new stack
+// returns the value left on the stack by the called function
+func (vm *ChaincodeVM) callFunction(funcnum int, nargs int, debug bool, extraArgs ...Value) (Value, error) {
+	var retval Value
+	if funcnum <= vm.infunc || funcnum >= len(vm.offsets) {
+		return retval, vm.runtimeError(newRuntimeError("invalid function number (no recursion allowed)"))
+	}
+	newpc := vm.offsets[funcnum]
+
+	childvm, err := vm.CreateForFunc(funcnum, newpc, nargs)
+	if err != nil {
+		return retval, vm.runtimeError(err)
+	}
+	for _, e := range extraArgs {
+		err := childvm.stack.Push(e)
+		if err != nil {
+			return retval, vm.runtimeError(err)
+		}
+	}
+	err = childvm.Run(debug)
+	// no matter what, we want the history
+	vm.history = append(vm.history, childvm.history...)
+	if err != nil {
+		return retval, vm.runtimeError(err)
+	}
+	// we've called the child function, now get back its return value
+	retval, err = childvm.stack.Pop()
+	if err != nil {
+		return retval, vm.runtimeError(err)
+	}
+	return retval, nil
 }
 
 // Step executes a single instruction
@@ -728,32 +761,45 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 	case OpCall:
 		// The call opcode tracks the number of the current routine, and will only call a
 		// function that has a larger number than itself (this prevents recursion). It constructs a
-		// new stack for the function and populates it by popping off the specified number of
-		// values from the caller's stack.
+		// new stack for the function and populates it by copying (NOT popping off!) the specified number of
+		// values from the caller's stack. The function call returns a single Value which is pushed
+		// onto the caller's stack.
 		funcnum := int(vm.code[vm.pc])
 		nargs := int(vm.code[vm.pc+1])
 		vm.pc += 2
-		if funcnum <= vm.infunc || funcnum >= len(vm.offsets) {
-			return vm.runtimeError(newRuntimeError("invalid function number (no recursion allowed)"))
+		result, err := vm.callFunction(funcnum, nargs, debug)
+		if err != nil {
+			return err
 		}
-		newpc := vm.offsets[funcnum]
+		if err := vm.stack.Push(result); err != nil {
+			return vm.runtimeError(err)
+		}
 
-		childvm, err := vm.CreateForFunc(funcnum, newpc, nargs)
+	case OpDeco:
+		funcnum := int(vm.code[vm.pc])
+		nargs := int(vm.code[vm.pc+1])
+		vm.pc += 2
+		// we're going to iterate over a List
+		l, err := vm.stack.PopAsList()
 		if err != nil {
 			return vm.runtimeError(err)
 		}
-		err = childvm.Run(debug)
-		// no matter what, we want the history
-		vm.history = append(vm.history, childvm.history...)
-		if err != nil {
+		newlist := NewList()
+		for i := range l {
+			s, ok := l[i].(Struct)
+			if !ok {
+				return vm.runtimeError(newRuntimeError("list element was not struct"))
+			}
+
+			retval, err := vm.callFunction(funcnum, nargs, debug, s)
+			if err != nil {
+				return err
+			}
+			newlist = newlist.Append(s.Append(retval))
+		}
+		if err := vm.stack.Push(newlist); err != nil {
 			return vm.runtimeError(err)
 		}
-		// we've called the child function, now get back its return value
-		retval, err := childvm.stack.Pop()
-		if err != nil {
-			return vm.runtimeError(err)
-		}
-		vm.stack.Push(retval)
 
 	case OpEndDef:
 		// we hit this at the end of a function that hasn't used OpRet or OpFail

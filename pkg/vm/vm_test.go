@@ -427,3 +427,19 @@ func TestCallFail3(t *testing.T) {
 	err := vm.Run(false)
 	assert.NotNil(t, err)
 }
+
+func TestDeco1(t *testing.T) {
+	vm := buildVM(t, `
+		def 0 deco 1 0 fieldl 2 sum enddef
+		def 1 dup field 0 dup mul swap  field 1 dup mul add enddef
+	`)
+	l := NewList()
+	for i := int64(0); i < 5; i++ {
+		st := NewStruct(NewNumber(2*i), NewNumber(3*i+1))
+		l = l.Append(st)
+	}
+	vm.Init(l)
+	err := vm.Run(false)
+	assert.Nil(t, err)
+	checkStack(t, vm.Stack(), 455)
+}
