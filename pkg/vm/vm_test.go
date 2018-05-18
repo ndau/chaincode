@@ -251,7 +251,7 @@ func TestCompares4(t *testing.T) {
 	assert.NotNil(t, err)
 }
 
-func TestTimestamp(t *testing.T) {
+func TestTimestamp1(t *testing.T) {
 	vm := buildVM(t, `
 		def 0
 		pusht 2018-07-18T00:00:00Z
@@ -272,6 +272,29 @@ func TestTimestamp(t *testing.T) {
 	assert.Nil(t, err)
 	checkStack(t, vm.Stack(), 198)
 }
+
+func TestTimestampNegative(t *testing.T) {
+	vm := buildVM(t, `
+		def 0
+		pusht 2018-01-01T00:00:00Z
+		pusht 2018-07-18T00:00:00Z
+		sub
+		push3 40 42 0f
+		div
+		push1 3C
+		dup
+		mul
+		push1 18
+		mul
+		div
+		enddef
+		`)
+	vm.Init()
+	err := vm.Run(false)
+	assert.Nil(t, err)
+	checkStack(t, vm.Stack(), -198)
+}
+
 
 func TestList1(t *testing.T) {
 	vm := buildVM(t, "def 0 pushl one append push1 7 append dup len swap one index enddef")

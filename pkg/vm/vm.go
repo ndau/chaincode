@@ -588,7 +588,7 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 			if !ok {
 				return vm.runtimeError(newRuntimeError("incompatible types"))
 			}
-			t = int64(n2.t - n1.t)
+			t = int64(n2.t) - int64(n1.t)
 		}
 		if err := vm.stack.Push(NewNumber(t)); err != nil {
 			return vm.runtimeError(err)

@@ -4,15 +4,6 @@ package vm
 // we can have.
 type ValueType int
 
-// These are ValueType constants
-const (
-	NumberT    ValueType = iota
-	IDT        ValueType = iota
-	TimestampT ValueType = iota
-	ListT      ValueType = iota
-	StructT    ValueType = iota
-)
-
 // Value objects are what is managed by the VM
 type Value interface {
 	Compare(rhs Value) (int, error)

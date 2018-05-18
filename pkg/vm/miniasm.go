@@ -91,6 +91,8 @@ var opcodeMap = map[string]Opcode{
 	"lookup":  OpLookup,
 }
 
+// miniAsm is primarily for testing but we want it available.
+// nolint: deadcode
 func miniAsm(s string) []Opcode {
 	// whitespace
 	wsp := regexp.MustCompile("[ \t\r\n]")
