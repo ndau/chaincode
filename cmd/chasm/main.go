@@ -33,7 +33,12 @@ func main() {
 	var buf bytes.Buffer
 	tee := io.TeeReader(in, &buf)
 
-	sn, err := ParseReader("", tee)
+	sn, err := ParseReader("",
+		tee,
+		GlobalStore("functions", make(map[string]int)),
+		GlobalStore("functionCounter", int(0)),
+		GlobalStore("constants", make(map[string]string)),
+	)
 	if err != nil {
 		log.Fatal(describeErrors(err, buf.String()))
 	}

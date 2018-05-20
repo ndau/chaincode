@@ -9,3 +9,7 @@ clean:
 
 test: chasm
 	go test -v --race
+
+.PHONY: examples
+examples:
+	./chasm --output examples/quadratic.chbin --comment "Test of quadratic" examples/quadratic.chasm

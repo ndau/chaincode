@@ -1,6 +1,6 @@
 {
   "name": "examples/quadratic.chasm",
-  "comment": "test of assembling quadratic",
+  "comment": "Test of quadratic",
   "context": "TEST",
-  "data": "ACEDIQUhByEVDwMOAQVCQg8DDwJCQEAQ"
+  "data": "AID/IQMhBSEHIRUPAw4BBUJCDwMPAkJAQBCI"
 }

@@ -21,11 +21,8 @@ func foo {
     mul		; BCXR
     roll 3  ; CXRB
     roll 2  ; CRBX
-    call bar;
     mul		; CRS
     add		; CR
     add		; R
     ret
-}
-func bar {
 }
