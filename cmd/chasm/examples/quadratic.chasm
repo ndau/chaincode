@@ -4,7 +4,7 @@
 ; a*x*x + b*x + c
 
 context: TEST
-{
+func foo {
     A = 3
     B = 5
     C = 7
@@ -21,8 +21,11 @@ context: TEST
     mul		; BCXR
     roll 3  ; CXRB
     roll 2  ; CRBX
+    call bar;
     mul		; CRS
     add		; CR
     add		; R
     ret
+}
+func bar {
 }

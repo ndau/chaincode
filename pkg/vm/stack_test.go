@@ -79,3 +79,10 @@ func TestGet(t *testing.T) {
 	assert.Equal(t, st.Depth(), 5)
 	checkMulti(t, st, 5, 4, 3, 2, 1)
 }
+
+func TestString(t *testing.T) {
+	st := newStack()
+	assert.Equal(t, "|== Empty", st.String())
+	pushMulti(t, st, 1, 2, 3, 4, 5)
+	assert.Equal(t, "|== 5\n|== 4\n|== 3\n|== 2\n|== 1", st.String())
+}

@@ -251,6 +251,35 @@ func TestCompares4(t *testing.T) {
 	assert.NotNil(t, err)
 }
 
+func TestCompares5(t *testing.T) {
+	vm := buildVM(t, `def 0 pushb "hello" pushb "hi" dup2 eq pick 2 pick 2 gt enddef`)
+	vm.Init()
+	err := vm.Run(false)
+	assert.Nil(t, err)
+	checkStack(t, vm.Stack(), 0, 1)
+}
+
+func TestCompares6(t *testing.T) {
+	vm := buildVM(t, `def 0 pushl zero append one append dup dup eq swap dup gt enddef`)
+	vm.Init()
+	err := vm.Run(false)
+	assert.Nil(t, err)
+	checkStack(t, vm.Stack(), 1, 0)
+}
+
+func TestCompare7(t *testing.T) {
+	vm := buildVM(t, "def 0 dup zero index pick 1 one index eq enddef")
+	l := NewList()
+	for i := int64(0); i < 5; i++ {
+		st := NewStruct(NewNumber(3*i), NewNumber(3*i+1), NewNumber(3*i+2))
+		l = l.Append(st)
+	}
+	vm.Init(l)
+	err := vm.Run(false)
+	assert.Nil(t, err)
+	checkStack(t, vm.Stack(), 0)
+}
+
 func TestTimestamp1(t *testing.T) {
 	vm := buildVM(t, `
 		def 0
@@ -294,7 +323,6 @@ func TestTimestampNegative(t *testing.T) {
 	assert.Nil(t, err)
 	checkStack(t, vm.Stack(), -198)
 }
-
 
 func TestList1(t *testing.T) {
 	vm := buildVM(t, "def 0 pushl one append push1 7 append dup len swap one index enddef")
@@ -492,4 +520,29 @@ func TestDeco1(t *testing.T) {
 	err := vm.Run(false)
 	assert.Nil(t, err)
 	checkStack(t, vm.Stack(), 455)
+}
+
+func TestStringers(t *testing.T) {
+	assert.Equal(t, "Call", OpCall.String())
+	vid := NewID([]byte("hi"))
+	assert.Equal(t, "hi", vid.String())
+	vn := NewNumber(123)
+	assert.Equal(t, "123", vn.String())
+	vt := NewTimestamp(0xffffff)
+	assert.Equal(t, "ffffff", vt.String())
+	vl := NewList()
+	vl = vl.Append(NewID([]byte("July"))).Append(NewNumber(18))
+	assert.Equal(t, "[July, 18]", vl.String())
+	vs := NewStruct(NewID([]byte("July")), NewNumber(18))
+	assert.Equal(t, "str(0)[July, 18]", vs.String())
+}
+
+func TestExerciseStrings(t *testing.T) {
+	vm := buildVM(t, "def 0 sort 6 push1 3 index field 1 enddef")
+	vm.Init()
+
+	assert.Contains(t, vm.String(), "Sort")
+	da, n := vm.Disassemble(4)
+	assert.Equal(t, 2, n)
+	assert.Contains(t, da, "Push1")
 }

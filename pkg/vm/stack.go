@@ -1,6 +1,8 @@
 package vm
 
-import "strings"
+import (
+	"strings"
+)
 
 var maxStackDepth = 128
 
@@ -132,7 +134,7 @@ func (st *Stack) PopAt(n int) (Value, error) {
 
 // String renders a stack with one line per value
 func (st *Stack) String() string {
-	if len(st.stack) == 0 {
+	if st.stack == nil || len(st.stack) == 0 {
 		return "|== Empty"
 	}
 	sa := make([]string, len(st.stack))
