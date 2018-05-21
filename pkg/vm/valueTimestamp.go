@@ -1,7 +1,6 @@
 package vm
 
 import (
-	"strconv"
 	"time"
 )
 
@@ -21,19 +20,23 @@ func NewTimestamp(n uint64) Timestamp {
 	return Timestamp{n}
 }
 
-// ParseTimestamp creates a timestamp from an ISO-3933 string
-func ParseTimestamp(s string) (Timestamp, error) {
+// NewTimestampFromTime returns a timestamp taken from a time.Time struct in Go.
+func NewTimestampFromTime(t time.Time) Timestamp {
 	epoch, err := time.Parse(TimestampFormat, EpochStart)
 	if err != nil {
 		panic("Epoch isn't a valid timestamp!")
 	}
+	uSec := uint64(t.Sub(epoch).Nanoseconds() / 1000)
+	return NewTimestamp(uSec)
+}
+
+// ParseTimestamp creates a timestamp from an ISO-3933 string
+func ParseTimestamp(s string) (Timestamp, error) {
 	ts, err := time.Parse(TimestampFormat, s)
 	if err != nil {
 		return NewTimestamp(0), err
 	}
-	// durations are in nanoseconds but we want microseconds
-	uSec := uint64(ts.Sub(epoch).Nanoseconds() / 1000)
-	return NewTimestamp(uSec), nil
+	return NewTimestampFromTime(ts), nil
 }
 
 // Compare implements comparison for Timestamp
@@ -57,7 +60,9 @@ func (vt Timestamp) IsScalar() bool {
 }
 
 func (vt Timestamp) String() string {
-	return strconv.FormatUint(vt.t, 16)
+	epoch, _ := time.Parse(TimestampFormat, EpochStart)
+	t := epoch.Add(time.Duration(vt.t) * time.Microsecond)
+	return t.Format(TimestampFormat)
 }
 
 // T returns the timestamp as a uint64 duration in uSec since the start of epoch.

@@ -44,6 +44,18 @@ type HistoryState struct {
 	// lists []List
 }
 
+// Randomer is an interface for a type that generates "random" integers (which may be
+// defined by context)
+type Randomer interface {
+	RandInt() (int64, error)
+}
+
+// Nower is an interface for a type that returns the "current" time as a Timestamp
+// The definition of "now" may be defined by context.
+type Nower interface {
+	Now() (Timestamp, error)
+}
+
 // ChaincodeVM is the reason we're here
 type ChaincodeVM struct {
 	runstate RunState
@@ -54,6 +66,8 @@ type ChaincodeVM struct {
 	history  []HistoryState
 	infunc   int   // the number of the func we're currently in
 	offsets  []int // byte offsets of the functions
+	rand     Randomer
+	now      Nower
 }
 
 // New creates a new VM and loads a ChasmBinary into it (or errors)
@@ -65,7 +79,27 @@ func New(bin ChasmBinary) (*ChaincodeVM, error) {
 	vm.context = bin.Data[0]
 	vm.code = bin.Data[1:]
 	vm.runstate = RsNotReady // not ready to run until we've called Init
+	r, err := NewDefaultRand()
+	if err != nil {
+		return nil, err
+	}
+	vm.rand = r
+	n, err := NewDefaultNow()
+	if err != nil {
+		return nil, err
+	}
+	vm.now = n
 	return &vm, nil
+}
+
+// SetRand sets the randomer to call for this VM
+func (vm *ChaincodeVM) SetRand(r Randomer) {
+	vm.rand = r
+}
+
+// SetNow sets the Nower to call for this VM
+func (vm *ChaincodeVM) SetNow(n Nower) {
+	vm.now = n
 }
 
 // CreateForFunc creates a new VM from this one that is used to run a function
@@ -268,8 +302,6 @@ func (vm *ChaincodeVM) Init(values ...Value) {
 	for _, v := range values {
 		vm.stack.Push(v)
 	}
-	// TODO: lists
-	// vm.lists = make([]List, 0)
 	vm.history = []HistoryState{}
 	vm.runstate = RsReady
 	vm.pc = 2 // skip the def 0 at the start
@@ -492,7 +524,7 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		if err := vm.stack.Push(NewNumber(value)); err != nil {
 			return vm.runtimeError(err)
 		}
-	case OpPushT, OpNow:
+	case OpPushT:
 		var value uint64
 		var i byte
 		var b Opcode
@@ -501,14 +533,16 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 			vm.pc++
 			value |= uint64(b) << (i * 8)
 		}
-		var v Value
-		switch instr {
-		case OpPushT:
-			v = NewTimestamp(value)
-		case OpNow:
-			v = NewTimestamp(0) // TODO: Put NOW in place
+		ts := NewTimestamp(value)
+		if err := vm.stack.Push(ts); err != nil {
+			return vm.runtimeError(err)
 		}
-		if err := vm.stack.Push(v); err != nil {
+	case OpNow:
+		ts, err := vm.now.Now()
+		if err != nil {
+			return vm.runtimeError(err)
+		}
+		if err := vm.stack.Push(ts); err != nil {
 			return vm.runtimeError(err)
 		}
 	case OpPushB:
@@ -531,7 +565,15 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		if err := vm.stack.Push(NewNumber(-1)); err != nil {
 			return vm.runtimeError(err)
 		}
-	// case OpRand:
+	case OpRand:
+		r, err := vm.rand.RandInt()
+		if err != nil {
+			return vm.runtimeError(err)
+		}
+		if err := vm.stack.Push(NewNumber(r)); err != nil {
+			return vm.runtimeError(err)
+		}
+
 	case OpPushL:
 		if err := vm.stack.Push(NewList()); err != nil {
 			return vm.runtimeError(err)
@@ -615,11 +657,11 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 			return vm.runtimeError(err)
 		}
 	case OpEq, OpGt, OpLt:
-		v1, err := vm.stack.Pop()
+		v2, err := vm.stack.Pop()
 		if err != nil {
 			return vm.runtimeError(err)
 		}
-		v2, err := vm.stack.Pop()
+		v1, err := vm.stack.Pop()
 		if err != nil {
 			return vm.runtimeError(err)
 		}

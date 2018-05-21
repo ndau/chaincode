@@ -225,7 +225,7 @@ func TestCompares1(t *testing.T) {
 	vm.Init()
 	err := vm.Run(false)
 	assert.Nil(t, err)
-	checkStack(t, vm.Stack(), 0, 1, 0)
+	checkStack(t, vm.Stack(), 0, 0, 1)
 }
 
 func TestCompares2(t *testing.T) {
@@ -241,7 +241,7 @@ func TestCompares3(t *testing.T) {
 	vm.Init()
 	err := vm.Run(false)
 	assert.Nil(t, err)
-	checkStack(t, vm.Stack(), 0, 0, 1)
+	checkStack(t, vm.Stack(), 0, 1, 0)
 }
 
 func TestCompares4(t *testing.T) {
@@ -252,7 +252,7 @@ func TestCompares4(t *testing.T) {
 }
 
 func TestCompares5(t *testing.T) {
-	vm := buildVM(t, `def 0 pushb "hello" pushb "hi" dup2 eq pick 2 pick 2 gt enddef`)
+	vm := buildVM(t, `def 0 pushb "hello" pushb "hi" dup2 eq pick 2 pick 2 lt enddef`)
 	vm.Init()
 	err := vm.Run(false)
 	assert.Nil(t, err)
@@ -278,6 +278,54 @@ func TestCompare7(t *testing.T) {
 	err := vm.Run(false)
 	assert.Nil(t, err)
 	checkStack(t, vm.Stack(), 0)
+}
+
+func TestCompareTimestampGt(t *testing.T) {
+	vm := buildVM(t, `
+		def 0
+		pusht 2018-07-18T00:00:00Z pusht 2018-01-01T00:00:00Z
+		gt
+		pusht 2018-01-01T00:00:00Z pusht 2018-07-18T00:00:00Z
+		gt
+		pusht 2018-07-18T00:00:00Z pusht 2018-07-18T00:00:00Z
+		gt
+		enddef`)
+	vm.Init()
+	err := vm.Run(false)
+	assert.Nil(t, err)
+	checkStack(t, vm.Stack(), 1, 0, 0)
+}
+
+func TestCompareTimestampLt(t *testing.T) {
+	vm := buildVM(t, `
+		def 0
+		pusht 2018-07-18T00:00:00Z pusht 2018-01-01T00:00:00Z
+		lt
+		pusht 2018-01-01T00:00:00Z pusht 2018-07-18T00:00:00Z
+		lt
+		pusht 2018-07-18T00:00:00Z pusht 2018-07-18T00:00:00Z
+		lt
+		enddef`)
+	vm.Init()
+	err := vm.Run(false)
+	assert.Nil(t, err)
+	checkStack(t, vm.Stack(), 0, 1, 0)
+}
+
+func TestCompareTimestampEq(t *testing.T) {
+	vm := buildVM(t, `
+		def 0
+		pusht 2018-07-18T00:00:00Z pusht 2018-01-01T00:00:00Z
+		eq
+		pusht 2018-01-01T00:00:00Z pusht 2018-07-18T00:00:00Z
+		eq
+		pusht 2018-07-18T00:00:00Z pusht 2018-07-18T00:00:00Z
+		eq
+		enddef`)
+	vm.Init()
+	err := vm.Run(false)
+	assert.Nil(t, err)
+	checkStack(t, vm.Stack(), 0, 0, 1)
 }
 
 func TestTimestamp1(t *testing.T) {
@@ -322,6 +370,67 @@ func TestTimestampNegative(t *testing.T) {
 	err := vm.Run(false)
 	assert.Nil(t, err)
 	checkStack(t, vm.Stack(), -198)
+}
+
+func TestTimestampInjectedNow(t *testing.T) {
+	vm := buildVM(t, `
+		def 0
+		now
+		pusht 2018-01-01T00:00:00Z
+		sub
+		enddef
+		`)
+	ts, err := ParseTimestamp("2018-01-02T03:04:05Z")
+	assert.Nil(t, err)
+	now, err := NewCachingNow(ts)
+	assert.Nil(t, err)
+	vm.SetNow(now)
+	vm.Init()
+	err = vm.Run(false)
+	assert.Nil(t, err)
+	checkStack(t, vm.Stack(), 97445000000)
+}
+
+func TestTimestampDefaultNow(t *testing.T) {
+	vm := buildVM(t, `
+		def 0
+		now
+		dup
+		pusht 2018-01-01T00:00:00Z
+		lt
+		swap
+		now
+		sub
+		zero
+		eq
+		pusht 2022-02-02T22:22:22Z
+		now
+		gt
+		enddef
+		`)
+	vm.Init()
+	err := vm.Run(true)
+	assert.Nil(t, err)
+	checkStack(t, vm.Stack(), 0, 0, 1)
+}
+
+func TestInjectedRand(t *testing.T) {
+	vm := buildVM(t, "def 0 rand rand eq rand rand eq enddef")
+	r, err := NewCachingRand()
+	assert.Nil(t, err)
+	vm.SetRand(r)
+	vm.Init()
+	err = vm.Run(false)
+	assert.Nil(t, err)
+	checkStack(t, vm.Stack(), 1, 1)
+}
+
+func TestDefaultRand(t *testing.T) {
+	vm := buildVM(t, "def 0 rand rand eq rand rand eq enddef")
+	vm.Init()
+	err := vm.Run(false)
+	assert.Nil(t, err)
+	checkStack(t, vm.Stack(), 0, 0)
 }
 
 func TestList1(t *testing.T) {
@@ -528,8 +637,8 @@ func TestStringers(t *testing.T) {
 	assert.Equal(t, "hi", vid.String())
 	vn := NewNumber(123)
 	assert.Equal(t, "123", vn.String())
-	vt := NewTimestamp(0xffffff)
-	assert.Equal(t, "ffffff", vt.String())
+	vt := NewTimestamp(0)
+	assert.Equal(t, "2018-01-01T00:00:00Z", vt.String())
 	vl := NewList()
 	vl = vl.Append(NewID([]byte("July"))).Append(NewNumber(18))
 	assert.Equal(t, "[July, 18]", vl.String())
