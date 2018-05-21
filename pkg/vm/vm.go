@@ -3,6 +3,7 @@ package vm
 import (
 	"fmt"
 	"math"
+	"math/rand"
 	"sort"
 	"strings"
 )
@@ -951,7 +952,25 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 			return vm.runtimeError(err)
 		}
 
-	// case OpChoice:
+	case OpChoice:
+		src, err := vm.stack.PopAsList()
+		if err != nil {
+			return vm.runtimeError(err)
+		}
+		if src.Len() == 0 {
+			return vm.runtimeError(newRuntimeError("choice of empty list"))
+		}
+		i, err := vm.rand.RandInt()
+		if err != nil {
+			return vm.runtimeError(err)
+		}
+		r := rand.New(rand.NewSource(i))
+		n := r.Intn(int(src.Len()))
+		item := src[n]
+		if err := vm.stack.Push(item); err != nil {
+			return vm.runtimeError(err)
+		}
+
 	// case OpWChoice:
 	case OpSort:
 		src, err := vm.stack.PopAsList()

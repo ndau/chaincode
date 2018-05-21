@@ -465,6 +465,25 @@ func TestSum(t *testing.T) {
 	checkStack(t, vm.Stack(), 6)
 }
 
+type seededRand struct {
+	n int64
+}
+
+// RandInt implements Randomer for seededRand
+func (r seededRand) RandInt() (int64, error) {
+	return r.n, nil
+}
+
+func TestChoice(t *testing.T) {
+	vm := buildVM(t, "def 0 pushl zero append one append push1 2 append push1 3 append choice enddef")
+	r := seededRand{n: 12345}
+	vm.SetRand(r)
+	vm.Init()
+	err := vm.Run(false)
+	assert.Nil(t, err)
+	checkStack(t, vm.Stack(), 3)
+}
+
 func TestAvg(t *testing.T) {
 	vm := buildVM(t, "def 0 pushl one append push1 7 append push1 16 append avg enddef")
 	vm.Init()
