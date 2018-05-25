@@ -1,6 +1,7 @@
 package vm
 
 import (
+	"fmt"
 	"strings"
 )
 
@@ -101,6 +102,30 @@ func (st *Stack) PopAsList() (List, error) {
 	l, ok := v.(List)
 	if !ok {
 		return NewList(), stackError("top was not list")
+	}
+	return l, nil
+}
+
+// PopAsListOfStructs retrieves the top entry on the stack as a List,
+// and then checks to make sure that every element in the list is a Struct
+// with a numeric field at the given offset; if anything isn't true, it errors.
+func (st *Stack) PopAsListOfStructs(ix int) (List, error) {
+	l, err := st.PopAsList()
+	if err != nil {
+		return l, err
+	}
+	for i, v := range l {
+		str, ok := v.(Struct)
+		if !ok {
+			return l, stackError(fmt.Sprintf("element %d was not a Struct", i))
+		}
+		n, err := str.Field(ix)
+		if err != nil {
+			return l, err
+		}
+		if _, ok := n.(Number); !ok {
+			return l, stackError(fmt.Sprintf("field %d of element %d was not a Number", ix, i))
+		}
 	}
 	return l, nil
 }

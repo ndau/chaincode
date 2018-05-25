@@ -399,7 +399,7 @@ func (vm *ChaincodeVM) callFunction(funcnum int, nargs int, debug bool, extraArg
 func (vm *ChaincodeVM) Step(debug bool) error {
 	switch vm.runstate {
 	default:
-		return newRuntimeError("vm is not in runnable state!")
+		return newRuntimeError("vm is not in runnable state")
 	case RsReady:
 		vm.runstate = RsRunning
 		fallthrough
@@ -668,7 +668,7 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		}
 		r, err := v1.Compare(v2)
 		if err != nil {
-			return vm.runtimeError(newRuntimeError("comparing incompatible types"))
+			return vm.runtimeError(err)
 		}
 		var result int64
 		switch instr {
@@ -807,7 +807,7 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 
 	case OpDef:
 		// if we try to execute a def statement there has been an error and we should abort
-		return vm.runtimeError(newRuntimeError("tried to execute def"))
+		return vm.runtimeError(newRuntimeError("tried to execute def opcode"))
 
 	case OpCall:
 		// The call opcode tracks the number of the current routine, and will only call a
@@ -839,7 +839,7 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		for i := range l {
 			s, ok := l[i].(Struct)
 			if !ok {
-				return vm.runtimeError(newRuntimeError("list element was not struct"))
+				return vm.runtimeError(newRuntimeError("list element should have been struct"))
 			}
 
 			retval, err := vm.callFunction(funcnum, nargs, debug, s)
@@ -848,7 +848,7 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 			}
 			// in order to prevent memory bombs, deco cannot add non-scalars
 			if !retval.IsScalar() {
-				return vm.runtimeError(newRuntimeError("deco can only add scalars"))
+				return vm.runtimeError(newRuntimeError("deco result must be scalar"))
 			}
 			newlist = newlist.Append(s.Append(retval))
 		}
@@ -940,7 +940,7 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 			result = l.Reduce(sum, NewNumber(0))
 		case OpAvg:
 			if l.Len() == 0 {
-				return vm.runtimeError(newRuntimeError("average of empty list"))
+				return vm.runtimeError(newRuntimeError("cannot average empty list"))
 			}
 			result = NewNumber(l.Reduce(sum, NewNumber(0)).(Number).v / l.Len())
 		case OpMin:
@@ -958,7 +958,7 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 			return vm.runtimeError(err)
 		}
 		if src.Len() == 0 {
-			return vm.runtimeError(newRuntimeError("choice of empty list"))
+			return vm.runtimeError(newRuntimeError("cannot use choice on empty list"))
 		}
 		i, err := vm.rand.RandInt()
 		if err != nil {
@@ -971,7 +971,47 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 			return vm.runtimeError(err)
 		}
 
-	// case OpWChoice:
+	case OpWChoice:
+		fix := vm.code[vm.pc]
+		vm.pc++
+		src, err := vm.stack.PopAsListOfStructs(int(fix))
+		if err != nil {
+			return vm.runtimeError(err)
+		}
+		// because of PopAsListOfStructs(), we know we're safe to traverse
+		// the list of structs and pull out our specified field as a Number
+		sum := func(prev, current Value) Value {
+			p := prev.(Number).v
+			fi, _ := current.(Struct).Field(int(fix))
+			c := fi.(Number).v
+			return NewNumber(p + c)
+		}
+		total := src.Reduce(sum, NewNumber(0)).(Number).AsInt64()
+
+		rand, err := vm.rand.RandInt()
+		if err != nil {
+			return vm.runtimeError(err)
+		}
+
+		var partialSum int64
+		for i := range src {
+			fi, _ := src[i].(Struct).Field(int(fix))
+			partialSum += fi.(Number).AsInt64()
+			fmt.Printf("wchoice : %d %d/%d %d/%d\n", i, rand, math.MaxInt64, partialSum, total)
+			if FractionLess(rand, math.MaxInt64, partialSum, total) {
+				fmt.Printf("DONE : %d %d/%d %d/%d\n", i, rand, math.MaxInt64, partialSum, total)
+				fmt.Println(src[i])
+				err := vm.stack.Push(src[i])
+				if err != nil {
+					return vm.runtimeError(err)
+				}
+				return nil
+			}
+		}
+
+		// if we get here, something is very wrong
+		return vm.runtimeError(newRuntimeError(fmt.Sprintf("wchoice can't happen: %d %d %d", rand, partialSum, total)))
+
 	case OpSort:
 		src, err := vm.stack.PopAsList()
 		if err != nil {
@@ -979,7 +1019,8 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		}
 		fix := vm.code[vm.pc]
 		vm.pc++
-		// note - error handling is weak
+		// note - error handling is weak because the less function cannot fail
+		// so we can only figure it out after the sort completes
 		hadErr := false
 		less := func(i, j int) bool {
 			fi, e1 := src[i].(Struct).Field(int(fix))

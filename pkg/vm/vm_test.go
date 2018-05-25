@@ -1,6 +1,7 @@
 package vm
 
 import (
+	"math"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -482,6 +483,40 @@ func TestChoice(t *testing.T) {
 	err := vm.Run(false)
 	assert.Nil(t, err)
 	checkStack(t, vm.Stack(), 3)
+}
+
+func TestWChoice1(t *testing.T) {
+	vm := buildVM(t, "def 0 wchoice 0 field 0 enddef")
+	r := seededRand{n: math.MaxInt64 / 2}
+	vm.SetRand(r)
+
+	l := NewList()
+	for i := int64(0); i < 6; i++ {
+		st := NewStruct(NewNumber(i))
+		l = l.Append(st)
+	}
+	vm.Init(l)
+
+	err := vm.Run(false)
+	assert.Nil(t, err)
+	checkStack(t, vm.Stack(), 4)
+}
+
+func TestWChoice2(t *testing.T) {
+	vm := buildVM(t, "def 0 wchoice 0 field 0 enddef")
+	r := seededRand{n: math.MaxInt64 / 2}
+	vm.SetRand(r)
+
+	l := NewList()
+	for i := int64(0); i < 6; i++ {
+		st := NewStruct(NewNumber(6 - i))
+		l = l.Append(st)
+	}
+	vm.Init(l)
+
+	err := vm.Run(false)
+	assert.Nil(t, err)
+	checkStack(t, vm.Stack(), 5)
 }
 
 func TestAvg(t *testing.T) {

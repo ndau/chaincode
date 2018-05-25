@@ -111,3 +111,38 @@ func NewCachingNow(ts Timestamp) (*CachingNow, error) {
 func (cn *CachingNow) Now() (Timestamp, error) {
 	return cn.t, nil
 }
+
+// FractionLess compares two ratios of int64 values (fractions) without exceeding an int64.
+func FractionLess(n1, d1, n2, d2 int64) bool {
+	return compareRatios(n1, d1, n2, d2, true)
+}
+
+// compareRatios compares two ratios of int64 values (fractions) without exceeding an int64.
+// It does so by computing the continued fraction representation of each fraction
+// simultaneously, but stops as soon as they differ.
+// The algorithm was found here:
+// https://janmr.com/blog/2014/05/comparing-rational-numbers-without-overflow/
+func compareRatios(n1, d1, n2, d2 int64, less bool) bool {
+	i1 := n1 / d1
+	r1 := n1 % d1
+	i2 := n2 / d2
+	r2 := n2 % d2
+	switch {
+	case n2 == 0:
+		return false
+	case n1 == 0:
+		return true
+	case less && i1 < i2,
+		!less && i1 > i2:
+		return true
+	case less && i1 > i2,
+		!less && i1 < i2:
+		return false
+	case r1 == 0:
+		return false
+	case r2 == 0:
+		return true
+	default:
+		return compareRatios(d1, r1, d2, r2, !less)
+	}
+}
