@@ -7,6 +7,9 @@ type ID struct {
 	id []byte
 }
 
+// assert that ID really is a Value
+var _ = Value(ID{})
+
 // NewID creates an ID
 func NewID(ab []byte) ID {
 	return ID{id: ab}

@@ -85,13 +85,7 @@ func NewDefaultNow() (*DefaultNow, error) {
 
 // Now implements Nower for DefaultNow
 func (dr *DefaultNow) Now() (Timestamp, error) {
-	epoch, err := time.Parse(TimestampFormat, EpochStart)
-	if err != nil {
-		return NewTimestamp(0), err
-	}
-	t := time.Now()
-	uSec := uint64(t.Sub(epoch).Nanoseconds() / 1000)
-	return NewTimestamp(uSec), nil
+	return NewTimestampFromTime(time.Now())
 }
 
 // CachingNow is a Nower that

@@ -11,6 +11,9 @@ type Struct struct {
 	fields []Value
 }
 
+// assert that Struct really is a Value
+var _ = Value(Struct{})
+
 // NewStruct creates a new struct with an arbitrary set of fields.
 func NewStruct(vs ...Value) Struct {
 	return Struct{fields: vs}

@@ -7,6 +7,9 @@ type Number struct {
 	v int64
 }
 
+// assert that Number really is a Value
+var _ = Value(Number{})
+
 // NewNumber creates a Number object out of an int64
 func NewNumber(n int64) Number {
 	return Number{n}

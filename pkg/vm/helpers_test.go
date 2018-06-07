@@ -2,6 +2,7 @@ package vm
 
 import (
 	"math"
+	"reflect"
 	"testing"
 )
 
@@ -35,6 +36,29 @@ func TestFractionLess(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := FractionLess(tt.args.n1, tt.args.d1, tt.args.n2, tt.args.d2); got != tt.want {
 				t.Errorf("FractionLess() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestToBytes(t *testing.T) {
+	tests := []struct {
+		name string
+		n    int64
+		want []byte
+	}{
+		{"a", 1, []byte{0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}},
+		{"b", 0x010203, []byte{0x03, 0x02, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00}},
+		{"c", -1, []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}},
+		{"d", -256, []byte{0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}},
+		{"e", int64(math.MaxInt64), []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x7F}},
+		{"f", int64(math.MinInt64), []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80}},
+		{"g", 0, []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := ToBytes(tt.n); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("ToBytes() = %v, want %v", got, tt.want)
 			}
 		})
 	}

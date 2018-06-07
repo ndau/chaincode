@@ -8,6 +8,12 @@ import (
 	"strings"
 )
 
+// TODO: tweak data types to support our real keys and timestamps and use ndaumath
+//       resolve duration as uint64 or int64
+// TODO: calculate and track some execution cost metric
+// TODO: test more error states
+// TODO: add logging
+
 // The VM package implements a virtual machine for chaincode.
 
 // maxCodeLength is the maximum number of bytes that a VM may contain.
@@ -526,13 +532,13 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 			return vm.runtimeError(err)
 		}
 	case OpPushT:
-		var value uint64
+		var value int64
 		var i byte
 		var b Opcode
 		for i = 0; i < 8; i++ {
 			b = vm.code[vm.pc]
 			vm.pc++
-			value |= uint64(b) << (i * 8)
+			value |= int64(b) << (i * 8)
 		}
 		ts := NewTimestamp(value)
 		if err := vm.stack.Push(ts); err != nil {

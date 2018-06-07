@@ -118,7 +118,7 @@ func miniAsm(s string) []Opcode {
 			if err != nil {
 				panic(err)
 			}
-			bytes := ToBytesU(t.t)
+			bytes := ToBytes(int64(t.t))
 			for _, byt := range bytes {
 				opcodes = append(opcodes, Opcode(byt))
 			}

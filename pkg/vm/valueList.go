@@ -8,6 +8,9 @@ const MaxListSize = 1024
 // List maintains a single list object
 type List []Value
 
+// assert that List really is a Value
+var _ = Value(List{})
+
 // NewList creates a new, empty list.
 func NewList() List {
 	return []Value{}
