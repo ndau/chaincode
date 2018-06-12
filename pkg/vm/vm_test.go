@@ -67,8 +67,8 @@ func TestPushB1(t *testing.T) {
 	assert.Nil(t, err)
 	v, err := vm.Stack().Pop()
 	assert.Nil(t, err)
-	assert.IsType(t, NewID(nil), v)
-	assert.Equal(t, NewID([]byte{65, 66, 67, 68, 69, 70, 71, 72, 73}), v)
+	assert.IsType(t, NewBytes(nil), v)
+	assert.Equal(t, NewBytes([]byte{65, 66, 67, 68, 69, 70, 71, 72, 73}), v)
 }
 
 func TestPushB2(t *testing.T) {
@@ -78,8 +78,25 @@ func TestPushB2(t *testing.T) {
 	assert.Nil(t, err)
 	v, err := vm.Stack().Pop()
 	assert.Nil(t, err)
-	assert.IsType(t, NewID(nil), v)
-	assert.Equal(t, NewID([]byte{65, 66, 67, 68, 69, 70, 71, 72, 73}), v)
+	assert.IsType(t, NewBytes(nil), v)
+	assert.Equal(t, NewBytes([]byte{65, 66, 67, 68, 69, 70, 71, 72, 73}), v)
+}
+
+func TestPushA(t *testing.T) {
+	vm := buildVM(t, `def 0 pusha ndadprx764ciigti8d8whtw2kct733r85qvjukhqhke3dka4 enddef`)
+	vm.Init()
+	err := vm.Run(false)
+	assert.Nil(t, err)
+	v, err := vm.Stack().Pop()
+	assert.Nil(t, err)
+	assert.IsType(t, NewBytes(nil), v)
+	assert.Equal(t, NewBytes([]byte{
+		0x6e, 0x64, 0x61, 0x64, 0x70, 0x72, 0x78, 0x37,
+		0x36, 0x34, 0x63, 0x69, 0x69, 0x67, 0x74, 0x69,
+		0x38, 0x64, 0x38, 0x77, 0x68, 0x74, 0x77, 0x32,
+		0x6b, 0x63, 0x74, 0x37, 0x33, 0x33, 0x72, 0x38,
+		0x35, 0x71, 0x76, 0x6a, 0x75, 0x6b, 0x68, 0x71,
+		0x68, 0x6b, 0x65, 0x33, 0x64, 0x6b, 0x61, 0x34}), v)
 }
 
 func TestDrop(t *testing.T) {
@@ -410,7 +427,7 @@ func TestTimestampDefaultNow(t *testing.T) {
 		enddef
 		`)
 	vm.Init()
-	err := vm.Run(true)
+	err := vm.Run(false)
 	assert.Nil(t, err)
 	checkStack(t, vm.Stack(), 0, 0, 1)
 }
@@ -687,16 +704,16 @@ func TestDeco1(t *testing.T) {
 
 func TestStringers(t *testing.T) {
 	assert.Equal(t, "Call", OpCall.String())
-	vid := NewID([]byte("hi"))
+	vid := NewBytes([]byte("hi"))
 	assert.Equal(t, "hi", vid.String())
 	vn := NewNumber(123)
 	assert.Equal(t, "123", vn.String())
 	vt := NewTimestamp(0)
 	assert.Equal(t, "2018-01-01T00:00:00Z", vt.String())
 	vl := NewList()
-	vl = vl.Append(NewID([]byte("July"))).Append(NewNumber(18))
+	vl = vl.Append(NewBytes([]byte("July"))).Append(NewNumber(18))
 	assert.Equal(t, "[July, 18]", vl.String())
-	vs := NewStruct(NewID([]byte("July")), NewNumber(18))
+	vs := NewStruct(NewBytes([]byte("July")), NewNumber(18))
 	assert.Equal(t, "str(0)[July, 18]", vs.String())
 }
 

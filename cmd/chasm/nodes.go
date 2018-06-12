@@ -4,6 +4,8 @@ import (
 	"errors"
 	"strconv"
 
+	"github.com/oneiro-ndev/ndaumath/pkg/address"
+
 	"github.com/oneiro-ndev/chaincode/pkg/vm"
 )
 
@@ -221,11 +223,6 @@ type PushB struct {
 	b []byte
 }
 
-// func newPushB(s string) (*PushB, error) {
-// 	v, err := strconv.ParseUint(s, 0, 64)
-// 	return &PushB{u: v}, err
-// }
-
 func newPushB(iface interface{}) (*PushB, error) {
 	ia := toIfaceSlice(iface)
 	out := make([]byte, len(ia))
@@ -246,6 +243,17 @@ func newPushB(iface interface{}) (*PushB, error) {
 	return &PushB{out}, nil
 }
 
+// this pushes an address onto the stack as an array of bytes corresponding
+// to the string version of the address.
+// TODO: consider doing this in the decoded form
+func newPushAddr(addr string) (*PushB, error) {
+	_, err := address.Validate(addr)
+	if err != nil {
+		return nil, err
+	}
+	return &PushB{[]byte(addr)}, nil
+}
+
 func (n *PushB) bytes() []byte {
 	out := append([]byte{byte(vm.OpPushB)}, byte(len(n.b)))
 	return append(out, n.b...)
@@ -253,7 +261,7 @@ func (n *PushB) bytes() []byte {
 
 // PushTimestamp is a 64-bit representation of the time since the start of the epoch in microseconds
 type PushTimestamp struct {
-	t uint64
+	t int64
 }
 
 func newPushTimestamp(s string) (*PushTimestamp, error) {
@@ -265,5 +273,5 @@ func newPushTimestamp(s string) (*PushTimestamp, error) {
 }
 
 func (n *PushTimestamp) bytes() []byte {
-	return append([]byte{byte(vm.OpPushT)}, vm.ToBytesU(n.t)...)
+	return append([]byte{byte(vm.OpPushT)}, vm.ToBytes(n.t)...)
 }

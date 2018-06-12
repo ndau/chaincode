@@ -90,7 +90,7 @@ func TestString(t *testing.T) {
 func listOfStructs() List {
 	l := NewList()
 	for i := int64(0); i < 5; i++ {
-		s := NewStruct().Append(NewNumber(i)).Append(NewNumber(5 - i)).Append(NewID([]byte("hi")))
+		s := NewStruct().Append(NewNumber(i)).Append(NewNumber(5 - i)).Append(NewBytes([]byte("hi")))
 		l = l.Append(s)
 	}
 	return l

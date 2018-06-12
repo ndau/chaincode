@@ -4,6 +4,8 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/oneiro-ndev/ndaumath/pkg/address"
 )
 
 // MiniAsm is a miniature assembler that has very simple syntax. It's primarily intended for writing
@@ -52,6 +54,7 @@ var opcodeMap = map[string]Opcode{
 	"neg1":    OpNeg1,
 	"pusht":   OpPushT,
 	"now":     OpNow,
+	"pusha":   OpPushA,
 	"rand":    OpRand,
 	"pushl":   OpPushL,
 	"add":     OpAdd,
@@ -98,6 +101,8 @@ func miniAsm(s string) []Opcode {
 	wsp := regexp.MustCompile("[ \t\r\n]")
 	// timestamp
 	tsp := regexp.MustCompile("[0-9-]+T[0-9:]+Z")
+	// address is 48 chars starting with nd and not containing io10
+	addrp := regexp.MustCompile("nd[2-9a-km-np-zA-KM-NP-Z]{46}")
 	// quoted string without spaces (this is a mini assembler!)
 	qsp := regexp.MustCompile(`"[^" ]+"`)
 	words := wsp.Split(strings.TrimSpace(s), -1)
@@ -119,6 +124,19 @@ func miniAsm(s string) []Opcode {
 				panic(err)
 			}
 			bytes := ToBytes(int64(t.t))
+			for _, byt := range bytes {
+				opcodes = append(opcodes, Opcode(byt))
+			}
+			continue
+		}
+		// see if it's an address
+		if addrp.MatchString(w) {
+			_, err := address.Validate(w)
+			if err != nil {
+				panic(err)
+			}
+			bytes := []byte(w)
+			opcodes = append(opcodes, Opcode(len(bytes)))
 			for _, byt := range bytes {
 				opcodes = append(opcodes, Opcode(byt))
 			}

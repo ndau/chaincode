@@ -35,6 +35,7 @@ const (
 	OpNeg1    Opcode = 0x2B
 	OpPushT   Opcode = 0x2C
 	OpNow     Opcode = 0x2D
+	OpPushA   Opcode = 0x2E
 	OpRand    Opcode = 0x2F
 	OpPushL   Opcode = 0x30
 	OpAdd     Opcode = 0x40

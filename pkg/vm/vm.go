@@ -149,7 +149,7 @@ func extraBytes(code []Opcode, offset int) int {
 		numExtra = 7
 	case OpPush8, OpPushT:
 		numExtra = 8
-	case OpPushB:
+	case OpPushA, OpPushB:
 		numExtra = int(code[offset+1]) + 1
 	}
 	return numExtra
@@ -552,7 +552,7 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		if err := vm.stack.Push(ts); err != nil {
 			return vm.runtimeError(err)
 		}
-	case OpPushB:
+	case OpPushB, OpPushA:
 		n := int(vm.code[vm.pc])
 		vm.pc++
 		b := make([]byte, n)
@@ -560,7 +560,7 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 			b[i] = byte(vm.code[vm.pc])
 			vm.pc++
 		}
-		v := NewID(b)
+		v := NewBytes(b)
 		if err := vm.stack.Push(v); err != nil {
 			return vm.runtimeError(err)
 		}
@@ -1003,10 +1003,7 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		for i := range src {
 			fi, _ := src[i].(Struct).Field(int(fix))
 			partialSum += fi.(Number).AsInt64()
-			fmt.Printf("wchoice : %d %d/%d %d/%d\n", i, rand, math.MaxInt64, partialSum, total)
 			if FractionLess(rand, math.MaxInt64, partialSum, total) {
-				fmt.Printf("DONE : %d %d/%d %d/%d\n", i, rand, math.MaxInt64, partialSum, total)
-				fmt.Println(src[i])
 				err := vm.stack.Push(src[i])
 				if err != nil {
 					return vm.runtimeError(err)
@@ -1076,6 +1073,9 @@ func (vm *ChaincodeVM) Disassemble(pc int) (string, int) {
 		sa = append(sa, fmt.Sprintf("%02x", byte(vm.code[pc+i])))
 	}
 	hex := strings.Join(sa, " ")
+	if len(hex) > 30 {
+		hex = hex[:25] + "..."
+	}
 	out := fmt.Sprintf("%-30s  %s", hex, op)
 
 	return out, numExtra + 1

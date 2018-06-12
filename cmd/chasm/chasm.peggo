@@ -65,6 +65,7 @@ Opcode =
     / "pusht" _ ts:Timestamp  { return newPushTimestamp(ts.(string)) }
     / "pushl" { return newUnitaryOpcode(vm.OpPushL) }
     / "now" { return newUnitaryOpcode(vm.OpNow) }
+    / "pusha" _ a:Address { return newPushAddr(a.(string)) }
     / "rand" { return newUnitaryOpcode(vm.OpRand) }
     / "add" { return newUnitaryOpcode(vm.OpAdd) }
     / "sub" { return newUnitaryOpcode(vm.OpSub) }
@@ -125,9 +126,11 @@ Bytes <-
     / _? '"' s:[^"]+ '"'                          { return s, nil }
     )
 
+Address <- "nd" [2-9a-km-np-zA-KM-NP-Z]+          { return string(c.text), nil }
+
 Byte <-
-    ( _? "0x" [0-9A-Fa-f] [0-9A-Fa-f]?               { return strings.TrimSpace(string(c.text)), nil }
-    / _? [0-9]+                                      { return strings.TrimSpace(string(c.text)), nil }
+    ( _? "0x" [0-9A-Fa-f] [0-9A-Fa-f]?            { return strings.TrimSpace(string(c.text)), nil }
+    / _? [0-9]+                                   { return strings.TrimSpace(string(c.text)), nil }
     )
 Constant <- [A-Z] [A-Z0-9_]*                      { return string(c.text), nil }
 FunctionName <- [A-Za-z] [A-Za-z0-9_]+            { return string(c.text), nil }
