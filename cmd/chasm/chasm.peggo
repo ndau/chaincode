@@ -69,6 +69,8 @@ Opcode =
     / "rand" { return newUnitaryOpcode(vm.OpRand) }
     / "add" { return newUnitaryOpcode(vm.OpAdd) }
     / "sub" { return newUnitaryOpcode(vm.OpSub) }
+    / "divmod" { return newUnitaryOpcode(vm.OpDivMod) }
+    / "muldiv" { return newUnitaryOpcode(vm.OpMulDiv) }
     / "mul" { return newUnitaryOpcode(vm.OpMul) }
     / "div" { return newUnitaryOpcode(vm.OpDiv) }
     / "mod" { return newUnitaryOpcode(vm.OpMod) }

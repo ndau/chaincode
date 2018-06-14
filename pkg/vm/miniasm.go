@@ -62,6 +62,8 @@ var opcodeMap = map[string]Opcode{
 	"mul":     OpMul,
 	"div":     OpDiv,
 	"mod":     OpMod,
+	"divmod":  OpDivMod,
+	"muldiv":  OpMulDiv,
 	"not":     OpNot,
 	"neg":     OpNeg,
 	"inc":     OpInc,

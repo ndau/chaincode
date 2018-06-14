@@ -131,12 +131,28 @@ func TestMath(t *testing.T) {
 	checkStack(t, vm.Stack(), -85, 42, 14, 2)
 }
 
+func TestDivMod(t *testing.T) {
+	vm := buildVM(t, "def 0 push1 17 push1 7 divmod enddef")
+	vm.Init()
+	err := vm.Run(false)
+	assert.Nil(t, err)
+	checkStack(t, vm.Stack(), 2, 3)
+}
+
 func TestMathErrors(t *testing.T) {
 	vm := buildVM(t, "def 0 push1 55 zero div enddef")
 	vm.Init()
 	err := vm.Run(false)
 	assert.NotNil(t, err)
 	vm = buildVM(t, "def 0 push1 55 zero mod enddef")
+	vm.Init()
+	err = vm.Run(false)
+	assert.NotNil(t, err)
+	vm = buildVM(t, "def 0 push1 55 zero divmod enddef")
+	vm.Init()
+	err = vm.Run(false)
+	assert.NotNil(t, err)
+	vm = buildVM(t, "def 0 push1 55 push1 2 zero muldiv enddef")
 	vm.Init()
 	err = vm.Run(false)
 	assert.NotNil(t, err)

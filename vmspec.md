@@ -32,17 +32,18 @@ Structs cannot be created by the VM, only by its callers. However, they can be m
 ## Script Structure
 Every script has a one-byte preamble defining its context. The context implies:
 
-* The type of its return value
 * The quantity and types of values it expects on the stack at entry
+* The quantity and types of values it expects on the stack at exit
+* How an error exit will be interpreted
 
-Contexts will be published; a change in any of these parameters will require creating a new context.
+Contexts are published in [contexts.md](contexts.md); a change in any of these parameters will require creating a new context.
 
 The remainder of the bytes in a script are the opcodes.
 
 All opcodes must be defined within functions defined using the `def` and `enddef` opcode pair. The parameter to `def` is the function index, and in a given script the functions must be defined in sequential numeric order, starting with 0. The zero function is considered "main" and execution of a script starts there. Functions are called using the `call` opcode, which has the restriction that it can only call functions whose number is strictly greater than the currently executing function (this constraint prevents recursion).
 
 ### Opcodes
-(see opcodes file)
+(see [opcodes.md](opcodes.md))
 
 ## Validity
 

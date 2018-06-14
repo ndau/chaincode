@@ -120,6 +120,8 @@ func TestUnitaryOpcodes1(t *testing.T) {
 			mul
 			div
 			mod
+			divmod
+			muldiv
 			not
 			neg
 			inc
@@ -136,8 +138,8 @@ func TestUnitaryOpcodes1(t *testing.T) {
 		00 0102 0506 090D
 		1011 2020 2a2a 2b2d
 		2f40 4142 4344 4546
-		4748 5051 5253 54
-		88`)
+		4849 4A4B 5051 5253
+		5488`)
 }
 
 func TestUnitaryOpcodes2(t *testing.T) {

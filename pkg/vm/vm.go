@@ -614,6 +614,45 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		if err := vm.stack.Push(NewNumber(t)); err != nil {
 			return vm.runtimeError(err)
 		}
+	case OpDivMod:
+		d, err := vm.stack.PopAsInt64()
+		if err != nil {
+			return vm.runtimeError(err)
+		}
+		n, err := vm.stack.PopAsInt64()
+		if err != nil {
+			return vm.runtimeError(err)
+		}
+		if d == 0 {
+			return vm.runtimeError(newRuntimeError("divide by zero"))
+		}
+		q, m := divmod(n, d)
+		if err := vm.stack.Push(NewNumber(m)); err != nil {
+			return vm.runtimeError(err)
+		}
+		if err := vm.stack.Push(NewNumber(q)); err != nil {
+			return vm.runtimeError(err)
+		}
+	case OpMulDiv:
+		d, err := vm.stack.PopAsInt64()
+		if err != nil {
+			return vm.runtimeError(err)
+		}
+		n, err := vm.stack.PopAsInt64()
+		if err != nil {
+			return vm.runtimeError(err)
+		}
+		v, err := vm.stack.PopAsInt64()
+		if err != nil {
+			return vm.runtimeError(err)
+		}
+		v2, err := mulDiv(v, n, d)
+		if err != nil {
+			return vm.runtimeError(err)
+		}
+		if err := vm.stack.Push(NewNumber(v2)); err != nil {
+			return vm.runtimeError(err)
+		}
 	case OpSub:
 		// Subtraction is special because you can also subtract timestamps
 		v1, err := vm.stack.Pop()
