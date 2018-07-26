@@ -32,38 +32,39 @@ type Fixupper interface {
 // Script is the highest level node in the system
 type Script struct {
 	preamble Node
-	opcodes  []Node
+	nodes    []Node
+	funcs    map[string]int
 }
 
-func (n *Script) fixup(funcs map[string]int) {
-	for _, op := range n.opcodes {
+func (n *Script) fixup() {
+	for _, op := range n.nodes {
 		if f, ok := op.(Fixupper); ok {
-			f.fixup(funcs)
+			f.fixup(n.funcs)
 		}
 	}
 }
 
 func (n *Script) bytes() []byte {
 	b := append([]byte{}, n.preamble.bytes()...)
-	for _, op := range n.opcodes {
+	for _, op := range n.nodes {
 		b = append(b, op.bytes()...)
 	}
 	return b
 }
 
-func newScript(p interface{}, opcodes interface{}) (*Script, error) {
+func newScript(p interface{}, nodes interface{}, funcs map[string]int) (*Script, error) {
 	preamble, ok := p.(*PreambleNode)
 	if !ok {
 		return &Script{}, errors.New("not a preamble node")
 	}
-	sl := toIfaceSlice(opcodes)
-	ops := []Node{}
+	sl := toIfaceSlice(nodes)
+	nodeArray := []Node{}
 	for _, v := range sl {
 		if n, ok := v.(Node); ok {
-			ops = append(ops, n)
+			nodeArray = append(nodeArray, n)
 		}
 	}
-	return &Script{preamble: preamble, opcodes: ops}, nil
+	return &Script{preamble: preamble, nodes: nodeArray, funcs: funcs}, nil
 }
 
 // PreambleNode expresses the information in the preamble (which for now is just a context byte)

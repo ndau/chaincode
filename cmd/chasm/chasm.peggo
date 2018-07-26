@@ -3,7 +3,7 @@
 
 }
 
-Script <- EOL* p:Preamble code:Code EOF { return newScript(p, code) }
+Script <- EOL* p:Preamble code:Code EOF { return newScript(p, code, c.globalStore["functions"].(map[string]int)) }
 
 Preamble <-  _? "context" _? ":" _? cc:ContextConstant EOL { return newPreambleNode(cc.(vm.ContextByte)) }
 

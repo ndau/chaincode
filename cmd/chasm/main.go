@@ -53,6 +53,7 @@ func main() {
 		out = f
 	}
 
+	sn.(*Script).fixup()
 	b := sn.(*Script).bytes()
 	err = vm.Serialize(name, args.Comment, b, out)
 	if err != nil {

@@ -16,5 +16,3 @@ This repository contains several pieces:
 * A [spec for the virtual machine](vmspec.md).
 * A library implementing the virtual machine itself.
 * An assembler that can take text files corresponding to opcode-level instructions and create a properly formatted set of bytecodes.
-* A compiler that describes a higher-level language for writing scripts.
-

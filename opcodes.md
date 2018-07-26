@@ -43,8 +43,7 @@ Value|Opcode|Meaning|Stack before|Stack after
 0x52|append|creates a new list, appending the new value to it|[X Y] Z|[X Y Z]
 0x53|extend|generates a new list by concatenating two other lists|[X Y] [Z]|[X Y Z]
 0x54|slice|Expects a list and two indices on top of the stack. Creates a new list containing the designated subset of the elements in the original slice.|[X Y Z] 1 3|[Y Z]
-0x60|get f|retrieves a field at index f from a struct; if the index is out of bounds, fails|X|X.f
-0x61|set f|sets a field at index f in a struct; if the index is out of bounds, fails|X v|X.f <- v
+0x60|field f|retrieves a field at index f from a struct; if the index is out of bounds, fails|X|X.f
 0x70|fieldl f|makes a new list by retrieving a given field from all of the structs in a list|[X Y Z]|[X.f Y.f Z.f]
 0x80|def n|defines function block n, where n is a number larger than any previously defined function in this script. Function 0 is called by the system. Every function must be terminated by end, and function definitions may not be nested.||
 0x81|call n m|calls function block n, provided that n is greater than the index of the function block currently executing (recursion is not permitted). The function runs with a new stack which is initialized with the top m values of the current stack (which are copied, NOT popped). Upon return, the top value on the function's stack is pushed onto the caller's stack. Functions must return a single Value (it may be a List or Struct).||
@@ -67,6 +66,7 @@ Value|Opcode|Meaning|Stack before|Stack after
 
 Value|Opcode|Meaning|Stack before|Stack after
 ----|----|----|----|----
+0x61|set f|sets a field at index f in a struct; if the index is out of bounds, fails (is it a good idea to have set or should system structs be readonly?)|X v|X.f <- v
 0xxx|intersect|Given two lists on top of the stack, pops both and returns a new list containing only the items in both lists that compare as equal. The ordering of the result list is not guaranteed.|[A B C D] [A C E]|[A C]
 0xxx|verify|Top of stack: signature (as Bytes); #2 on stack: message hash (as Bytes); #3: public key (as Bytes); Verifies that the signature is a valid signature of the message hash with the given public key. (This is done by the tx prevalidation)||
 0xxx|hash|Calculates a hash of the given block of bytes (why would we need this?)||
