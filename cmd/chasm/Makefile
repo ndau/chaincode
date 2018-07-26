@@ -13,3 +13,4 @@ test: chasm
 .PHONY: examples
 examples:
 	./chasm --output examples/quadratic.chbin --comment "Test of quadratic" examples/quadratic.chasm
+	./chasm --output examples/majority.chbin --comment "Test of majority" examples/majority.chasm

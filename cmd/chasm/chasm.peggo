@@ -51,9 +51,9 @@ Opcode =
     / "dup" { return newUnitaryOpcode(vm.OpDup) }
     / "swap" { return newUnitaryOpcode(vm.OpSwap) }
     / "over" { return newUnitaryOpcode(vm.OpOver) }
-    / "pick" _ b:Byte { return newBinaryOpcode(vm.OpPick, b.(string)) }
-    / "roll" _ b:Byte { return newBinaryOpcode(vm.OpRoll, b.(string)) }
-    / "tuck" _ b:Byte { return newBinaryOpcode(vm.OpTuck, b.(string)) }
+    / "pick" _ v:Value { return newBinaryOpcode(vm.OpPick, v.(string)) }
+    / "roll" _ v:Value { return newBinaryOpcode(vm.OpRoll, v.(string)) }
+    / "tuck" _ v:Value { return newBinaryOpcode(vm.OpTuck, v.(string)) }
     / "ret" { return newUnitaryOpcode(vm.OpRet) }
     / "fail" { return newUnitaryOpcode(vm.OpFail) }
     / "zero" { return newUnitaryOpcode(vm.OpZero) }
@@ -87,13 +87,13 @@ Opcode =
     / "append" { return newUnitaryOpcode(vm.OpAppend) }
     / "extend" { return newUnitaryOpcode(vm.OpExtend) }
     / "slice" { return newUnitaryOpcode(vm.OpSlice) }
-    / "fieldl" { return newUnitaryOpcode(vm.OpFieldL) }
-    / "field" { return newUnitaryOpcode(vm.OpField) }
+    / "fieldl" _ v:Value { return newBinaryOpcode(vm.OpFieldL, v.(string)) }
+    / "field" _ v:Value { return newBinaryOpcode(vm.OpField, v.(string)) }
     / "choice" { return newUnitaryOpcode(vm.OpChoice) }
     / "wchoice" { return newUnitaryOpcode(vm.OpWChoice) }
     / "sort" { return newUnitaryOpcode(vm.OpSort) }
     / "lookup" { return newUnitaryOpcode(vm.OpLookup) }
-    / "call" _ n:FunctionName _ b:Byte { return newCallOpcode(vm.OpCall, n.(string), b.(string)) }
+    / "call" _ n:FunctionName _ v:Value { return newCallOpcode(vm.OpCall, n.(string), v.(string)) }
     / "enddef" { return newUnitaryOpcode(vm.OpEndDef) }
     / "ifz" { return newUnitaryOpcode(vm.OpIfz) }
     / "ifnz" { return newUnitaryOpcode(vm.OpIfnz) }
@@ -124,18 +124,17 @@ Value =
     )
 
 ConstantRef <- k:Constant                         { cm := c.globalStore["constants"].(map[string]string); return cm[k.(string)], nil }
-Integer <- '-'? [0-9]+                            { return string(c.text), nil }
+Integer <-
+    ( _? "0x" [0-9A-Fa-f]+                        { return strings.TrimSpace(string(c.text)), nil }
+    / _? '-'? [0-9]+                              { return strings.TrimSpace(string(c.text)), nil }
+    )
 Bytes <-
-    ( b:Byte+                                     { return b, nil }
+    ( b:Integer+                                  { return b, nil }
     / _? '"' s:[^"]+ '"'                          { return s, nil }
     )
 
 Address <- "nd" [2-9a-km-np-zA-KM-NP-Z]+          { return string(c.text), nil }
 
-Byte <-
-    ( _? "0x" [0-9A-Fa-f] [0-9A-Fa-f]?            { return strings.TrimSpace(string(c.text)), nil }
-    / _? [0-9]+                                   { return strings.TrimSpace(string(c.text)), nil }
-    )
 Constant <- [A-Z] [A-Z0-9_]*                      { return string(c.text), nil }
 FunctionName <- [A-Za-z] [A-Za-z0-9_]+            { return string(c.text), nil }
 

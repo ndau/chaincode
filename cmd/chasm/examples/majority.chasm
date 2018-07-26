@@ -1,0 +1,29 @@
+; strict majority calculation -- requires more than half
+; def main(tx Transaction, state Account) {
+;     authorized = len(state.KEYS)
+;     onBoth = intersect(tx.SIGNATURES, state.KEYS)
+;     return len(onBoth) * 2 >= len(state.KEYS)
+; }
+
+context: TRANSACTION
+func majority {
+    ; when the context is properly set up, the constants for
+    ; transactions and addresses to select fields would be predefined
+    ; these definitions are just for demonstration purposes right now
+    SIGS = 2
+    KEYS = 4
+
+    ; stack top on right -- tx on top, then account
+                            ;acct tx
+    field SIGS              ;acct sigs
+    swap                    ;sigs acct
+    field KEYS              ;sigs keys
+    dup                     ;sigs keys keys
+    len                     ;sigs keys n
+    tuck 2                  ;n sigs keys
+    len                     ;n m
+    dup                     ;n m m
+    add                     ;n 2m
+    lt                      ;(true if n < 2m)
+}
+

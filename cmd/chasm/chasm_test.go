@@ -154,8 +154,6 @@ func TestUnitaryOpcodes2(t *testing.T) {
 		; comment
 		context: TEST
 		func foo {
-			field
-			fieldl
 			choice
 			wchoice
 			sort
@@ -172,7 +170,7 @@ func TestUnitaryOpcodes2(t *testing.T) {
 		}
 `
 	checkParse(t, "Unitary2", code,
-		"00 8000 607094959697 898a8e8f9091929330 88")
+		"00 8000 94959697 898a8e8f9091929330 88")
 }
 
 func TestBinary(t *testing.T) {
@@ -183,13 +181,15 @@ func TestBinary(t *testing.T) {
 			pick 2
 			pick 12
 			roll 0xA
+			field 3
+			fieldl 0
 			call bar 0
 		}
 		func bar {
 			nop
 		}
 `
-	checkParse(t, "Binary", code, "00 8000 0D020D0C0E0A 810100 88 8001 00 88")
+	checkParse(t, "Binary", code, "00 8000 0D020D0C0E0A 6003 7000 810100 88 8001 00 88")
 }
 
 func TestRealistic(t *testing.T) {

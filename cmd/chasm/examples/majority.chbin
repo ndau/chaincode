@@ -1,0 +1,6 @@
+{
+  "name": "examples/majority.chasm",
+  "comment": "Test of majority",
+  "context": "TRANSACTION",
+  "data": "BYD/YAIJYAQFUQ8CUQVAT4g="
+}
