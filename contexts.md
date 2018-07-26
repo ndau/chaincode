@@ -8,14 +8,14 @@ This is a context used only for testing; input, output, and error behavior are a
 
 Calculates node payout awards proportionally by stake, with a fixed percentage to the node operator.
 
-This script is run with these values on the stack:
+This script is run with these values pushed on the stack in this order:
 
-* a list of stakers, consisting of structs, where each struct has:
+2: a list of stakers, consisting of structs, where each struct has:
     * address of the staked account
     * amount staked in napu
     * timestamp when the stake occurred
-* the total node payout amount in napu
-* the address of the staked account for which the node reward is being calculated (the node operator's address)
+1: the total node payout amount in napu
+0: the address of the staked account for which the node reward is being calculated (the node operator's address)
 
 The return value is a list containing addresses and a payout for each address.
 
@@ -25,3 +25,14 @@ If the script exits with an error, the entire payout goes to the node operator's
 ##  0x02: "EAI_TIMING"
 ##  0x03: "NODE_QUALITY"
 ##  0x04: "MARKET_PRICE"
+
+##  0x05: "TRANSACTION"
+
+Validates a transaction.
+
+This script is run with these values pushed on the stack in this order:
+
+1: A struct corresponding to the transaction under evaluation
+0: A struct corresponding to the state of the source account for this transaction
+
+If the top value of the stack upon return is anything other than exactly equal to True (1), the transaction fails. (Note that "truthiness" does not apply -- anything not equal to 1 is considered failure).
