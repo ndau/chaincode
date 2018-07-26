@@ -36,7 +36,7 @@ func (st *Stack) Depth() int {
 
 // Push puts a value on top of the stack
 func (st *Stack) Push(v Value) error {
-	if len(st.stack) > maxStackDepth {
+	if len(st.stack) >= maxStackDepth {
 		return stackError("overflow")
 	}
 	st.stack = append(st.stack, v)
@@ -45,7 +45,7 @@ func (st *Stack) Push(v Value) error {
 
 // Get retrieves the item at index n and returns it
 func (st *Stack) Get(n int) (Value, error) {
-	if len(st.stack) < n {
+	if len(st.stack) <= n {
 		return NewNumber(0), stackError("index error")
 	}
 	last := len(st.stack) - 1
@@ -108,23 +108,36 @@ func (st *Stack) PopAsList() (List, error) {
 
 // PopAsListOfStructs retrieves the top entry on the stack as a List,
 // and then checks to make sure that every element in the list is a Struct
-// with a numeric field at the given offset; if anything isn't true, it errors.
+// and that all of the structs in the list have the same number of fields.
+// If ix >= 0, it also verifies that the struct has a numeric field at the
+// given offset.
+// If anything isn't true, it errors.
 func (st *Stack) PopAsListOfStructs(ix int) (List, error) {
 	l, err := st.PopAsList()
 	if err != nil {
 		return l, err
 	}
+	nfields := -1
 	for i, v := range l {
 		str, ok := v.(Struct)
 		if !ok {
 			return l, stackError(fmt.Sprintf("element %d was not a Struct", i))
 		}
-		n, err := str.Field(ix)
-		if err != nil {
-			return l, err
+		if nfields == -1 {
+			nfields = len(str.fields)
+		} else {
+			if len(str.fields) != nfields {
+				return l, stackError(fmt.Sprintf("element %d had the wrong number of fields", i))
+			}
 		}
-		if _, ok := n.(Number); !ok {
-			return l, stackError(fmt.Sprintf("field %d of element %d was not a Number", ix, i))
+		if ix >= 0 {
+			n, err := str.Field(ix)
+			if err != nil {
+				return l, err
+			}
+			if _, ok := n.(Number); !ok {
+				return l, stackError(fmt.Sprintf("field %d of element %d was not a Number", ix, i))
+			}
 		}
 	}
 	return l, nil
@@ -155,6 +168,23 @@ func (st *Stack) PopAt(n int) (Value, error) {
 	retval := st.stack[ix]
 	st.stack = append(st.stack[:ix], st.stack[ix+1:]...)
 	return retval, nil
+}
+
+// InsertAt inserts a value between positions N and N-1 of the stack,
+// counting from the top. If N is 0, this is equivalent to Push.
+func (st *Stack) InsertAt(n int, v Value) error {
+	if n == 0 {
+		return st.Push(v)
+	}
+	if len(st.stack) < n {
+		return stackError("index error")
+	}
+	if len(st.stack) >= maxStackDepth {
+		return stackError("overflow")
+	}
+	ix := len(st.stack) - n
+	st.stack = append(st.stack[:ix], append([]Value{v}, st.stack[ix:]...)...)
+	return nil
 }
 
 // String renders a stack with one line per value

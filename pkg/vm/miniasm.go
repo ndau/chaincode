@@ -35,6 +35,7 @@ var opcodeMap = map[string]Opcode{
 	"over":    OpOver,
 	"pick":    OpPick,
 	"roll":    OpRoll,
+	"tuck":    OpTuck,
 	"ret":     OpRet,
 	"fail":    OpFail,
 	"zero":    OpZero,

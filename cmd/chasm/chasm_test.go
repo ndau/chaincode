@@ -45,9 +45,16 @@ func TestPushB(t *testing.T) {
 		func foo {
 			pushb 5 1 2 3 4 5 6 7 8 9 10
 			pushb "HI!"
+			pushb 0x01 0x02 0x03
+			pushb 0x01 0x02 0x03 0x04 0x05 0x06 0x07
 		}
 `
-	checkParse(t, "SimplePush", code, "00 8000 29 0b 050102030405060708090a 29 03 484921 88")
+	checkParse(t, "SimplePush", code, `00 8000
+	29 0b 050102030405060708090a
+	29 03 484921
+	29 03 01 02 03
+	29 07 01 02 03 04 05 06 07
+	88`)
 }
 
 func TestFunc(t *testing.T) {
@@ -135,7 +142,7 @@ func TestUnitaryOpcodes1(t *testing.T) {
 `
 	checkParse(t, "Unitary1", code, `
 		00 8000
-		00 0102 0506 090D
+		00 0102 0506 090C
 		1011 2020 2a2a 2b2d
 		2f40 4142 4344 4546
 		4849 4A4B 5051 5253
@@ -182,7 +189,7 @@ func TestBinary(t *testing.T) {
 			nop
 		}
 `
-	checkParse(t, "Binary", code, "00 8000 0E020E0C0F0A 810100 88 8001 00 88")
+	checkParse(t, "Binary", code, "00 8000 0D020D0C0E0A 810100 88 8001 00 88")
 }
 
 func TestRealistic(t *testing.T) {
@@ -215,6 +222,6 @@ func TestRealistic(t *testing.T) {
 		}
 `
 	checkParse(t, "Realistic", code, `
-		00 80 00 21 03 21 05 21 07 21  15 0f 04 0e 01 05 42 42
-		0f 04 0f 02 42 40 40 10 88`)
+		00 80 00 21 03 21 05 21 07 21  15 0E 04 0d 01 05 42 42
+		0e 04 0e 02 42 40 40 10 88`)
 }

@@ -39,7 +39,7 @@ func TestOverflow(t *testing.T) {
 	for i := 0; i < maxStackDepth+2; i++ {
 		err := st.Push(NewNumber(int64(i)))
 		if err != nil {
-			assert.Equal(t, i, maxStackDepth+1)
+			assert.Equal(t, i, maxStackDepth)
 			return
 		}
 	}
@@ -133,34 +133,67 @@ func TestPopAsListOfStructs(t *testing.T) {
 func TestPopAsListOfStructsFail(t *testing.T) {
 	st := newStack()
 	st.Push(NewNumber(0))
+	// fail because top is not a list
 	_, err := st.PopAsListOfStructs(2)
+	assert.NotNil(t, err)
 	st.Push(listOfStructs())
+	// fail because field 2 is not a number
 	_, err = st.PopAsListOfStructs(2)
+	assert.NotNil(t, err)
 
 	l := NewList()
 	l = l.Append(NewNumber(0))
 	st.Push(l)
+	// fail because list doesn't contain structs
 	_, err = st.PopAsListOfStructs(0)
 	assert.NotNil(t, err)
 
 	l2 := NewList()
 	l2 = l2.Append(NewStruct().Append(NewNumber(1))).Append(NewNumber(0))
 	st.Push(l2)
+	// fail because list's second element isn't a struct
 	_, err = st.PopAsListOfStructs(0)
 	assert.NotNil(t, err)
 
 	l3 := NewList()
 	l3 = l3.Append(NewStruct().Append(NewNumber(1))).Append(NewStruct().Append(NewList()))
 	st.Push(l3)
+	// check that ix of -1 doesn't fail
+	_, err = st.PopAsListOfStructs(-1)
+	assert.Nil(t, err)
+	st.Push(l3)
+	// fail because second struct's field 0 isn't a number
 	_, err = st.PopAsListOfStructs(0)
 	assert.NotNil(t, err)
 
 	l4 := NewList()
 	l4 = l4.Append(NewStruct().Append(NewNumber(1))).Append(NewStruct())
 	st.Push(l4)
+	// fail because second struct doesn't have any fields
 	_, err = st.PopAsListOfStructs(0)
 	assert.NotNil(t, err)
 
+	// fail on empty stack
 	_, err = st.PopAsListOfStructs(0)
 	assert.NotNil(t, err)
+
+	l5 := listOfStructs()
+	l5 = l5.Append(NewStruct().Append(NewNumber(1)))
+	st.Push(l5)
+	// fail because the last struct has the wrong number of fields
+	_, err = st.PopAsListOfStructs(0)
+	assert.NotNil(t, err)
+}
+
+func TestPushAt(t *testing.T) {
+	st := newStack()
+	pushMulti(t, st, 1, 2, 3)
+	err := st.InsertAt(2, NewNumber(7))
+	assert.Nil(t, err)
+	err = st.InsertAt(0, NewNumber(9))
+	assert.Nil(t, err)
+	err = st.InsertAt(5, NewNumber(5))
+	assert.Nil(t, err)
+	assert.Equal(t, st.Depth(), 6)
+	checkMulti(t, st, 9, 3, 2, 7, 1, 5)
 }

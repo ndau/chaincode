@@ -13,9 +13,10 @@ const (
 	OpDup     Opcode = 0x05
 	OpDup2    Opcode = 0x06
 	OpSwap    Opcode = 0x09
-	OpOver    Opcode = 0x0D
-	OpPick    Opcode = 0x0E
-	OpRoll    Opcode = 0x0F
+	OpOver    Opcode = 0x0C
+	OpPick    Opcode = 0x0D
+	OpRoll    Opcode = 0x0E
+	OpTuck    Opcode = 0x0F
 	OpRet     Opcode = 0x10
 	OpFail    Opcode = 0x11
 	OpZero    Opcode = 0x20

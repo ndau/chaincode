@@ -2,6 +2,8 @@ package vm
 
 import (
 	"math"
+	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -53,11 +55,17 @@ func TestPush(t *testing.T) {
 }
 
 func TestBigPush(t *testing.T) {
-	vm := buildVM(t, "def 0 push3 1 2 3 push7 1 2 3 4 5 6 7 push8 fb ff ff ff ff ff ff ff enddef")
+	vm := buildVM(t, `def 0
+		push3 1 2 3
+		push4 4 0 0 1
+		push5 5 0 0 0 1
+		push6 6 0 0 0 0 1
+		push7 1 2 3 4 5 6 7
+		push8 fb ff ff ff ff ff ff ff enddef`)
 	vm.Init()
 	err := vm.Run(false)
 	assert.Nil(t, err)
-	checkStack(t, vm.Stack(), 197121, 1976943448883713, -5)
+	checkStack(t, vm.Stack(), 197121, 16777220, 4294967301, 1099511627782, 1976943448883713, -5)
 }
 
 func TestPushB1(t *testing.T) {
@@ -123,6 +131,29 @@ func TestSwapOverPickRoll(t *testing.T) {
 	checkStack(t, vm.Stack(), 0, 3, 2, 3, 0, 1)
 }
 
+func TestPickRollEdgeCases(t *testing.T) {
+	vm := buildVM(t, "def 0 zero one pick 0 push1 2 roll 0 push1 3 roll 1 enddef")
+	vm.Init()
+	err := vm.Run(false)
+	assert.Nil(t, err)
+	checkStack(t, vm.Stack(), 0, 1, 1, 3, 2)
+}
+
+func TestTuck(t *testing.T) {
+	vm := buildVM(t, "def 0 zero one push1 2 push1 3 tuck 0 tuck 1 tuck 1 tuck 3 enddef")
+	vm.Init()
+	err := vm.Run(false)
+	assert.Nil(t, err)
+	checkStack(t, vm.Stack(), 3, 0, 1, 2)
+}
+
+func TestTuckFail(t *testing.T) {
+	vm := buildVM(t, "def 0 zero one push1 2 push1 3 tuck 4 enddef")
+	vm.Init()
+	err := vm.Run(false)
+	assert.NotNil(t, err)
+}
+
 func TestMath(t *testing.T) {
 	vm := buildVM(t, "def 0 push1 55 dup dup add sub push1 7 push1 6 mul dup push1 3 div dup push1 3 mod enddef")
 	vm.Init()
@@ -143,19 +174,37 @@ func TestMathErrors(t *testing.T) {
 	vm := buildVM(t, "def 0 push1 55 zero div enddef")
 	vm.Init()
 	err := vm.Run(false)
-	assert.NotNil(t, err)
+	assert.NotNil(t, err, "divide by zero")
+
 	vm = buildVM(t, "def 0 push1 55 zero mod enddef")
 	vm.Init()
 	err = vm.Run(false)
-	assert.NotNil(t, err)
+	assert.NotNil(t, err, "mod by zero")
+
 	vm = buildVM(t, "def 0 push1 55 zero divmod enddef")
 	vm.Init()
 	err = vm.Run(false)
-	assert.NotNil(t, err)
+	assert.NotNil(t, err, "divmod by zero")
+
 	vm = buildVM(t, "def 0 push1 55 push1 2 zero muldiv enddef")
 	vm.Init()
 	err = vm.Run(false)
-	assert.NotNil(t, err)
+	assert.NotNil(t, err, "muldiv by zero")
+}
+
+func TestMathOverflows(t *testing.T) {
+	vm := buildVM(t, "def 0 push8 7a bb cc dd ee ff 99 88 push1 ff mul enddef")
+	vm.Init()
+	err := vm.Run(false)
+	assert.NotNil(t, err, "mul overflow")
+	vm = buildVM(t, "def 0 push8 7f bb cc dd ee ff 99 88 push8 7f bb cc dd ee ff 99 88 add enddef")
+	vm.Init()
+	err = vm.Run(false)
+	assert.NotNil(t, err, "add overflow")
+	vm = buildVM(t, "def 0 push8 7f bb cc dd ee ff 99 78 push8 ff bb cc dd ee ff 99 88 sub enddef")
+	vm.Init()
+	err = vm.Run(false)
+	assert.NotNil(t, err, "sub overflow")
 }
 
 func TestNotNegIncDec(t *testing.T) {
@@ -254,6 +303,14 @@ func TestIfNested3(t *testing.T) {
 	checkStack(t, vm.Stack(), 19, 19, 17)
 }
 
+func TestIfNull(t *testing.T) {
+	vm := buildVM(t, "def 0 one ifnz else endif enddef")
+	vm.Init()
+	err := vm.Run(false)
+	assert.Nil(t, err)
+	checkStack(t, vm.Stack())
+}
+
 func TestCompares1(t *testing.T) {
 	vm := buildVM(t, "def 0 one neg1 eq one neg1 lt one neg1 gt enddef")
 	vm.Init()
@@ -293,12 +350,28 @@ func TestCompares5(t *testing.T) {
 	checkStack(t, vm.Stack(), 0, 1)
 }
 
-func TestCompares6(t *testing.T) {
+func TestCompareLists1(t *testing.T) {
 	vm := buildVM(t, `def 0 pushl zero append one append dup dup eq swap dup gt enddef`)
 	vm.Init()
 	err := vm.Run(false)
 	assert.Nil(t, err)
 	checkStack(t, vm.Stack(), 1, 0)
+}
+
+func TestCompareLists2(t *testing.T) {
+	vm := buildVM(t, `def 0 pushl zero append one append dup one append dup pick 2 eq swap roll 2 gt enddef`)
+	vm.Init()
+	err := vm.Run(false)
+	assert.Nil(t, err)
+	checkStack(t, vm.Stack(), 0, 1)
+}
+
+func TestCompareLists3(t *testing.T) {
+	vm := buildVM(t, `def 0 pushl zero append one append dup one append swap dup pick 2 eq swap roll 2 gt enddef`)
+	vm.Init()
+	err := vm.Run(false)
+	assert.Nil(t, err)
+	checkStack(t, vm.Stack(), 0, 0)
 }
 
 func TestCompare7(t *testing.T) {
@@ -741,4 +814,75 @@ func TestExerciseStrings(t *testing.T) {
 	da, n := vm.Disassemble(4)
 	assert.Equal(t, 2, n)
 	assert.Contains(t, da, "Push1")
+}
+
+func TestLookup1(t *testing.T) {
+	vm := buildVM(t, `
+		def 0 lookup 1 0 enddef
+		def 1 field 0 push1 4 gt enddef
+	`)
+	l := NewList()
+	for i := int64(0); i < 5; i++ {
+		st := NewStruct(NewNumber(2*i), NewNumber(3*i+1))
+		l = l.Append(st)
+	}
+	vm.Init(l)
+	err := vm.Run(false)
+	assert.Nil(t, err)
+	checkStack(t, vm.Stack(), 3)
+}
+
+func TestLookup2(t *testing.T) {
+	vm := buildVM(t, `
+		def 0 lookup 1 0 enddef
+		def 1 field 1 push1 4 gt enddef
+	`)
+	l := NewList()
+	for i := int64(0); i < 5; i++ {
+		st := NewStruct(NewNumber(2*i), NewNumber(3*i+1))
+		l = l.Append(st)
+	}
+	vm.Init(l)
+	err := vm.Run(false)
+	assert.Nil(t, err)
+	checkStack(t, vm.Stack(), 2)
+}
+
+func TestLookupFail1(t *testing.T) {
+	vm := buildVM(t, `
+		def 0 lookup 1 0 enddef
+		def 1 field 1 push1 FF gt enddef
+	`)
+	l := NewList()
+	for i := int64(0); i < 5; i++ {
+		st := NewStruct(NewNumber(2*i), NewNumber(3*i+1))
+		l = l.Append(st)
+	}
+	vm.Init(l)
+	err := vm.Run(false)
+	assert.NotNil(t, err)
+}
+
+func TestUnimplemented(t *testing.T) {
+	vm := buildVM(t, "def 0 FF enddef")
+	vm.Init()
+	err := vm.Run(false)
+	assert.NotNil(t, err)
+}
+
+func TestUnderflows(t *testing.T) {
+	p := regexp.MustCompile("[[:space:]]+")
+	keywords := p.Split(`drop drop2 dup dup2 swap over
+		add sub mul div mod divmod muldiv not neg inc dec
+		eq lt gt index len append extend slice sum avg max min`, -1)
+	for _, k := range keywords {
+		prog := "def 0 " + k + " enddef"
+		vm := buildVM(t, prog)
+		vm.Init()
+		err := vm.Run(false)
+		assert.NotNil(t, err)
+		correct := strings.HasSuffix(err.Error(), "stack underflow") ||
+			strings.HasSuffix(err.Error(), "stack index error")
+		assert.True(t, correct, "Keyword=%s msg=%s", k, err)
+	}
 }

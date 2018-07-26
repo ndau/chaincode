@@ -232,7 +232,6 @@ func newPushB(iface interface{}) (*PushB, error) {
 			out[i] = b[0]
 		} else {
 			s := item.(string)
-			// fmt.Printf("%#v\n", sa)
 			v, err := strconv.ParseUint(s, 0, 8)
 			if err != nil {
 				return nil, err
