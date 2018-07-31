@@ -115,7 +115,7 @@ ContextConstant <-
     / "EAI_TIMING" { return vm.CtxEaiTiming, nil }
     / "NODE_QUALITY" { return vm.CtxNodeQuality, nil }
     / "MARKET_PRICE" { return vm.CtxMarketPrice, nil }
-    / "TRANSACTION" { return vm.CtxTransaction, nil }
+    / "ACCOUNT" { return vm.CtxAccount, nil }
     )
 
 Value =

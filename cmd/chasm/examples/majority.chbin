@@ -1,6 +1,6 @@
 {
   "name": "examples/majority.chasm",
   "comment": "Test of majority",
-  "context": "TRANSACTION",
-  "data": "BYAAYAIJYAQFUQ8CUQVAT4g="
+  "context": "ACCOUNT",
+  "data": "BYAAYAIJYARRCVEFQE+I"
 }

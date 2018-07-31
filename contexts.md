@@ -26,13 +26,13 @@ If the script exits with an error, the entire payout goes to the node operator's
 ##  0x03: "NODE_QUALITY"
 ##  0x04: "MARKET_PRICE"
 
-##  0x05: "TRANSACTION"
+##  0x05: "ACCOUNT"
 
-Validates a transaction.
+Validates signatures for an account prior to executing a transaction.
 
 This script is run with these values pushed on the stack in this order:
 
 1: A struct corresponding to the transaction under evaluation
-0: A struct corresponding to the state of the source account for this transaction
+0: A struct corresponding to the state of the source account for this transaction (the account that includes this script)
 
 If the top value of the stack upon return is anything other than exactly equal to True (1), the transaction fails. (Note that "truthiness" does not apply -- anything not equal to 1 is considered failure).

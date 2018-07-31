@@ -5,25 +5,24 @@
 ;     return len(onBoth) * 2 >= len(state.KEYS)
 ; }
 
-context: TRANSACTION
+context: ACCOUNT
 func majority {
     ; when the context is properly set up, the constants for
     ; transactions and addresses to select fields would be predefined
     ; these definitions are just for demonstration purposes right now
-    SIGS = 2
-    KEYS = 4
+    SIGS = 2    ; the field ID containing the list of signatures in the tx struct
+    KEYS = 4    ; the field ID containing the list of keys authorized on the account
 
     ; stack top on right -- tx on top, then account
                             ;acct tx
     field SIGS              ;acct sigs
     swap                    ;sigs acct
     field KEYS              ;sigs keys
-    dup                     ;sigs keys keys
-    len                     ;sigs keys n
-    tuck 2                  ;n sigs keys
-    len                     ;n m
-    dup                     ;n m m
-    add                     ;n 2m
-    lt                      ;(true if n < 2m)
+    len                     ;sigs nkeys
+    swap                    ;nkeys sigs
+    len                     ;nkeys nsigs
+    dup                     ;nkeys nsigs nsigs
+    add                     ;nkeys 2*nsigs
+    lt                      ;(true if nkeys < 2*nsigs)
 }
 
