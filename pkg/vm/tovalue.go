@@ -85,6 +85,7 @@ func ToValue(x interface{}) (Value, error) {
 	tx := reflect.TypeOf(x)
 	switch vx.Kind() {
 	case reflect.Array, reflect.Slice:
+		// special case for byte arrays -- they are treated as strings
 		if tx == reflect.TypeOf([]byte{}) {
 			return ToValueScalar(string(x.([]byte)))
 		}
@@ -117,12 +118,12 @@ func ToValue(x interface{}) (Value, error) {
 			tag := fld.Tag.Get("chain")
 
 			ix, _, err := parseChainTag(tag, "")
+			if err != nil {
+				return nil, err
+			}
 			// if there's no chain tag, just move on
 			if ix < 0 {
 				continue
-			}
-			if err != nil {
-				return nil, err
 			}
 
 			fm[ix], err = ToValueScalar(vx.FieldByIndex(fld.Index).Interface())
@@ -145,5 +146,52 @@ func ToValue(x interface{}) (Value, error) {
 	default:
 		// for all other types assume it's a scalar
 		return ToValueScalar(x)
+	}
+}
+
+// ExtractConstants takes an interface which should be a Go language struct with
+// "chain" Struct Tags, and extracts a map of names to indices in the generated vm struct
+func ExtractConstants(x interface{}) (map[string]int, error) {
+	vx := reflect.ValueOf(x)
+	tx := reflect.TypeOf(x)
+	switch vx.Kind() {
+	case reflect.Struct:
+		// if it's a struct, iterate the members and look to see if they have "chain:" tags;
+		// if so, assemble a map from all the members that do. If no chain tags exist, then
+		// error.
+		result := make(map[string]int)
+		for i := 0; i < tx.NumField(); i++ {
+			fld := tx.Field(i)
+			tag := fld.Tag.Get("chain")
+
+			ix, name, err := parseChainTag(tag, fld.Name)
+			if err != nil {
+				return nil, err
+			}
+			// if there's no chain tag, just move on
+			if ix < 0 {
+				continue
+			}
+
+			result[name] = ix
+		}
+		if len(result) == 0 {
+			return nil, errors.New("no chain tags found in struct")
+		}
+		// now validate that they're all there with no gaps
+		valset := make(map[int]struct{})
+		for _, v := range result {
+			valset[v] = struct{}{}
+		}
+		for i := 0; i < len(valset); i++ {
+			if _, ok := valset[i]; !ok {
+				return nil, errors.New("struct indices were not adjacent")
+			}
+		}
+		return result, nil
+
+	default:
+		// all other types are an error
+		return nil, errors.New("object was not a tagged struct")
 	}
 }

@@ -146,3 +146,68 @@ func TestToValue(t *testing.T) {
 		})
 	}
 }
+
+func TestExtractConstants(t *testing.T) {
+	type args struct {
+		x interface{}
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    map[string]int
+		wantErr bool
+	}{
+		{"simple", args{
+			struct {
+				X int `chain:"0"`
+			}{3},
+		}, map[string]int{"X": 0}, false},
+		{"in order", args{
+			struct {
+				X int `chain:"0"`
+				Y int `chain:"1"`
+				Z int `chain:"2"`
+			}{3, 4, 5},
+		}, map[string]int{"X": 0, "Y": 1, "Z": 2}, false},
+		{"out of order", args{
+			struct {
+				X int `chain:"2"`
+				Y int `chain:"0"`
+				Z int `chain:"1"`
+			}{3, 4, 5},
+		}, map[string]int{"X": 2, "Y": 0, "Z": 1}, false},
+		{"not continuous should error", args{
+			struct {
+				X int `chain:"3"`
+				Y int `chain:"0"`
+				Z int `chain:"1"`
+			}{3, 4, 5},
+		}, nil, true},
+		{"mixed types", args{
+			struct {
+				X string `chain:"0"`
+				Y int64  `chain:"1"`
+				Z byte   `chain:"2"`
+			}{"hi", math.MaxInt64, 0x2A},
+		}, map[string]int{"X": 0, "Y": 1, "Z": 2}, false},
+		{"rename", args{
+			struct {
+				X int `chain:"0,foo"`
+				Y int `chain:"1,Bar"`
+				Z int `chain:"2"`
+			}{3, 4, 5},
+		}, map[string]int{"FOO": 0, "BAR": 1, "Z": 2}, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := ExtractConstants(tt.args.x)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ExtractConstants() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("ExtractConstants() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
