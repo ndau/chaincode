@@ -28,6 +28,8 @@ func TestToValueScalar(t *testing.T) {
 		{"[]int", []int{1, 23}, nil, true},
 		{"map", map[int]int{1: 2}, nil, true},
 		{"ptr to time", &tt, ts, false},
+		{"illegal struct", struct{ X int }{3}, nil, true},
+		{"unexpected type", int32(17), nil, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -71,6 +73,11 @@ func TestToValue(t *testing.T) {
 				X int `chain:"0"`
 			}{3},
 		}, NewStruct(NewNumber(3)), false},
+		{"badtag", args{
+			struct {
+				X int `chain:"x"`
+			}{3},
+		}, nil, true},
 		{"in order", args{
 			struct {
 				X int `chain:"0"`
@@ -100,6 +107,11 @@ func TestToValue(t *testing.T) {
 				T time.Time `chain:"3"`
 			}{"hi", math.MaxInt64, 0x2A, tt},
 		}, NewStruct(NewBytes([]byte("hi")), NewNumber(math.MaxInt64), NewNumber(42), ts), false},
+		{"illegal field type", args{
+			struct {
+				X int32 `chain:"0"`
+			}{3},
+		}, nil, true},
 		{"simple array", args{
 			[]int{1, 2, 3},
 		}, NewList().Append(NewNumber(1)).Append(NewNumber(2)).Append(NewNumber(3)), false},
@@ -130,8 +142,11 @@ func TestToValue(t *testing.T) {
 		{"true", args{true}, NewNumber(1), false},
 		{"false", args{false}, NewNumber(0), false},
 		{"[]int", args{[]int{1, 23}}, NewList().Append(NewNumber(1)).Append(NewNumber(23)), false},
+		{"[] illegal values", args{[]int32{1, 23}}, nil, true},
 		{"map", args{map[int]int{1: 2}}, nil, true},
 		{"ptr to time", args{&tt}, ts, false},
+		{"[][]int", args{[][]int{[]int{1}, []int{2, 3}}},
+			NewList().Append(NewList().Append(NewNumber(1))).Append(NewList().Append(NewNumber(2)).Append(NewNumber(3))), false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -197,6 +212,36 @@ func TestExtractConstants(t *testing.T) {
 				Z int `chain:"2"`
 			}{3, 4, 5},
 		}, map[string]int{"FOO": 0, "BAR": 1, "Z": 2}, false},
+		{"bad number", args{
+			struct {
+				X int `chain:"x"`
+			}{3},
+		}, nil, true},
+		{"illegal name", args{
+			struct {
+				X int `chain:"0,a+b"`
+			}{3},
+		}, nil, true},
+		{"empty name", args{
+			struct {
+				X int `chain:"0,"`
+			}{3},
+		}, nil, true},
+		{"only some fields", args{
+			struct {
+				X int `chain:"0"`
+				Y int
+				Z int `chain:"1"`
+			}{3, 4, 5},
+		}, map[string]int{"X": 0, "Z": 1}, false},
+		{"no chain tags", args{
+			struct {
+				X int
+				Y int
+				Z int
+			}{3, 4, 5},
+		}, nil, true},
+		{"not a struct", args{[]int{3}}, nil, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

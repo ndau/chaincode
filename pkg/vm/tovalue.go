@@ -4,6 +4,7 @@ import (
 	"errors"
 	"math"
 	"reflect"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -11,7 +12,8 @@ import (
 
 // chain tags have comma-separated values. The first is always a numeric field index, the second
 // is an optional field name to be used in CHASM (if the second is not specified, the actual
-// field name is used). Names are converted to uppercase for use in the assembler.
+// field name is used). Names are converted to uppercase for use in the assembler. Names, when
+// converted to uppercase, must be valid CHASM constant names ([A-Z][A-Z0-9_]*)
 
 // parseChainTag interprets a tag string
 func parseChainTag(tag string, name string) (int, string, error) {
@@ -24,6 +26,10 @@ func parseChainTag(tag string, name string) (int, string, error) {
 		return 0, "", err
 	}
 	if len(sp) > 1 {
+		p := regexp.MustCompile("[A-Za-z][A-Za-z0-9_]+")
+		if !p.MatchString(sp[1]) {
+			return 0, "", errors.New("name must be a valid constant in chasm ([A-Z][A-Z0-9_]*)")
+		}
 		name = sp[1]
 	}
 	return int(ix), strings.ToUpper(name), nil
@@ -90,7 +96,7 @@ func ToValue(x interface{}) (Value, error) {
 			return ToValueScalar(string(x.([]byte)))
 		}
 		// if it's an array, create a list out of the individual items by calling this function
-		// recursively. This will work for arrays of arrays or arrays of structs.
+		// recursively. This will also work for arrays of arrays or arrays of structs.
 		li := NewList()
 		for i := 0; i < vx.Len(); i++ {
 			item := vx.Index(i).Interface()
