@@ -33,7 +33,7 @@ func checkStack(t *testing.T, st *Stack, values ...int64) {
 }
 
 func TestMiniAsmBasics(t *testing.T) {
-	ops := miniAsm("neg1 zero one push1 45 push2 01 01 2018-01-01T00:00:00Z")
+	ops := miniAsm("neg1 zero one push1 45 push2 01 01 2000-01-01T00:00:00Z")
 	bytes := []Opcode{0, OpNeg1, OpZero, OpOne, OpPush1, 69, OpPush2, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0}
 	assert.Equal(t, ops, bytes)
 }
@@ -798,7 +798,7 @@ func TestStringers(t *testing.T) {
 	vn := NewNumber(123)
 	assert.Equal(t, "123", vn.String())
 	vt := NewTimestamp(0)
-	assert.Equal(t, "2018-01-01T00:00:00Z", vt.String())
+	assert.Equal(t, "2000-01-01T00:00:00Z", vt.String())
 	vl := NewList()
 	vl = vl.Append(NewBytes([]byte("July"))).Append(NewNumber(18))
 	assert.Equal(t, "[July, 18]", vl.String())
