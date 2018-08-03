@@ -94,34 +94,14 @@ type opcodeInfo struct {
 type opcodeInfos []opcodeInfo
 
 // selectEnabled returns the subset of the opcodeInfo that matches
-// the state of the passed-in flag
-func (o opcodeInfos) selectEnabled(enabled bool) opcodeInfos {
+// the state of the enabled flag. If the withSynonym flag is specified,
+// it also generates records for any synonyms
+func (o opcodeInfos) selectEnabled(enabled bool, withSynonym bool) opcodeInfos {
 	o2 := make(opcodeInfos, 0)
 	for i := range o {
 		if o[i].Enabled == enabled {
 			o2 = append(o2, o[i])
-		}
-	}
-	return o2
-}
-
-func (o opcodeInfos) Enabled() opcodeInfos {
-	return o.selectEnabled(true)
-}
-
-func (o opcodeInfos) Disabled() opcodeInfos {
-	return o.selectEnabled(false)
-}
-
-// MiniAsm generates an opcodeInfos for the MiniAsm listing, which
-// includes not only the main opcodes but also its alternate if it exists. It
-// excludes disabled opcodes.
-func (o opcodeInfos) MiniAsm() opcodeInfos {
-	o2 := make(opcodeInfos, 0)
-	for i := range o {
-		if o[i].Enabled {
-			o2 = append(o2, o[i])
-			if o[i].Synonym != "" {
+			if withSynonym && o[i].Synonym != "" {
 				syn := o[i]
 				syn.Name = syn.Synonym
 				o2 = append(o2, syn)
@@ -129,4 +109,16 @@ func (o opcodeInfos) MiniAsm() opcodeInfos {
 		}
 	}
 	return o2
+}
+
+func (o opcodeInfos) Enabled() opcodeInfos {
+	return o.selectEnabled(true, false)
+}
+
+func (o opcodeInfos) EnabledWithSynonyms() opcodeInfos {
+	return o.selectEnabled(true, true)
+}
+
+func (o opcodeInfos) Disabled() opcodeInfos {
+	return o.selectEnabled(false, false)
 }

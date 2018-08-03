@@ -133,5 +133,5 @@ func TestPushTimestamp(t *testing.T) {
 	op, err := newPushTimestamp("2018-07-18T20:00:58Z")
 	assert.Nil(t, err)
 	b := op.bytes()
-	bcheck(t, b, "2C801292DB9F0F0000")
+	bcheck(t, b, "2c 80 b2 2c 4a 4a 14 02  00")
 }

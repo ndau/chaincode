@@ -4,12 +4,14 @@ package main
 const tmplOpcodeDoc = `
 # Opcodes for Chaincode
 
+This file is generated automatically; DO NOT EDIT.
+
 ## Implemented and Enabled Opcodes
 
 Value|Opcode|Meaning|Stack before|Stack after
 ----|----|----|----|----
 {{range .Enabled -}}
-{{ printf "0x%02x" .Value}}|{{.Name}}|{{.Summary}}|{{.Example.Pre}}|{{.Example.Post}}
+{{ printf "0x%02x" .Value}}|{{.Name}}{{if .Synonym}} ({{.Synonym}}){{end}}|{{.Summary}}|{{.Example.Pre}}|{{.Example.Post}}
 {{end -}}
 
 # Disabled Opcodes

@@ -1,3 +1,5 @@
+// This file is generated automatically; DO NOT EDIT.
+
 package vm
 
 // Opcode is a byte used to identify an opcode; we rely on it being a byte in some cases.
@@ -13,15 +15,14 @@ const (
 	OpDup     Opcode = 0x05
 	OpDup2    Opcode = 0x06
 	OpSwap    Opcode = 0x09
-	OpOver    Opcode = 0x0C
-	OpPick    Opcode = 0x0D
-	OpRoll    Opcode = 0x0E
-	OpTuck    Opcode = 0x0F
+	OpOver    Opcode = 0x0c
+	OpPick    Opcode = 0x0d
+	OpRoll    Opcode = 0x0e
+	OpTuck    Opcode = 0x0f
 	OpRet     Opcode = 0x10
 	OpFail    Opcode = 0x11
 	OpZero    Opcode = 0x20
 	OpFalse   Opcode = 0x20
-	OpPushN   Opcode = 0x20
 	OpPush1   Opcode = 0x21
 	OpPush2   Opcode = 0x22
 	OpPush3   Opcode = 0x23
@@ -31,13 +32,13 @@ const (
 	OpPush7   Opcode = 0x27
 	OpPush8   Opcode = 0x28
 	OpPushB   Opcode = 0x29
-	OpOne     Opcode = 0x2A
-	OpTrue    Opcode = 0x2A
-	OpNeg1    Opcode = 0x2B
-	OpPushT   Opcode = 0x2C
-	OpNow     Opcode = 0x2D
-	OpPushA   Opcode = 0x2E
-	OpRand    Opcode = 0x2F
+	OpOne     Opcode = 0x2a
+	OpTrue    Opcode = 0x2a
+	OpNeg1    Opcode = 0x2b
+	OpPushT   Opcode = 0x2c
+	OpNow     Opcode = 0x2d
+	OpPushA   Opcode = 0x2e
+	OpRand    Opcode = 0x2f
 	OpPushL   Opcode = 0x30
 	OpAdd     Opcode = 0x40
 	OpSub     Opcode = 0x41
@@ -48,11 +49,11 @@ const (
 	OpMulDiv  Opcode = 0x46
 	OpNot     Opcode = 0x48
 	OpNeg     Opcode = 0x49
-	OpInc     Opcode = 0x4A
-	OpDec     Opcode = 0x4B
-	OpEq      Opcode = 0x4D
-	OpGt      Opcode = 0x4E
-	OpLt      Opcode = 0x4F
+	OpInc     Opcode = 0x4a
+	OpDec     Opcode = 0x4b
+	OpEq      Opcode = 0x4d
+	OpGt      Opcode = 0x4e
+	OpLt      Opcode = 0x4f
 	OpIndex   Opcode = 0x50
 	OpLen     Opcode = 0x51
 	OpAppend  Opcode = 0x52
@@ -64,10 +65,10 @@ const (
 	OpCall    Opcode = 0x81
 	OpDeco    Opcode = 0x82
 	OpEndDef  Opcode = 0x88
-	OpIfz     Opcode = 0x89
-	OpIfnz    Opcode = 0x8A
-	OpElse    Opcode = 0x8E
-	OpEndIf   Opcode = 0x8F
+	OpIfZ     Opcode = 0x89
+	OpIfNZ    Opcode = 0x8a
+	OpElse    Opcode = 0x8e
+	OpEndIf   Opcode = 0x8f
 	OpSum     Opcode = 0x90
 	OpAvg     Opcode = 0x91
 	OpMax     Opcode = 0x92

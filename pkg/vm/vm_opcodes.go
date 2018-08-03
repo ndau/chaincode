@@ -22,7 +22,7 @@ func (vm *ChaincodeVM) skipToMatchingBracket() error {
 		vm.pc++
 		nesting := 0
 		switch instr {
-		case OpIfnz, OpIfz:
+		case OpIfNZ, OpIfZ:
 			nesting++
 		case OpElse:
 			if nesting == 0 {
@@ -598,7 +598,7 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		// we hit this at the end of a function that hasn't used OpRet or OpFail
 		vm.runstate = RsComplete
 
-	case OpIfz:
+	case OpIfZ:
 		t, err := vm.stack.Pop()
 		if err != nil {
 			return vm.runtimeError(err)
@@ -616,7 +616,7 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 				return vm.runtimeError(err)
 			}
 		}
-	case OpIfnz:
+	case OpIfNZ:
 		t, err := vm.stack.Pop()
 		if err != nil {
 			return vm.runtimeError(err)

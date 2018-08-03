@@ -317,12 +317,12 @@ var opcodeData = opcodeInfos{
 	},
 	opcodeInfo{
 		Value:   0x2E,
-		Name:    "PushAddr",
+		Name:    "PushA",
 		Summary: "Evaluates a to make sure it is formatted as a valid ndau-style address; if so, pushes it onto the stack as a Bytes object. If not, error.",
 		Doc:     "",
 		Example: example{
 			Pre:  "",
-			Inst: "pushaddr nda234...4b3",
+			Inst: "pusha nda234...4b3",
 			Post: "nda234...4b3"},
 		Parms:   []parm{},
 		Enabled: true,

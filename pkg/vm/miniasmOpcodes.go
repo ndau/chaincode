@@ -1,3 +1,5 @@
+// This file is generated automatically; DO NOT EDIT.
+
 package vm
 
 // these are the opcodes supported by mini-asm
@@ -16,7 +18,6 @@ var opcodeMap = map[string]Opcode{
 	"fail":    OpFail,
 	"zero":    OpZero,
 	"false":   OpFalse,
-	"pushN":   OpPushN,
 	"push1":   OpPush1,
 	"push2":   OpPush2,
 	"push3":   OpPush3,
@@ -46,8 +47,8 @@ var opcodeMap = map[string]Opcode{
 	"inc":     OpInc,
 	"dec":     OpDec,
 	"eq":      OpEq,
-	"lt":      OpLt,
 	"gt":      OpGt,
+	"lt":      OpLt,
 	"index":   OpIndex,
 	"len":     OpLen,
 	"append":  OpAppend,
@@ -58,10 +59,10 @@ var opcodeMap = map[string]Opcode{
 	"def":     OpDef,
 	"call":    OpCall,
 	"deco":    OpDeco,
-	"ifz":     OpIfz,
-	"ifnz":    OpIfnz,
-	"else":    OpElse,
 	"enddef":  OpEndDef,
+	"ifz":     OpIfZ,
+	"ifnz":    OpIfNZ,
+	"else":    OpElse,
 	"endif":   OpEndIf,
 	"sum":     OpSum,
 	"avg":     OpAvg,

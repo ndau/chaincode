@@ -2245,7 +2245,7 @@ func (p *parser) callonOpcode145() (interface{}, error) {
 }
 
 func (c *current) onOpcode147() (interface{}, error) {
-	return newUnitaryOpcode(vm.OpIfz)
+	return newUnitaryOpcode(vm.OpIfZ)
 }
 
 func (p *parser) callonOpcode147() (interface{}, error) {
@@ -2255,7 +2255,7 @@ func (p *parser) callonOpcode147() (interface{}, error) {
 }
 
 func (c *current) onOpcode149() (interface{}, error) {
-	return newUnitaryOpcode(vm.OpIfnz)
+	return newUnitaryOpcode(vm.OpIfNZ)
 }
 
 func (p *parser) callonOpcode149() (interface{}, error) {

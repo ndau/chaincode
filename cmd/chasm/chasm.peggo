@@ -95,8 +95,8 @@ Opcode =
     / "lookup" { return newUnitaryOpcode(vm.OpLookup) }
     / "call" _ n:FunctionName _ v:Value { return newCallOpcode(vm.OpCall, n.(string), v.(string)) }
     / "enddef" { return newUnitaryOpcode(vm.OpEndDef) }
-    / "ifz" { return newUnitaryOpcode(vm.OpIfz) }
-    / "ifnz" { return newUnitaryOpcode(vm.OpIfnz) }
+    / "ifz" { return newUnitaryOpcode(vm.OpIfZ) }
+    / "ifnz" { return newUnitaryOpcode(vm.OpIfNZ) }
     / "else" { return newUnitaryOpcode(vm.OpElse) }
     / "endif" { return newUnitaryOpcode(vm.OpEndIf) }
     / "sum" { return newUnitaryOpcode(vm.OpSum) }
