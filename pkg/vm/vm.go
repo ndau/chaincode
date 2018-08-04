@@ -32,6 +32,9 @@ type Chaincode interface {
 // RunState is the current run state of the VM
 type RunState byte
 
+// Instruction is an opcode with all of its associated data bytes
+type Instruction []Opcode
+
 // These are runstate constants
 const (
 	RsNotReady RunState = iota
@@ -151,6 +154,13 @@ func (vm *ChaincodeVM) PreLoad(cb ChasmBinary) error {
 	}
 	vm.offsets = offsets
 
+	// now generate a bitset of used opcodes from the instructions
+	usedOpcodes := getUsedOpcodes(generateInstructions(cb.Data[1:]))
+	// if it's not a proper subset of the enabled opcodes, don't let it run
+	if !usedOpcodes.IsSubsetOf(EnabledOpcodes) {
+		return ValidationError{"code contains illegal opcodes"}
+	}
+
 	ctx, ok := ContextLookup(cb.Context)
 	if !ok {
 		return ValidationError{"invalid context string"}
@@ -226,6 +236,7 @@ func (vm *ChaincodeVM) Disassemble(pc int) (string, int) {
 	return out, numExtra + 1
 }
 
+// String implements Stringer so we can print a VM and get something meaningful.
 func (vm *ChaincodeVM) String() string {
 	st := strings.Split(vm.stack.String(), "\n")
 	st1 := make([]string, len(st))

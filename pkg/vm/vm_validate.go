@@ -1,6 +1,11 @@
 package vm
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+
+	"github.com/oneiro-ndev/ndaumath/pkg/bitset256"
+)
 
 // this validates a VM to make sure that its structural elements (if, else, def, end)
 // are well-formed.
@@ -108,4 +113,57 @@ func validateStructure(code []Opcode) ([]int, error) {
 		return offsets, ValidationError{"missing def"}
 	}
 	return offsets, nil
+}
+
+// generateInstructions is a helper that reads a sequence of bytes that has
+// already been determined to be structurally valid and converts it to a set of Instruction
+// objects, each of which is a slice consisting of a single opcode plus
+// its data bytes
+func generateInstructions(code []Opcode) []Instruction {
+	instrs := make([]Instruction, 0)
+	for pc := 0; pc < len(code); {
+		// op := code[pc]
+		numExtra := extraBytes(code, pc)
+		inst := code[pc : pc+numExtra+1]
+		instrs = append(instrs, inst)
+		pc += numExtra + 1
+	}
+	return instrs
+}
+
+// getUsedOpcodes takes an array of Instructions and pulls out a bitset of the
+// opcodes that were used in it.
+func getUsedOpcodes(instrs []Instruction) *bitset256.Bitset256 {
+	bitset := bitset256.New()
+	for i := 0; i < len(instrs); i++ {
+		bitset.Set(int(instrs[i][0]))
+	}
+	return bitset
+}
+
+// bitsetToOpcodes returns a human-readable list of opcodes as a bitset
+func bitsetToOpcodes(b *bitset256.Bitset256) string {
+	sa := []string{}
+	for i := 0; i < 256; i++ {
+		if b.Get(i) {
+			sa = append(sa, Opcode(i).String())
+		}
+	}
+	return strings.Join(sa, " ")
+}
+
+// DisableOpcode allows an opcode to be disabled at runtime; this is for use
+// in a security situation where a vulnerability has been discovered and
+// it's important to make sure that VMs containing this opcode can no longer
+// run.
+// Note that this has global impact and cannot be reversed! Once an opcode
+// is disabled, the only way to re-enable it is to restart the application.
+// Note that this operates at the level of VM validation -- a VM that is
+// already loaded will not be affected by this operation.
+// The function returns true if the opcode was previously enabled (i.e., if it
+// has had an effect).
+func DisableOpcode(op Opcode) bool {
+	ret := EnabledOpcodes.Get(int(op))
+	EnabledOpcodes.Clear(int(op))
+	return ret
 }
