@@ -8,8 +8,8 @@ This file is generated automatically; DO NOT EDIT.
 
 ## Implemented and Enabled Opcodes
 
-Value|Opcode|Meaning|Stack before|Stack after
-----|----|----|----|----
+Value|Opcode|Meaning|Stack before|Instr.|Stack after
+----|----|----|----|----|----
 {{range .Enabled -}}
     {{- printf "0x%02x" .Value}}|
     {{- .Name}}{{if .Synonym}} ({{.Synonym}}){{end}}|
@@ -21,8 +21,8 @@ Value|Opcode|Meaning|Stack before|Stack after
 
 # Disabled Opcodes
 
-Value|Opcode|Meaning|Stack before|Stack after
-----|----|----|----|----
+Value|Opcode|Meaning|Stack before|Instr.|Stack after
+----|----|----|----|----|----
 {{range .Disabled -}}
     {{- printf "0x%02x" .Value}}|
     {{- .Name}}|

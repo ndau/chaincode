@@ -75,6 +75,6 @@ Value|Opcode|Meaning|Stack before|Instr.|Stack after
 0x97|Lookup|Selects an item from a list of structs by applying the function block to each item in order, copying n stack entries to the function block's stack, then copying the struct itself; returns the index of the first item in the list where the result is a nonzero number; throws an error if no item returns a nonzero number.|[X Y Z]|lookup n m|i
 # Disabled Opcodes
 
-Value|Opcode|Meaning|Stack before|Stack after
-----|----|----|----|----
+Value|Opcode|Meaning|Stack before|Instr.|Stack after
+----|----|----|----|----|----
 ||There are no disabled opcodes at the moment.||
