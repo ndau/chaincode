@@ -125,33 +125,6 @@ func (vm *ChaincodeVM) CreateForFunc(funcnum int, newpc int, nstack int) (*Chain
 	return &newvm, nil
 }
 
-// extraBytes returns the number of extra bytes associated with a given opcode
-func extraBytes(code []Opcode, offset int) int {
-	numExtra := 0
-	op := code[offset]
-	switch op {
-	case OpPush1, OpPick, OpRoll, OpDef, OpField, OpFieldL:
-		numExtra = 1
-	case OpPush2, OpCall, OpDeco, OpLookup:
-		numExtra = 2
-	case OpPush3:
-		numExtra = 3
-	case OpPush4:
-		numExtra = 4
-	case OpPush5:
-		numExtra = 5
-	case OpPush6:
-		numExtra = 6
-	case OpPush7:
-		numExtra = 7
-	case OpPush8, OpPushT:
-		numExtra = 8
-	case OpPushA, OpPushB:
-		numExtra = int(code[offset+1]) + 1
-	}
-	return numExtra
-}
-
 // Stack returns the current stack of the VM
 func (vm *ChaincodeVM) Stack() *Stack {
 	return vm.stack

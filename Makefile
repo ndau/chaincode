@@ -1,6 +1,6 @@
 .PHONY: generate clean
 
-generate: opcodes.md pkg/vm/opcodes.go pkg/vm/miniasmOpcodes.go pkg/vm/opcode_string.go cmd/chasm/chasm.peggo
+generate: opcodes.md pkg/vm/opcodes.go pkg/vm/miniasmOpcodes.go pkg/vm/opcode_string.go pkg/vm/extrabytes.go cmd/chasm/chasm.peggo
 
 clean:
 	rm cmd/opcodes/opcodes
@@ -13,6 +13,9 @@ pkg/vm/opcodes.go: cmd/opcodes/opcodes
 
 pkg/vm/miniasmOpcodes.go: cmd/opcodes/opcodes
 	cmd/opcodes/opcodes --miniasm pkg/vm/miniasmOpcodes.go
+
+pkg/vm/extrabytes.go: cmd/opcodes/opcodes
+	cmd/opcodes/opcodes --extra pkg/vm/extrabytes.go
 
 cmd/chasm/chasm.peggo: cmd/opcodes/opcodes
 	cmd/opcodes/opcodes --pigeon cmd/chasm/chasm.peggo

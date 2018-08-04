@@ -17,6 +17,7 @@ import (
 var funcMap = template.FuncMap{
 	"tolower": strings.ToLower,
 	"getparm": getParm,
+	"nbytes":  nbytes,
 }
 
 func doOpcodeDoc(tname string, ts string, w io.Writer) error {
@@ -39,16 +40,51 @@ func doOpcodesGo(tname string, ts string, w io.Writer) error {
 	return tmpl.Execute(w, opcodeData)
 }
 
+func generateGoFile(name, tmpl string) {
+	f := os.Stdout
+	var err error
+	ondisk := false
+	if name != "-" {
+		ondisk = true
+		f, err = os.Create(name)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	err = doOpcodesGo(name, tmpl, f)
+	if err != nil {
+		panic(err)
+	}
+	if ondisk {
+		f.Close()
+		gofmtFile(name)
+	}
+}
+
 func main() {
 	var args struct {
 		Opcodes string `arg:"-o" help:"opcodes doc file -- ./opcodes.md"`
 		Defs    string `arg:"-d" help:"opcode definition file -- ./pkg/vm/opcodes.go"`
 		MiniAsm string `arg:"-m" help:"mini-assembler opcodes -- ./pkg/vm/miniasmOpcodes.go"`
+		Extra   string `arg:"-e" help:"extrabytes helper for opcodes -- ./pkg/vm/extrabytes.go"`
 		Pigeon  string `arg:"-p" help:"pigeon grammar for opcodes -- ./cmd/chasm/chasm.peggo (modifies this file)"`
 	}
 	arg.MustParse(&args)
 
 	var err error
+
+	if args.Defs != "" {
+		generateGoFile(args.Defs, tmplOpcodesDef)
+	}
+
+	if args.MiniAsm != "" {
+		generateGoFile(args.MiniAsm, tmplOpcodesMiniAsm)
+	}
+
+	if args.Extra != "" {
+		generateGoFile(args.Extra, tmplOpcodesExtra)
+	}
 
 	if args.Opcodes != "" {
 		f := os.Stdout
@@ -62,49 +98,6 @@ func main() {
 		err = doOpcodeDoc(args.Opcodes, tmplOpcodeDoc, f)
 		if err != nil {
 			panic(err)
-		}
-	}
-
-	if args.Defs != "" {
-		f := os.Stdout
-		ondisk := false
-		if args.Defs != "-" {
-			ondisk = true
-			f, err = os.Create(args.Defs)
-			if err != nil {
-				panic(err)
-			}
-		}
-
-		err = doOpcodesGo(args.Defs, tmplOpcodesDef, f)
-		if err != nil {
-			panic(err)
-		}
-		if ondisk {
-			f.Close()
-			gofmtFile(args.Defs)
-		}
-	}
-
-	if args.MiniAsm != "" {
-		f := os.Stdout
-		ondisk := false
-		if args.MiniAsm != "-" {
-			ondisk = true
-			f, err = os.Create(args.MiniAsm)
-			if err != nil {
-				panic(err)
-			}
-		}
-
-		err = doOpcodesGo(args.MiniAsm, tmplOpcodesMiniAsm, f)
-		if err != nil {
-			panic(err)
-		}
-
-		if ondisk {
-			f.Close()
-			gofmtFile(args.MiniAsm)
 		}
 	}
 

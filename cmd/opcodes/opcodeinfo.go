@@ -3,19 +3,8 @@ package main
 import (
 	"fmt"
 	"sort"
+	"strconv"
 )
-
-// Value: 0,
-// Name: "nop",
-// Summary: "no-op - has no effect",
-// Doc: "",
-// Example: example{
-//     Pre: "A B",
-//     Inst: "nop 3",
-//     Post: "A B",
-// },
-// Parms: []parm{indexParm{}, shiftParm{}},
-// ErrorNotes: "",
 
 type opcodeInfo struct {
 	Value   byte
@@ -36,8 +25,22 @@ type example struct {
 	Post string
 }
 
+// getparm is a helper function for templates to index into the array
 func getParm(o opcodeInfo, i int) parm {
 	return o.Parms[i]
+}
+
+func nbytes(o opcodeInfo) string {
+	switch len(o.Parms) {
+	case 1:
+		return o.Parms[0].Nbytes()
+	case 2:
+		a, _ := strconv.Atoi(o.Parms[0].Nbytes())
+		b, _ := strconv.Atoi(o.Parms[0].Nbytes())
+		return strconv.Itoa(a + b)
+	default:
+		return ""
+	}
 }
 
 type parm interface {
