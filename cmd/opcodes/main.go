@@ -64,11 +64,12 @@ func generateGoFile(name, tmpl string) {
 
 func main() {
 	var args struct {
-		Opcodes string `arg:"-o" help:"opcodes doc file -- ./opcodes.md"`
-		Defs    string `arg:"-d" help:"opcode definition file -- ./pkg/vm/opcodes.go"`
-		MiniAsm string `arg:"-m" help:"mini-assembler opcodes -- ./pkg/vm/miniasmOpcodes.go"`
-		Extra   string `arg:"-e" help:"extrabytes helper for opcodes -- ./pkg/vm/extrabytes.go"`
-		Pigeon  string `arg:"-p" help:"pigeon grammar for opcodes -- ./cmd/chasm/chasm.peggo (modifies this file)"`
+		Opcodes string `help:"opcodes doc file -- ./opcodes.md"`
+		Defs    string `help:"opcode definition file -- ./pkg/vm/opcodes.go"`
+		MiniAsm string `help:"mini-assembler opcodes -- ./pkg/vm/miniasmOpcodes.go"`
+		Extra   string `help:"extrabytes helper for opcodes -- ./pkg/vm/extrabytes.go"`
+		Enabled string `help:"bitset of enabled opcodes -- ./pkg/vm/enabledopcodes.go"`
+		Pigeon  string `help:"pigeon grammar for opcodes -- ./cmd/chasm/chasm.peggo (modifies this file)"`
 	}
 	arg.MustParse(&args)
 
@@ -84,6 +85,10 @@ func main() {
 
 	if args.Extra != "" {
 		generateGoFile(args.Extra, tmplOpcodesExtra)
+	}
+
+	if args.Enabled != "" {
+		generateGoFile(args.Enabled, tmplOpcodesEnabled)
 	}
 
 	if args.Opcodes != "" {
