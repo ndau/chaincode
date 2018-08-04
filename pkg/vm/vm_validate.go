@@ -152,16 +152,17 @@ func bitsetToOpcodes(b *bitset256.Bitset256) string {
 	return strings.Join(sa, " ")
 }
 
-// DisableOpcode allows an opcode to be disabled at runtime; this is for use
-// in a security situation where a vulnerability has been discovered and
-// it's important to make sure that VMs containing this opcode can no longer
-// run.
-// Note that this has global impact and cannot be reversed! Once an opcode
-// is disabled, the only way to re-enable it is to restart the application.
-// Note that this operates at the level of VM validation -- a VM that is
-// already loaded will not be affected by this operation.
-// The function returns true if the opcode was previously enabled (i.e., if it
-// has had an effect).
+// DisableOpcode allows an opcode to be disabled at runtime; this is for use in
+// a security situation where a vulnerability has been discovered and it's
+// important to make sure that VMs containing this opcode can no longer run.
+//
+// Note that this has global impact and cannot be reversed! This is to say that
+// there is no equivalent "EnableOpcode" function. Once an opcode is disabled,
+// the only way to re-enable it is to restart the application.
+//
+// This operates at the level of VM validation -- a VM that is already loaded
+// will not be affected by this operation. The function returns true if the
+// opcode was previously enabled (i.e., if it has had an effect).
 func DisableOpcode(op Opcode) bool {
 	ret := EnabledOpcodes.Get(int(op))
 	EnabledOpcodes.Clear(int(op))
