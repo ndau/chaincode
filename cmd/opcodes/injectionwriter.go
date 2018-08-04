@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"io"
+	"io/ioutil"
 	"os"
 	"strings"
 )
@@ -101,23 +102,21 @@ func (iw *InjectionWriter) Close() error {
 		return err
 	}
 	// now write it to a temp file
-	w, err := os.Create(iw.filename + ".tmp")
+	tmpfile, err := ioutil.TempFile("", "injection")
 	if err != nil {
 		return err
 	}
-	_, err = io.Copy(w, iw.output)
+	defer os.Remove(tmpfile.Name()) // clean up if necessary
+
+	_, err = io.Copy(tmpfile, iw.output)
 	if err != nil {
 		return err
 	}
-	err = w.Close()
+	err = tmpfile.Close()
 	if err != nil {
 		return err
 	}
-	err = os.Remove(iw.filename)
-	if err != nil {
-		return err
-	}
-	err = os.Rename(iw.filename+".tmp", iw.filename)
+	err = os.Rename(tmpfile.Name(), iw.filename)
 	return err
 }
 
