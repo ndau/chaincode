@@ -14,8 +14,13 @@ import (
 // By default, it needs no parameters -- it just generates all of the files at once
 // from the information in the opcodedata.go file.
 
-func doOpcodeDoc(tname string, w io.Writer) error {
-	var tmpl = template.Must(template.New(tname).Parse(tmplOpcodeDoc))
+var funcMap = template.FuncMap{
+	"tolower": strings.ToLower,
+	"getparm": getParm,
+}
+
+func doOpcodeDoc(tname string, ts string, w io.Writer) error {
+	var tmpl = template.Must(template.New(tname).Funcs(funcMap).Parse(ts))
 	err := tmpl.Execute(w, opcodeData)
 	if err != nil {
 		return err
@@ -29,10 +34,6 @@ func gofmtFile(name string) error {
 }
 
 func doOpcodesGo(tname string, ts string, w io.Writer) error {
-	funcMap := template.FuncMap{
-		"tolower": strings.ToLower,
-	}
-
 	var tmpl = template.Must(template.New(tname).Funcs(funcMap).Parse(ts))
 
 	return tmpl.Execute(w, opcodeData)
@@ -58,7 +59,10 @@ func main() {
 				panic(err)
 			}
 		}
-		doOpcodeDoc(args.Opcodes, f)
+		err = doOpcodeDoc(args.Opcodes, tmplOpcodeDoc, f)
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	if args.Defs != "" {
@@ -72,7 +76,10 @@ func main() {
 			}
 		}
 
-		doOpcodesGo(args.Defs, tmplOpcodesDef, f)
+		err = doOpcodesGo(args.Defs, tmplOpcodesDef, f)
+		if err != nil {
+			panic(err)
+		}
 		if ondisk {
 			f.Close()
 			gofmtFile(args.Defs)
@@ -90,10 +97,30 @@ func main() {
 			}
 		}
 
-		doOpcodesGo(args.MiniAsm, tmplOpcodesMiniAsm, f)
+		err = doOpcodesGo(args.MiniAsm, tmplOpcodesMiniAsm, f)
+		if err != nil {
+			panic(err)
+		}
+
 		if ondisk {
 			f.Close()
 			gofmtFile(args.MiniAsm)
 		}
 	}
+
+	if args.Pigeon != "" {
+		var w io.WriteCloser = os.Stdout
+		if args.Pigeon != "-" {
+			w, err = NewInjectionWriter(args.Pigeon, "// VVVVV---GENERATED", "// ^^^^^---GENERATED")
+			if err != nil {
+				panic(err)
+			}
+			defer w.Close()
+		}
+		err = doOpcodeDoc(args.Pigeon, tmplOpcodesPigeon, w)
+		if err != nil {
+			panic(err)
+		}
+	}
+
 }

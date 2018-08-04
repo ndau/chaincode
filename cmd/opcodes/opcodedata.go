@@ -12,6 +12,7 @@ var opcodeData = opcodeInfos{
 			Post: ""},
 		Parms:   []parm{},
 		Enabled: true,
+		NoAsm:   true,
 	},
 	opcodeInfo{
 		Value:   0x01,
@@ -94,7 +95,7 @@ var opcodeData = opcodeInfos{
 			Pre:  "A B C D",
 			Inst: "pick 2",
 			Post: "A B C D B"},
-		Parms:   []parm{stackOffsetParm{}},
+		Parms:   []parm{indexParm{"offset"}},
 		Enabled: true,
 	},
 	opcodeInfo{
@@ -106,7 +107,7 @@ var opcodeData = opcodeInfos{
 			Pre:  "A B C D",
 			Inst: "roll 2",
 			Post: "A C D B"},
-		Parms:   []parm{stackOffsetParm{}},
+		Parms:   []parm{indexParm{"offset"}},
 		Enabled: true,
 	},
 	opcodeInfo{
@@ -118,7 +119,7 @@ var opcodeData = opcodeInfos{
 			Pre:  "A B C D",
 			Inst: "tuck 2",
 			Post: "A D B C"},
-		Parms:   []parm{stackOffsetParm{}},
+		Parms:   []parm{indexParm{"offset"}},
 		Enabled: true,
 	},
 	opcodeInfo{
@@ -167,8 +168,9 @@ var opcodeData = opcodeInfos{
 			Pre:  "",
 			Inst: "push1",
 			Post: "A"},
-		Parms:   []parm{dataParm{1}},
+		Parms:   []parm{embeddedParm{"1"}},
 		Enabled: true,
+		NoAsm:   true,
 	},
 	opcodeInfo{
 		Value:   0x22,
@@ -179,8 +181,9 @@ var opcodeData = opcodeInfos{
 			Pre:  "",
 			Inst: "push2",
 			Post: "A"},
-		Parms:   []parm{dataParm{2}},
+		Parms:   []parm{embeddedParm{"2"}},
 		Enabled: true,
+		NoAsm:   true,
 	},
 	opcodeInfo{
 		Value:   0x23,
@@ -191,8 +194,9 @@ var opcodeData = opcodeInfos{
 			Pre:  "",
 			Inst: "push3",
 			Post: "A"},
-		Parms:   []parm{dataParm{3}},
+		Parms:   []parm{embeddedParm{"3"}},
 		Enabled: true,
+		NoAsm:   true,
 	},
 	opcodeInfo{
 		Value:   0x24,
@@ -203,8 +207,9 @@ var opcodeData = opcodeInfos{
 			Pre:  "",
 			Inst: "push4",
 			Post: "A"},
-		Parms:   []parm{dataParm{4}},
+		Parms:   []parm{embeddedParm{"4"}},
 		Enabled: true,
+		NoAsm:   true,
 	},
 	opcodeInfo{
 		Value:   0x25,
@@ -215,8 +220,9 @@ var opcodeData = opcodeInfos{
 			Pre:  "",
 			Inst: "push5",
 			Post: "A"},
-		Parms:   []parm{dataParm{5}},
+		Parms:   []parm{embeddedParm{"5"}},
 		Enabled: true,
+		NoAsm:   true,
 	},
 	opcodeInfo{
 		Value:   0x26,
@@ -227,8 +233,9 @@ var opcodeData = opcodeInfos{
 			Pre:  "",
 			Inst: "push6",
 			Post: "A"},
-		Parms:   []parm{dataParm{6}},
+		Parms:   []parm{embeddedParm{"6"}},
 		Enabled: true,
+		NoAsm:   true,
 	},
 	opcodeInfo{
 		Value:   0x27,
@@ -239,8 +246,9 @@ var opcodeData = opcodeInfos{
 			Pre:  "",
 			Inst: "push7",
 			Post: "A"},
-		Parms:   []parm{dataParm{7}},
+		Parms:   []parm{embeddedParm{"7"}},
 		Enabled: true,
+		NoAsm:   true,
 	},
 	opcodeInfo{
 		Value:   0x28,
@@ -251,8 +259,9 @@ var opcodeData = opcodeInfos{
 			Pre:  "",
 			Inst: "push8",
 			Post: "A"},
-		Parms:   []parm{dataParm{8}},
+		Parms:   []parm{embeddedParm{"8"}},
 		Enabled: true,
+		NoAsm:   true,
 	},
 	opcodeInfo{
 		Value:   0x29,
@@ -263,7 +272,7 @@ var opcodeData = opcodeInfos{
 			Pre:  "",
 			Inst: "pushb 3 0x41 0x42 0x43",
 			Post: `"ABC"`},
-		Parms:   []parm{},
+		Parms:   []parm{pushbParm{}},
 		Enabled: true,
 	},
 	opcodeInfo{
@@ -300,7 +309,7 @@ var opcodeData = opcodeInfos{
 			Pre:  "",
 			Inst: "pusht",
 			Post: "timestamp A"},
-		Parms:   []parm{dataParm{8}},
+		Parms:   []parm{timeParm{}},
 		Enabled: true,
 	},
 	opcodeInfo{
@@ -324,7 +333,7 @@ var opcodeData = opcodeInfos{
 			Pre:  "",
 			Inst: "pusha nda234...4b3",
 			Post: "nda234...4b3"},
-		Parms:   []parm{},
+		Parms:   []parm{addrParm{}},
 		Enabled: true,
 	},
 	opcodeInfo{
@@ -528,7 +537,7 @@ var opcodeData = opcodeInfos{
 			Pre:  "[X Y Z] 2",
 			Inst: "index",
 			Post: "Z"},
-		Parms:   []parm{indexParm{"index"}},
+		Parms:   []parm{},
 		Enabled: true,
 	},
 	opcodeInfo{
@@ -576,7 +585,7 @@ var opcodeData = opcodeInfos{
 			Pre:  "[X Y Z] 1 3",
 			Inst: "slice",
 			Post: "[Y Z]"},
-		Parms:   []parm{indexParm{"start"}, indexParm{"end"}},
+		Parms:   []parm{},
 		Enabled: true,
 	},
 	opcodeInfo{
@@ -588,7 +597,7 @@ var opcodeData = opcodeInfos{
 			Pre:  "X",
 			Inst: "field f",
 			Post: "X.f"},
-		Parms:   []parm{indexParm{"fieldindex"}},
+		Parms:   []parm{indexParm{"ix"}},
 		Enabled: true,
 	},
 	opcodeInfo{
@@ -600,7 +609,7 @@ var opcodeData = opcodeInfos{
 			Pre:  "[X Y Z]",
 			Inst: "fieldl f",
 			Post: "[X.f Y.f Z.f]"},
-		Parms:   []parm{indexParm{"fieldindex"}},
+		Parms:   []parm{indexParm{"ix"}},
 		Enabled: true,
 	},
 	opcodeInfo{
@@ -614,6 +623,7 @@ var opcodeData = opcodeInfos{
 			Post: ""},
 		Parms:   []parm{functionIDParm{}},
 		Enabled: true,
+		NoAsm:   true,
 	},
 	opcodeInfo{
 		Value:   0x81,
@@ -624,7 +634,7 @@ var opcodeData = opcodeInfos{
 			Pre:  "",
 			Inst: "call n m",
 			Post: ""},
-		Parms:   []parm{functionIDParm{}, countParm{}},
+		Parms:   []parm{functionIDParm{}, indexParm{"count"}},
 		Enabled: true,
 	},
 	opcodeInfo{
@@ -636,7 +646,7 @@ var opcodeData = opcodeInfos{
 			Pre:  "",
 			Inst: "deco n m",
 			Post: ""},
-		Parms:   []parm{functionIDParm{}, countParm{}},
+		Parms:   []parm{functionIDParm{}, indexParm{"count"}},
 		Enabled: true,
 	},
 	opcodeInfo{
@@ -650,6 +660,7 @@ var opcodeData = opcodeInfos{
 			Post: ""},
 		Parms:   []parm{},
 		Enabled: true,
+		NoAsm:   true,
 	},
 	opcodeInfo{
 		Value:   0x89,
@@ -768,7 +779,7 @@ var opcodeData = opcodeInfos{
 			Pre:  "[X Y Z] f",
 			Inst: "wchoice f",
 			Post: ""},
-		Parms:   []parm{indexParm{"fieldindex"}},
+		Parms:   []parm{indexParm{"ix"}},
 		Enabled: true,
 	},
 	opcodeInfo{
@@ -780,7 +791,7 @@ var opcodeData = opcodeInfos{
 			Pre:  "[X Y Z] f",
 			Inst: "sort f",
 			Post: "The list sorted by field f"},
-		Parms:   []parm{indexParm{"fieldindex"}},
+		Parms:   []parm{indexParm{"ix"}},
 		Enabled: true,
 	},
 	opcodeInfo{
@@ -792,7 +803,7 @@ var opcodeData = opcodeInfos{
 			Pre:  "[X Y Z]",
 			Inst: "lookup n m",
 			Post: "i"},
-		Parms:   []parm{functionIDParm{}, countParm{}},
+		Parms:   []parm{functionIDParm{}, indexParm{"count"}},
 		Enabled: true,
 	},
 }

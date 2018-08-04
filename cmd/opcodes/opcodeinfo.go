@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"sort"
+)
 
 // Value: 0,
 // Name: "nop",
@@ -14,71 +17,6 @@ import "fmt"
 // Parms: []parm{indexParm{}, shiftParm{}},
 // ErrorNotes: "",
 
-type example struct {
-	Pre  string
-	Inst string
-	Post string
-}
-
-type parm interface {
-	Nbytes() int
-	String() string
-}
-
-type stackOffsetParm struct{}
-
-func (p stackOffsetParm) Nbytes() int {
-	return 1
-}
-
-func (p stackOffsetParm) String() string {
-	return "n"
-}
-
-type countParm struct{}
-
-func (p countParm) Nbytes() int {
-	return 1
-}
-
-func (p countParm) String() string {
-	return "n"
-}
-
-type functionIDParm struct{}
-
-func (p functionIDParm) Nbytes() int {
-	return 1
-}
-
-func (p functionIDParm) String() string {
-	return "id"
-}
-
-type indexParm struct {
-	Name string
-}
-
-func (p indexParm) Nbytes() int {
-	return 1
-}
-
-func (p indexParm) String() string {
-	return p.Name
-}
-
-type dataParm struct {
-	N int
-}
-
-func (p dataParm) Nbytes() int {
-	return p.N
-}
-
-func (p dataParm) String() string {
-	return fmt.Sprintf("(%d data bytes)", p.N)
-}
-
 type opcodeInfo struct {
 	Value   byte
 	Name    string
@@ -89,14 +27,160 @@ type opcodeInfo struct {
 	Example example
 	Parms   []parm
 	Enabled bool
+	NoAsm   bool
+}
+
+type example struct {
+	Pre  string
+	Inst string
+	Post string
+}
+
+func getParm(o opcodeInfo, i int) parm {
+	return o.Parms[i]
+}
+
+type parm interface {
+	Nbytes() string
+	PeggoParm() string
+	PeggoTmpl() string
+	Placeholder() string
+}
+
+type timeParm struct {
+}
+
+func (p timeParm) Nbytes() string {
+	return "8"
+}
+
+func (p timeParm) PeggoParm() string {
+	return fmt.Sprintf("Timestamp")
+}
+
+func (p timeParm) PeggoTmpl() string {
+	return fmt.Sprintf("PushT")
+}
+
+func (p timeParm) Placeholder() string {
+	return "t"
+}
+
+type addrParm struct {
+}
+
+func (p addrParm) Nbytes() string {
+	return "int(code[offset+1]) + 1"
+}
+
+func (p addrParm) PeggoParm() string {
+	return fmt.Sprintf("Address")
+}
+
+func (p addrParm) PeggoTmpl() string {
+	return fmt.Sprintf("PushA")
+}
+
+func (p addrParm) Placeholder() string {
+	return "a"
+}
+
+type pushbParm struct {
+}
+
+func (p pushbParm) Nbytes() string {
+	return "int(code[offset+1]) + 1"
+}
+
+func (p pushbParm) PeggoParm() string {
+	return fmt.Sprintf("Bytes")
+}
+
+func (p pushbParm) PeggoTmpl() string {
+	return fmt.Sprintf("PushB")
+}
+
+func (p pushbParm) Placeholder() string {
+	return "ba"
+}
+
+type functionIDParm struct{}
+
+func (p functionIDParm) Nbytes() string {
+	return "1"
+}
+
+func (p functionIDParm) PeggoParm() string {
+	return "FunctionName"
+}
+
+func (p functionIDParm) PeggoTmpl() string {
+	return ""
+}
+
+func (p functionIDParm) Placeholder() string {
+	return "id"
+}
+
+type indexParm struct {
+	Name string
+}
+
+func (p indexParm) Nbytes() string {
+	return "1"
+}
+
+func (p indexParm) PeggoParm() string {
+	return "Value"
+}
+
+func (p indexParm) PeggoTmpl() string {
+	return "BinOp"
+}
+
+func (p indexParm) Placeholder() string {
+	return p.Name
+}
+
+// embeddedParm is intended only for
+type embeddedParm struct {
+	N string
+}
+
+func (p embeddedParm) Nbytes() string {
+	return p.N
+}
+
+func (p embeddedParm) PeggoParm() string {
+	return "Value"
+}
+
+func (p embeddedParm) PeggoTmpl() string {
+	return ""
+}
+
+func (p embeddedParm) Placeholder() string {
+	return ""
 }
 
 type opcodeInfos []opcodeInfo
 
-// selectEnabled returns the subset of the opcodeInfo that matches
-// the state of the enabled flag. If the withSynonym flag is specified,
-// it also generates records for any synonyms
-func (o opcodeInfos) selectEnabled(enabled bool, withSynonym bool) opcodeInfos {
+type byValue opcodeInfos
+
+func (a byValue) Len() int           { return len(a) }
+func (a byValue) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a byValue) Less(i, j int) bool { return a[i].Value < a[j].Value }
+
+// byName sorts in reverse order (deliberately)
+type byName opcodeInfos
+
+func (a byName) Len() int           { return len(a) }
+func (a byName) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a byName) Less(i, j int) bool { return a[i].Name > a[j].Name }
+
+// subset returns the subset of the opcodeInfo that matches
+// the state of the associated flags: enabled, withSynonym
+func (o opcodeInfos) subset(enabled bool, withSynonym bool) opcodeInfos {
 	o2 := make(opcodeInfos, 0)
 	for i := range o {
 		if o[i].Enabled == enabled {
@@ -108,17 +192,30 @@ func (o opcodeInfos) selectEnabled(enabled bool, withSynonym bool) opcodeInfos {
 			}
 		}
 	}
+	sort.Sort(byValue(o2))
 	return o2
 }
 
 func (o opcodeInfos) Enabled() opcodeInfos {
-	return o.selectEnabled(true, false)
+	return o.subset(true, false)
 }
 
 func (o opcodeInfos) EnabledWithSynonyms() opcodeInfos {
-	return o.selectEnabled(true, true)
+	return o.subset(true, true)
 }
 
 func (o opcodeInfos) Disabled() opcodeInfos {
-	return o.selectEnabled(false, false)
+	return o.subset(false, false)
+}
+
+func (o opcodeInfos) ChasmOpcodes() opcodeInfos {
+	o2 := o.subset(true, true)
+	o3 := make(opcodeInfos, 0)
+	for i := range o2 {
+		if !o2[i].NoAsm {
+			o3 = append(o3, o2[i])
+		}
+	}
+	sort.Sort(byName(o3))
+	return o3
 }

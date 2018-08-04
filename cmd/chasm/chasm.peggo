@@ -42,72 +42,77 @@ ConstDef <-
 
 // note that opcodes that are spelled as a prefix of some other one
 // like push and push64 need to have the longer one first, as this
-// construct tests in order
+// construct tests matches in order. Easiest way to do this is to
+// sort by name in reverse order.
 Opcode =
     ( "nop" { return newUnitaryOpcode(vm.OpNop) }
-    / "drop2" { return newUnitaryOpcode(vm.OpDrop2) }
-    / "drop" { return newUnitaryOpcode(vm.OpDrop) }
-    / "dup2" { return newUnitaryOpcode(vm.OpDup2) }
-    / "dup" { return newUnitaryOpcode(vm.OpDup) }
-    / "swap" { return newUnitaryOpcode(vm.OpSwap) }
-    / "over" { return newUnitaryOpcode(vm.OpOver) }
-    / "pick" _ v:Value { return newBinaryOpcode(vm.OpPick, v.(string)) }
-    / "roll" _ v:Value { return newBinaryOpcode(vm.OpRoll, v.(string)) }
-    / "tuck" _ v:Value { return newBinaryOpcode(vm.OpTuck, v.(string)) }
-    / "ret" { return newUnitaryOpcode(vm.OpRet) }
-    / "fail" { return newUnitaryOpcode(vm.OpFail) }
-    / "zero" { return newUnitaryOpcode(vm.OpZero) }
-    / "false" { return newUnitaryOpcode(vm.OpFalse) }
-    / "pushb" _ ba:Bytes  { return newPushB(ba) }
+// VVVVV---GENERATED CODE BETWEEN THESE MARKERS, DO NOT EDIT---VVVVV
+
+	/ "zero" { return newUnitaryOpcode(vm.OpZero) }
+	/ "wchoice" _ ix:Value { return newBinaryOpcode(vm.OpWChoice, ix.(string)) }
+	/ "tuck" _ offset:Value { return newBinaryOpcode(vm.OpTuck, offset.(string)) }
+	/ "true" { return newUnitaryOpcode(vm.OpTrue) }
+	/ "swap" { return newUnitaryOpcode(vm.OpSwap) }
+	/ "sum" { return newUnitaryOpcode(vm.OpSum) }
+	/ "sub" { return newUnitaryOpcode(vm.OpSub) }
+	/ "sort" _ ix:Value { return newBinaryOpcode(vm.OpSort, ix.(string)) }
+	/ "slice" { return newUnitaryOpcode(vm.OpSlice) }
+	/ "roll" _ offset:Value { return newBinaryOpcode(vm.OpRoll, offset.(string)) }
+	/ "ret" { return newUnitaryOpcode(vm.OpRet) }
+	/ "rand" { return newUnitaryOpcode(vm.OpRand) }
+	/ "pusht" _ t:Timestamp { return newPushTimestamp(t.(string)) }
+	/ "pushl" { return newUnitaryOpcode(vm.OpPushL) }
+	/ "pushb" _ ba:Bytes { return newPushB(ba) }
+	/ "pusha" _ a:Address { return newPushAddr(a.(string)) }
+	/ "pick" _ offset:Value { return newBinaryOpcode(vm.OpPick, offset.(string)) }
+	/ "over" { return newUnitaryOpcode(vm.OpOver) }
+	/ "one" { return newUnitaryOpcode(vm.OpOne) }
+	/ "now" { return newUnitaryOpcode(vm.OpNow) }
+	/ "not" { return newUnitaryOpcode(vm.OpNot) }
+	/ "neg1" { return newUnitaryOpcode(vm.OpNeg1) }
+	/ "neg" { return newUnitaryOpcode(vm.OpNeg) }
+	/ "muldiv" { return newUnitaryOpcode(vm.OpMulDiv) }
+	/ "mul" { return newUnitaryOpcode(vm.OpMul) }
+	/ "mod" { return newUnitaryOpcode(vm.OpMod) }
+	/ "min" { return newUnitaryOpcode(vm.OpMin) }
+	/ "max" { return newUnitaryOpcode(vm.OpMax) }
+	/ "lt" { return newUnitaryOpcode(vm.OpLt) }
+    / "lookup" _ id:FunctionName _ count:Value { return newCallOpcode(vm.OpLookup, id.(string), count.(string)) }
+	/ "len" { return newUnitaryOpcode(vm.OpLen) }
+	/ "index" { return newUnitaryOpcode(vm.OpIndex) }
+	/ "inc" { return newUnitaryOpcode(vm.OpInc) }
+	/ "ifz" { return newUnitaryOpcode(vm.OpIfZ) }
+	/ "ifnz" { return newUnitaryOpcode(vm.OpIfNZ) }
+	/ "gt" { return newUnitaryOpcode(vm.OpGt) }
+	/ "fieldl" _ ix:Value { return newBinaryOpcode(vm.OpFieldL, ix.(string)) }
+	/ "field" _ ix:Value { return newBinaryOpcode(vm.OpField, ix.(string)) }
+	/ "false" { return newUnitaryOpcode(vm.OpFalse) }
+	/ "fail" { return newUnitaryOpcode(vm.OpFail) }
+	/ "extend" { return newUnitaryOpcode(vm.OpExtend) }
+	/ "eq" { return newUnitaryOpcode(vm.OpEq) }
+	/ "endif" { return newUnitaryOpcode(vm.OpEndIf) }
+	/ "else" { return newUnitaryOpcode(vm.OpElse) }
+	/ "dup2" { return newUnitaryOpcode(vm.OpDup2) }
+	/ "dup" { return newUnitaryOpcode(vm.OpDup) }
+	/ "drop2" { return newUnitaryOpcode(vm.OpDrop2) }
+	/ "drop" { return newUnitaryOpcode(vm.OpDrop) }
+	/ "divmod" { return newUnitaryOpcode(vm.OpDivMod) }
+	/ "div" { return newUnitaryOpcode(vm.OpDiv) }
+    / "deco" _ id:FunctionName _ count:Value { return newCallOpcode(vm.OpDeco, id.(string), count.(string)) }
+	/ "dec" { return newUnitaryOpcode(vm.OpDec) }
+	/ "choice" { return newUnitaryOpcode(vm.OpChoice) }
+    / "call" _ id:FunctionName _ count:Value { return newCallOpcode(vm.OpCall, id.(string), count.(string)) }
+	/ "avg" { return newUnitaryOpcode(vm.OpAvg) }
+	/ "append" { return newUnitaryOpcode(vm.OpAppend) }
+	/ "add" { return newUnitaryOpcode(vm.OpAdd) }
+// ^^^^^---GENERATED CODE BETWEEN THESE MARKERS, DO NOT EDIT---^^^^^
+// The opcode below is particularly special -- it doesn't exist as its own opcode but does some smart manipulation
     / "push" _ v:Value  { return newPushOpcode(v.(string)) }
-    / "one" { return newUnitaryOpcode(vm.OpOne) }
-    / "true" { return newUnitaryOpcode(vm.OpTrue) }
-    / "neg1" { return newUnitaryOpcode(vm.OpNeg1) }
-    / "pusht" _ ts:Timestamp  { return newPushTimestamp(ts.(string)) }
-    / "pushl" { return newUnitaryOpcode(vm.OpPushL) }
-    / "now" { return newUnitaryOpcode(vm.OpNow) }
-    / "pusha" _ a:Address { return newPushAddr(a.(string)) }
-    / "rand" { return newUnitaryOpcode(vm.OpRand) }
-    / "add" { return newUnitaryOpcode(vm.OpAdd) }
-    / "sub" { return newUnitaryOpcode(vm.OpSub) }
-    / "divmod" { return newUnitaryOpcode(vm.OpDivMod) }
-    / "muldiv" { return newUnitaryOpcode(vm.OpMulDiv) }
-    / "mul" { return newUnitaryOpcode(vm.OpMul) }
-    / "div" { return newUnitaryOpcode(vm.OpDiv) }
-    / "mod" { return newUnitaryOpcode(vm.OpMod) }
-    / "not" { return newUnitaryOpcode(vm.OpNot) }
-    / "neg" { return newUnitaryOpcode(vm.OpNeg) }
-    / "inc" { return newUnitaryOpcode(vm.OpInc) }
-    / "dec" { return newUnitaryOpcode(vm.OpDec) }
-    / "eq" { return newUnitaryOpcode(vm.OpEq) }
-    / "gt" { return newUnitaryOpcode(vm.OpGt) }
-    / "lt" { return newUnitaryOpcode(vm.OpLt) }
-    / "index" { return newUnitaryOpcode(vm.OpIndex) }
-    / "len" { return newUnitaryOpcode(vm.OpLen) }
-    / "append" { return newUnitaryOpcode(vm.OpAppend) }
-    / "extend" { return newUnitaryOpcode(vm.OpExtend) }
-    / "slice" { return newUnitaryOpcode(vm.OpSlice) }
-    / "fieldl" _ v:Value { return newBinaryOpcode(vm.OpFieldL, v.(string)) }
-    / "field" _ v:Value { return newBinaryOpcode(vm.OpField, v.(string)) }
-    / "choice" { return newUnitaryOpcode(vm.OpChoice) }
-    / "wchoice" { return newUnitaryOpcode(vm.OpWChoice) }
-    / "sort" { return newUnitaryOpcode(vm.OpSort) }
-    / "lookup" { return newUnitaryOpcode(vm.OpLookup) }
-    / "call" _ n:FunctionName _ v:Value { return newCallOpcode(vm.OpCall, n.(string), v.(string)) }
-    / "enddef" { return newUnitaryOpcode(vm.OpEndDef) }
-    / "ifz" { return newUnitaryOpcode(vm.OpIfZ) }
-    / "ifnz" { return newUnitaryOpcode(vm.OpIfNZ) }
-    / "else" { return newUnitaryOpcode(vm.OpElse) }
-    / "endif" { return newUnitaryOpcode(vm.OpEndIf) }
-    / "sum" { return newUnitaryOpcode(vm.OpSum) }
-    / "avg" { return newUnitaryOpcode(vm.OpAvg) }
-    / "max" { return newUnitaryOpcode(vm.OpMax) }
-    / "min" { return newUnitaryOpcode(vm.OpMin) }
     )
 
-Timestamp <- ts:(Date 'T' Time 'Z') { return ts.(string), nil }
+Timestamp <- Date 'T' Time 'Z' { return string(c.text), nil }
 Date <- [0-9] [0-9] [0-9] [0-9] '-' [0-9] [0-9] '-' [0-9] [0-9]
-Time <-  [0-9] [0-9] ':' [0:9] [0-9] '-' [0-9] [0-9]
+Time <-  [0-9] [0-9] ':' [0-9] [0-9] ':' [0-9] [0-9]
 
 ContextConstant <-
     ( "TEST" { return vm.CtxTest, nil }
