@@ -3,6 +3,7 @@ package vm
 import (
 	"fmt"
 	"strings"
+	"time"
 )
 
 // TODO: tweak data types to support our real keys and timestamps and use ndaumath
@@ -63,6 +64,27 @@ type Nower interface {
 	Now() (Timestamp, error)
 }
 
+// Stats tracks the statistics for a VM
+type Stats struct {
+	inittime time.Duration // how long it took to call init,
+	loadtime time.Duration // how long it took to load and validate the code
+	runtime  time.Duration // how long it took to run (not recorded in debug mode)
+	maxstack int           // highwater of the stack depth
+	childmax int           // highwater of child stacks
+}
+
+// AddChildStats is intended to appropriately increment stats based on running child functions
+func (vm *ChaincodeVM) AddChildStats(child *ChaincodeVM) {
+	vm.stats.inittime += child.stats.inittime
+	vm.stats.loadtime += child.stats.loadtime
+	// runtime is already accounted for
+	// track maximum child depth independently and recursively
+	childstacksum := child.stats.maxstack + child.stats.childmax
+	if childstacksum > vm.stats.childmax {
+		vm.stats.childmax = childstacksum
+	}
+}
+
 // ChaincodeVM is the reason we're here
 type ChaincodeVM struct {
 	runstate RunState
@@ -75,11 +97,16 @@ type ChaincodeVM struct {
 	offsets  []int // byte offsets of the functions
 	rand     Randomer
 	now      Nower
+	stats    Stats
 }
 
 // New creates a new VM and loads a ChasmBinary into it (or errors)
 func New(bin ChasmBinary) (*ChaincodeVM, error) {
+	starttime := time.Now()
 	vm := ChaincodeVM{}
+	defer func() {
+		vm.stats.loadtime = time.Now().Sub(starttime)
+	}()
 	if err := vm.PreLoad(bin); err != nil {
 		return nil, err
 	}
@@ -177,6 +204,10 @@ func (vm *ChaincodeVM) PreLoad(cb ChasmBinary) error {
 
 // Init is called to set up the VM to run
 func (vm *ChaincodeVM) Init(values ...Value) {
+	starttime := time.Now()
+	defer func() {
+		vm.stats.inittime = time.Now().Sub(starttime)
+	}()
 	vm.stack = newStack()
 	for _, v := range values {
 		vm.stack.Push(v)
@@ -188,6 +219,13 @@ func (vm *ChaincodeVM) Init(values ...Value) {
 
 // Run runs a VM from its current state until it ends
 func (vm *ChaincodeVM) Run(debug bool) error {
+	starttime := time.Now()
+	defer func() {
+		// only record the time for non-debug runs
+		if !debug {
+			vm.stats.runtime = time.Now().Sub(starttime)
+		}
+	}()
 	if debug {
 		vm.DisassembleAll()
 	}
@@ -200,6 +238,9 @@ func (vm *ChaincodeVM) Run(debug bool) error {
 		}
 		if err := vm.Step(debug); err != nil {
 			return err
+		}
+		if d := vm.stack.Depth(); d > vm.stats.maxstack {
+			vm.stats.maxstack = d
 		}
 	}
 	return nil

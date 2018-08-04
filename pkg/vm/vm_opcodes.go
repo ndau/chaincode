@@ -65,8 +65,9 @@ func (vm *ChaincodeVM) callFunction(funcnum int, nargs int, debug bool, extraArg
 		}
 	}
 	err = childvm.Run(debug)
-	// no matter what, we want the history
+	// no matter what, we want the history and stats
 	vm.history = append(vm.history, childvm.history...)
+	vm.AddChildStats(childvm)
 	if err != nil {
 		return retval, vm.runtimeError(err)
 	}
