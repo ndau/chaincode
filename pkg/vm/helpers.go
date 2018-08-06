@@ -2,7 +2,6 @@ package vm
 
 import (
 	"crypto/rand"
-	"errors"
 	"math"
 	"math/big"
 	"time"
@@ -139,27 +138,5 @@ func compareRatios(n1, d1, n2, d2 int64, less bool) bool {
 		return true
 	default:
 		return compareRatios(d1, r1, d2, r2, !less)
-	}
-}
-
-// divmod returns the quotient and remainder of n/d as int64
-func divmod(n, d int64) (int64, int64) {
-	return n / d, n % d
-}
-
-// mulDiv computes v * n / d without using floating point or overflowing an int64,
-// provided that n < d.
-func mulDiv(v, n, d int64) (int64, error) {
-	if d == 0 {
-		return 0, errors.New("divide by zero")
-	}
-	t := int64(0)
-	for {
-		q, m := divmod(v, d)
-		if q == 0 || m == 0 {
-			return t + (v * n / d), nil
-		}
-		t += q * n
-		v -= q * d
 	}
 }

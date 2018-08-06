@@ -20,7 +20,7 @@ Value|Opcode|Meaning|Stack before|Instr.|Stack after
 0x10|Ret|Terminates the function; the values on the stack (if any) are the return values.||ret|
 0x11|Fail|Terminates the function and indicates an error.||fail|
 0x20|Zero (False)|Pushes 0 onto the stack.||zero|0
-0x21|Push1|Evaluates the next n bytes as a signed little-endian numeric value and pushes it onto the stack.||push1|A
+0x21|Push1|Evaluates the next byte as a signed little-endian numeric value and pushes it onto the stack.||push1|A
 0x22|Push2|Evaluates the next 2 bytes as a signed little-endian numeric value and pushes it onto the stack.||push2|A
 0x23|Push3|Evaluates the next 3 bytes as a signed little-endian numeric value and pushes it onto the stack.||push3|A
 0x24|Push4|Evaluates the next 4 bytes as a signed little-endian numeric value and pushes it onto the stack.||push4|A

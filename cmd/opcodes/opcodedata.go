@@ -162,7 +162,7 @@ var opcodeData = opcodeInfos{
 	opcodeInfo{
 		Value:   0x21,
 		Name:    "Push1",
-		Summary: "Evaluates the next n bytes as a signed little-endian numeric value and pushes it onto the stack.",
+		Summary: "Evaluates the next byte as a signed little-endian numeric value and pushes it onto the stack.",
 		Doc:     "",
 		Example: example{
 			Pre:  "",
