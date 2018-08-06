@@ -895,8 +895,8 @@ func TestUnderflows(t *testing.T) {
 		vm.Init()
 		err := vm.Run(false)
 		assert.NotNil(t, err)
-		correct := strings.HasSuffix(err.Error(), "stack underflow") ||
-			strings.HasSuffix(err.Error(), "stack index error")
+		correct := strings.HasPrefix(err.Error(), "stack underflow") ||
+			strings.HasPrefix(err.Error(), "stack index error")
 		assert.True(t, correct, "Keyword=%s msg=%s", k, err)
 	}
 }

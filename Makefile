@@ -1,4 +1,8 @@
-.PHONY: generate clean
+.PHONY: generate clean fuzz
+
+fuzz:
+	go test ./... --race -timeout 10s -short
+	FUZZ_RUNS=100 go test --race -v -timeout 10m ./pkg/vm -run "*Fuzz*"
 
 generate: opcodes.md pkg/vm/opcodes.go pkg/vm/miniasmOpcodes.go pkg/vm/opcode_string.go \
 		pkg/vm/extrabytes.go cmd/chasm/chasm.peggo pkg/vm/enabledopcodes.go

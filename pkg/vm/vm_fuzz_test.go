@@ -3,8 +3,10 @@ package vm
 import (
 	"fmt"
 	"math/rand"
+	"os"
 	"regexp"
 	"runtime/debug"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -216,6 +218,10 @@ func TestFuzzFunctions(t *testing.T) {
 	rand.Seed(time.Now().UnixNano())
 	results := make(map[string]int)
 	total := 10000
+	nruns := os.Getenv("FUZZ_RUNS")
+	if nruns != "" {
+		total, _ = strconv.Atoi(nruns)
+	}
 	for i := 0; i < total; i++ {
 		s := []string{OpDef.String(), " 00"}
 		for j := 0; j < rand.Intn(20)+5; j++ {
@@ -276,7 +282,11 @@ func TestFuzzValid(t *testing.T) {
 
 	rand.Seed(time.Now().UnixNano())
 	results := make(map[string]int)
-	total := 100
+	total := 10000
+	nruns := os.Getenv("FUZZ_RUNS")
+	if nruns != "" {
+		total, _ = strconv.Atoi(nruns)
+	}
 	for i := 0; i < total; i++ {
 		prog = strings.Join(genRandomProgram(), "\n")
 		ops := miniAsm(prog)
