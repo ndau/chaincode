@@ -22,6 +22,7 @@ type weightings struct {
 	total int
 }
 
+// choose does a weighted selection of a single value from a collection of weighted values
 func choose(w weightings) interface{} {
 	if w.total == 0 {
 		for i := 0; i < len(w.opts); i++ {
@@ -45,6 +46,9 @@ func randByte() byte {
 	return byte(n)
 }
 
+// genRandomProgram generates a program that will pass the VM's validation
+// criteria, so we can make sure that the runtime doesn't just die when presented
+// with any strange code.
 func genRandomProgram() []string {
 	// here are some weightings for the number of functions in a program
 	w := weightings{opts: []option{
@@ -189,9 +193,13 @@ func genUnorderedInstruction() string {
 	}
 }
 
+// key reads an error that may end with extra data and returns only
+// the leading textual part of it so that we can aggregate messages
+// that are similar but not identical. I wouldn't do it this way
+// in production but for testing it's fine.
 func key(err error) string {
 	s := err.Error()
-	p := regexp.MustCompile("^[a-zA-Z0-9 ]+")
+	p := regexp.MustCompile("^[a-zA-Z ]+")
 	return p.FindString(s)
 }
 
