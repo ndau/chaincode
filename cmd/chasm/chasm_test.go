@@ -49,11 +49,24 @@ func TestPushB(t *testing.T) {
 			pushb 0x01 0x02 0x03 0x04 0x05 0x06 0x07
 		}
 `
-	checkParse(t, "SimplePush", code, `00 8000
+	checkParse(t, "PushB", code, `00 8000
 	29 0b 050102030405060708090a
 	29 03 484921
 	29 03 01 02 03
 	29 07 01 02 03 04 05 06 07
+	88`)
+}
+
+func TestPushT(t *testing.T) {
+	code := `
+		; comment
+		context: TEST
+		func foo {
+			pusht 2018-02-03T01:23:45Z
+		}
+`
+	checkParse(t, "PushT", code, `00 8000
+	2c 40 6a e1 72  43 07 02 00
 	88`)
 }
 
@@ -155,9 +168,6 @@ func TestUnitaryOpcodes2(t *testing.T) {
 		context: TEST
 		func foo {
 			choice
-			wchoice
-			sort
-			lookup
 			ifz
 			ifnz
 			else
@@ -167,10 +177,13 @@ func TestUnitaryOpcodes2(t *testing.T) {
 			max
 			min
 			pushl
+			eq
+			gt
+			lt
 		}
 `
 	checkParse(t, "Unitary2", code,
-		"00 8000 94959697 898a8e8f9091929330 88")
+		"00 800094 898a8e8f9091929330 4d4e4f 88")
 }
 
 func TestBinary(t *testing.T) {
@@ -184,12 +197,16 @@ func TestBinary(t *testing.T) {
 			field 3
 			fieldl 0
 			call bar 0
+			lookup bar 1
+			deco bar 2
+			sort 3
+			wchoice 1
 		}
 		func bar {
 			nop
 		}
 `
-	checkParse(t, "Binary", code, "00 8000 0D020D0C0E0A 6003 7000 810100 88 8001 00 88")
+	checkParse(t, "Binary", code, "00 8000 0D020D0C0E0A 6003 7000 810100 970101 820102 9603 9501 88 8001 00 88")
 }
 
 func TestRealistic(t *testing.T) {

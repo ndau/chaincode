@@ -208,7 +208,8 @@ func (n *PushOpcode) bytes() []byte {
 			b = b[:len(b)-1]
 		}
 		nbytes := byte(len(b))
-		op := byte(vm.OpPushN) | nbytes
+		// All the PushN opcodes are related
+		op := byte(vm.OpPush1) + (nbytes - 1)
 		b = append([]byte{op}, b...)
 		return b
 	}

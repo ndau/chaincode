@@ -32,6 +32,9 @@ type Chaincode interface {
 // RunState is the current run state of the VM
 type RunState byte
 
+// Instruction is an opcode with all of its associated data bytes
+type Instruction []Opcode
+
 // These are runstate constants
 const (
 	RsNotReady RunState = iota
@@ -125,33 +128,6 @@ func (vm *ChaincodeVM) CreateForFunc(funcnum int, newpc int, nstack int) (*Chain
 	return &newvm, nil
 }
 
-// extraBytes returns the number of extra bytes associated with a given opcode
-func extraBytes(code []Opcode, offset int) int {
-	numExtra := 0
-	op := code[offset]
-	switch op {
-	case OpPush1, OpPick, OpRoll, OpDef, OpField, OpFieldL:
-		numExtra = 1
-	case OpPush2, OpCall, OpDeco, OpLookup:
-		numExtra = 2
-	case OpPush3:
-		numExtra = 3
-	case OpPush4:
-		numExtra = 4
-	case OpPush5:
-		numExtra = 5
-	case OpPush6:
-		numExtra = 6
-	case OpPush7:
-		numExtra = 7
-	case OpPush8, OpPushT:
-		numExtra = 8
-	case OpPushA, OpPushB:
-		numExtra = int(code[offset+1]) + 1
-	}
-	return numExtra
-}
-
 // Stack returns the current stack of the VM
 func (vm *ChaincodeVM) Stack() *Stack {
 	return vm.stack
@@ -177,6 +153,13 @@ func (vm *ChaincodeVM) PreLoad(cb ChasmBinary) error {
 		return err
 	}
 	vm.offsets = offsets
+
+	// now generate a bitset of used opcodes from the instructions
+	usedOpcodes := getUsedOpcodes(generateInstructions(cb.Data[1:]))
+	// if it's not a proper subset of the enabled opcodes, don't let it run
+	if !usedOpcodes.IsSubsetOf(EnabledOpcodes) {
+		return ValidationError{"code contains illegal opcodes"}
+	}
 
 	ctx, ok := ContextLookup(cb.Context)
 	if !ok {
@@ -253,6 +236,7 @@ func (vm *ChaincodeVM) Disassemble(pc int) (string, int) {
 	return out, numExtra + 1
 }
 
+// String implements Stringer so we can print a VM and get something meaningful.
 func (vm *ChaincodeVM) String() string {
 	st := strings.Split(vm.stack.String(), "\n")
 	st1 := make([]string, len(st))
