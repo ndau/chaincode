@@ -439,7 +439,7 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		if err != nil {
 			return vm.runtimeError(err)
 		}
-		if n >= l.Len() {
+		if n >= l.Len() || n < 0 {
 			return vm.runtimeError(newRuntimeError("list index out of bounds"))
 		}
 		if err := vm.stack.Push(l[n]); err != nil {
