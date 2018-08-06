@@ -89,7 +89,7 @@ func validateStructure(code []Opcode) ([]int, error) {
 			nfuncs++
 			newstate = StDef
 		case StError:
-			return offsets, ValidationError{fmt.Sprintf("invalid structure at offset %d", offset)}
+			return offsets, ValidationError{fmt.Sprintf("invalid program structure at offset %d", offset)}
 		case StIfPlus:
 			depth++
 			newstate = StIf

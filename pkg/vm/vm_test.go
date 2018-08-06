@@ -303,7 +303,15 @@ func TestIfNested3(t *testing.T) {
 	checkStack(t, vm.Stack(), 19, 19, 17)
 }
 
-func TestIfNull(t *testing.T) {
+func TestIfNull1(t *testing.T) {
+	vm := buildVM(t, "def 0 one ifnz endif enddef")
+	vm.Init()
+	err := vm.Run(false)
+	assert.Nil(t, err)
+	checkStack(t, vm.Stack())
+}
+
+func TestIfNull2(t *testing.T) {
 	vm := buildVM(t, "def 0 one ifnz else endif enddef")
 	vm.Init()
 	err := vm.Run(false)
@@ -905,4 +913,29 @@ func TestDisableOpcode(t *testing.T) {
 	buildVMfail(t, "def 0 NOP enddef")
 	// but we have to re-enable Nop or other tests might fail
 	EnabledOpcodes.Set(int(OpNop))
+}
+
+func TestRealFuzz1(t *testing.T) {
+	prog := `Def 00
+		Sub PushL Swap Index Push2 9a 3f Dec Lt Neg1 DivMod Push3 58 c5 84 Add Max FieldL 7f Push2 37 4c
+		IfNZ
+		IfZ
+		IfNZ
+		IfZ
+		WChoice 69 Avg
+		EndIf
+		EndIf
+		EndIf
+		EndIf
+		IfZ
+		Mod Choice Pick 75 Neg1 Mul Mul Len Push5 8a d8 1e 9d a8 Push8 a1 6c 2e 0a d8 31 82 37 Min PushL WChoice 4b Push4 1c 66 36 e6 Slice
+		EndIf
+		EndDef
+		Def 01
+		Sub Drop2 Avg
+		EndDef`
+	vm := buildVM(t, prog)
+	vm.Init(NewNumber(1), NewNumber(2))
+	err := vm.Run(true)
+	assert.Nil(t, err)
 }
