@@ -326,3 +326,67 @@ func TestFuzzValid(t *testing.T) {
 		fmt.Printf("%8d: %s\n", v, k)
 	}
 }
+
+func TestFuzzJunk(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
+
+	var prog string
+	var savedvm *ChaincodeVM
+	// we want to know what failed if something failed
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("Run caused a panic:", r)
+			fmt.Println("Program: ", prog)
+			fmt.Println(savedvm)
+			debug.PrintStack()
+			t.Errorf("Test failed.")
+		}
+	}()
+
+	rand.Seed(time.Now().UnixNano())
+	results := make(map[string]int)
+	total := 100
+	nruns := os.Getenv("FUZZ_RUNS")
+	if nruns != "" {
+		total, _ = strconv.Atoi(nruns)
+	}
+	for i := 0; i < total; i++ {
+		s := []string{}
+		// there's a 10% chance of not having a function starter
+		if rand.Intn(100) < 10 {
+			s = append(s, OpDef.String(), " 00")
+		}
+		for j := 0; j < rand.Intn(50)+5; j++ {
+			b := randByte()
+			s = append(s, fmt.Sprintf("%02x", b))
+		}
+		s = append(s, OpEndDef.String())
+		prog = strings.Join(s, " ")
+		ops := miniAsm(prog)
+		bin := ChasmBinary{"test", "", "TEST", ops}
+		vm, err := New(bin)
+		if err != nil {
+			// fmt.Printf("Didn't load because %s: %s\n", err, p)
+			results[key(err)]++
+			continue
+		}
+		savedvm = vm
+
+		// Put a couple of items on the stack
+		vm.Init(NewNumber(1), NewNumber(2))
+		err = vm.Run(false)
+		if err == nil {
+			// fmt.Printf("Successfully ran:\n")
+			// vm.DisassembleAll()
+			results["success"]++
+		} else {
+			results[key(err)]++
+		}
+	}
+	fmt.Printf("Results for %d runs:\n", total)
+	for k, v := range results {
+		fmt.Printf("%8d: %s\n", v, k)
+	}
+}

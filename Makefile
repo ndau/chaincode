@@ -2,6 +2,7 @@
 
 fuzz:
 	go test ./... --race -timeout 10s -short
+	FUZZ_RUNS=50000 go test --race -v -timeout 30s ./pkg/vm -run "TestFuzzJunk"
 	FUZZ_RUNS=50000 go test --race -v -timeout 30s ./pkg/vm -run "TestFuzzFunctions"
 	FUZZ_RUNS=10000 go test --race -v -timeout 30s ./pkg/vm -run "TestFuzzValid"
 
