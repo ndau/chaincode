@@ -27,7 +27,7 @@ func (vt Struct) Append(v Value) Struct {
 
 // Field retrieves the field at a given index
 func (vt Struct) Field(ix int) (Value, error) {
-	if ix >= len(vt.fields) {
+	if ix >= len(vt.fields) || ix < 0 {
 		return NewNumber(0), ValueError{"invalid field index"}
 	}
 	return vt.fields[ix], nil
