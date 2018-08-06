@@ -3,6 +3,7 @@ package vm
 import (
 	"fmt"
 	"math/rand"
+	"regexp"
 	"runtime/debug"
 	"strings"
 	"testing"
@@ -186,7 +187,20 @@ func genUnorderedInstruction() string {
 	}
 }
 
-func TestFuzz(t *testing.T) {
+func key(err error) string {
+	s := err.Error()
+	p := regexp.MustCompile("^[a-zA-Z0-9 ]+")
+	return p.FindString(s)
+}
+
+// TestFuzzFunctions generates individual functions of random enabled opocodes -- they have
+// the proper wrappers at the beginning and end but are otherwise random-but-valid opcodes.
+// Many of these will just fail validation.
+func TestFuzzFunctions(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
+
 	var prog string
 	var savedvm *ChaincodeVM
 	// we want to know what failed if something failed
@@ -200,17 +214,25 @@ func TestFuzz(t *testing.T) {
 	}()
 
 	rand.Seed(time.Now().UnixNano())
-	noasm := 0
-	ranok := 0
+	results := make(map[string]int)
 	total := 10000
 	for i := 0; i < total; i++ {
-		prog = strings.Join(genRandomProgram(), "\n")
+		s := []string{OpDef.String(), " 00"}
+		for j := 0; j < rand.Intn(20)+5; j++ {
+			op := Opcode(randByte())
+			if !EnabledOpcodes.Get(int(op)) {
+				continue
+			}
+			s = append(s, op.String())
+		}
+		s = append(s, OpEndDef.String())
+		prog = strings.Join(s, " ")
 		ops := miniAsm(prog)
 		bin := ChasmBinary{"test", "", "TEST", ops}
 		vm, err := New(bin)
 		if err != nil {
 			// fmt.Printf("Didn't load because %s: %s\n", err, p)
-			noasm++
+			results[key(err)]++
 			continue
 		}
 		savedvm = vm
@@ -221,8 +243,66 @@ func TestFuzz(t *testing.T) {
 		if err == nil {
 			// fmt.Printf("Successfully ran:\n")
 			// vm.DisassembleAll()
-			ranok++
+			results["success"]++
+		} else {
+			results[key(err)]++
 		}
 	}
-	fmt.Printf("Attempts: %d\nAsm Failures: %d\nRan OK: %d\n", total, noasm, ranok)
+	fmt.Printf("Results for %d runs:\n", total)
+	for k, v := range results {
+		fmt.Printf("%8d: %s\n", v, k)
+	}
+}
+
+// TestFuzzValid generates programs that will pass validation (provided they're not too long).
+// Because validation is so picky, this lets us have a much higher hit rate of programs that will
+// actually exercise opcodes.
+func TestFuzzValid(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
+
+	var prog string
+	var savedvm *ChaincodeVM
+	// we want to know what failed if something failed
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("Run caused a panic:", r)
+			fmt.Println("Program: ", prog)
+			fmt.Println(savedvm)
+			debug.PrintStack()
+		}
+	}()
+
+	rand.Seed(time.Now().UnixNano())
+	results := make(map[string]int)
+	total := 100
+	for i := 0; i < total; i++ {
+		prog = strings.Join(genRandomProgram(), "\n")
+		ops := miniAsm(prog)
+		bin := ChasmBinary{"test", "", "TEST", ops}
+		vm, err := New(bin)
+		if err != nil {
+			// fmt.Printf("Didn't load because %s: %s\n", err, p)
+			results[key(err)]++
+			continue
+		}
+		savedvm = vm
+
+		// Put a couple of items on the stack
+		vm.Init(NewNumber(1), NewNumber(2))
+		err = vm.Run(false)
+		if err == nil {
+			// fmt.Printf("Successfully ran:\n")
+			// vm.DisassembleAll()
+			results["success"]++
+
+		} else {
+			results[key(err)]++
+		}
+	}
+	fmt.Printf("Results for %d runs:\n", total)
+	for k, v := range results {
+		fmt.Printf("%8d: %s\n", v, k)
+	}
 }
