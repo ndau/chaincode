@@ -915,12 +915,12 @@ func TestDisableOpcode(t *testing.T) {
 	EnabledOpcodes.Set(int(OpNop))
 }
 
-func TestIndexError1(t *testing.T) {
+func TestNegativeIndex(t *testing.T) {
 	prog := `Def 00
-		Sub PushL Swap Index
+		Neg1 Index
 		EndDef`
 	vm := buildVM(t, prog)
-	vm.Init(NewNumber(1), NewNumber(2))
+	vm.Init(NewList().Append(NewNumber(1)).Append(NewNumber(2)))
 	err := vm.Run(false)
 	assert.NotNil(t, err)
 }
