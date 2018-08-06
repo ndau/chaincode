@@ -924,3 +924,17 @@ func TestNegativeIndex(t *testing.T) {
 	err := vm.Run(false)
 	assert.NotNil(t, err)
 }
+
+func TestIndex2(t *testing.T) {
+	// this test is making sure that the 8f embedded into the PushB doesn't
+	// cause skipToMatchingBracket to fail
+	prog := `Def 00
+		IfZ
+		PushB 8 b6 42 59 a3 8f 28 81 70
+		EndIf
+		EndDef`
+	vm := buildVM(t, prog)
+	vm.Init(NewList().Append(NewNumber(1)).Append(NewNumber(2)))
+	err := vm.Run(false)
+	assert.Nil(t, err)
+}

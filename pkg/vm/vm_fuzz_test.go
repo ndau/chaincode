@@ -212,12 +212,13 @@ func TestFuzzFunctions(t *testing.T) {
 			fmt.Println("Program: ", prog)
 			fmt.Println(savedvm)
 			debug.PrintStack()
+			t.Errorf("Test failed.")
 		}
 	}()
 
 	rand.Seed(time.Now().UnixNano())
 	results := make(map[string]int)
-	total := 10000
+	total := 100
 	nruns := os.Getenv("FUZZ_RUNS")
 	if nruns != "" {
 		total, _ = strconv.Atoi(nruns)
@@ -277,12 +278,13 @@ func TestFuzzValid(t *testing.T) {
 			fmt.Println("Program: ", prog)
 			fmt.Println(savedvm)
 			debug.PrintStack()
+			t.Errorf("Test failed.")
 		}
 	}()
 
 	rand.Seed(time.Now().UnixNano())
 	results := make(map[string]int)
-	total := 10000
+	total := 100
 	nruns := os.Getenv("FUZZ_RUNS")
 	if nruns != "" {
 		total, _ = strconv.Atoi(nruns)

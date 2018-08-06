@@ -19,7 +19,8 @@ func (vm *ChaincodeVM) runtimeError(err error) error {
 func (vm *ChaincodeVM) skipToMatchingBracket() error {
 	for {
 		instr := vm.code[vm.pc]
-		vm.pc++
+		extra := extraBytes(vm.code, vm.pc)
+		vm.pc += extra + 1
 		nesting := 0
 		switch instr {
 		case OpIfNZ, OpIfZ:
