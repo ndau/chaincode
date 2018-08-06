@@ -44,5 +44,5 @@ func wrapRuntimeError(e error) RuntimeError {
 }
 
 func (e RuntimeError) Error() string {
-	return fmt.Sprintf("[pc=%d] %s", e.pc, e.msg)
+	return fmt.Sprintf("%s [pc=%d]", e.msg, e.pc)
 }
