@@ -12,8 +12,11 @@ type List []Value
 var _ = Value(List{})
 
 // NewList creates a new, empty list.
-func NewList() List {
-	return []Value{}
+func NewList(vs ...Value) List {
+	if vs == nil {
+		return make(List, 0)
+	}
+	return vs
 }
 
 // Compare implements comparison for List
