@@ -633,6 +633,18 @@ func TestWChoice2(t *testing.T) {
 	checkStack(t, vm.Stack(), 5)
 }
 
+func TestWChoiceErr(t *testing.T) {
+	vm := buildVM(t, "def 0 wchoice 0 field 0 enddef")
+	r := seededRand{n: math.MaxInt64 / 2}
+	vm.SetRand(r)
+
+	l := NewList()
+	vm.Init(l)
+
+	err := vm.Run(false)
+	assert.NotNil(t, err)
+}
+
 func TestAvg(t *testing.T) {
 	vm := buildVM(t, "def 0 pushl one append push1 7 append push1 16 append avg enddef")
 	vm.Init()
