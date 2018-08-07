@@ -537,7 +537,11 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		fix := vm.code[vm.pc]
 		vm.pc++
 		extract := func(v Value) (Value, error) {
-			return v.(Struct).Field(int(fix))
+			f, ok := v.(Struct)
+			if !ok {
+				return v, errors.New("fieldl requires list of non-struct")
+			}
+			return f.Field(int(fix))
 		}
 		result, err := src.Map(extract)
 		if err != nil {
@@ -654,9 +658,12 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 
 		// Define helper functions for the Reduce function
 		sum := func(prev, current Value) Value {
-			p := prev.(Number).v
-			c := current.(Number).v
-			return NewNumber(p + c)
+			// prev is guaranteed to be a Number, but current might not be
+			c, ok := current.(Number)
+			if !ok {
+				return prev
+			}
+			return NewNumber(prev.(Number).v + c.v)
 		}
 		max := func(prev, current Value) Value {
 			cmp, _ := prev.Compare(current)
@@ -762,8 +769,14 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		// the sort finishes first.
 		hadErr := false
 		less := func(i, j int) bool {
-			fi, e1 := src[i].(Struct).Field(int(fix))
-			fj, e2 := src[j].(Struct).Field(int(fix))
+			si, ok1 := src[i].(Struct)
+			sj, ok2 := src[j].(Struct)
+			if !ok1 || !ok2 {
+				hadErr = true
+				return false
+			}
+			fi, e1 := si.Field(int(fix))
+			fj, e2 := sj.Field(int(fix))
 			cmp, e3 := fi.Compare(fj)
 			if e1 != nil || e2 != nil || e3 != nil {
 				hadErr = true

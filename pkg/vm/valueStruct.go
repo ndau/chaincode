@@ -56,7 +56,7 @@ func (vt Struct) Compare(rhs Value) (int, error) {
 
 // IsScalar indicates if this Value is a scalar value type
 func (vt Struct) IsScalar() bool {
-	return true
+	return false
 }
 
 func (vt Struct) String() string {

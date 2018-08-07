@@ -641,7 +641,7 @@ var opcodeData = opcodeInfos{
 		Value:   0x82,
 		Name:    "Deco",
 		Summary: "Decorates a list of structs (on top of the stack, which it pops) by applying the function block to each member of the struct, copying n stack entries to the function block's stack, then copying the struct itself; on return, the top value of the function block stack is appended to the list entry. The resulting new list is pushed onto the stack.",
-		Doc:     "",
+		Doc:     "TODO: Write a real example here; consider letting deco make a list of structs out of a non-struct list.",
 		Example: example{
 			Pre:  "",
 			Inst: "deco n m",
@@ -725,8 +725,8 @@ var opcodeData = opcodeInfos{
 	opcodeInfo{
 		Value:   0x91,
 		Name:    "Avg",
-		Summary: "Given a list of numbers, averages all the values in the list.",
-		Doc:     "",
+		Summary: "Given a list of numbers, averages all the values in the list. The result will always be Floor(average).",
+		Doc:     "TODO: Verify that average returns correct result for non-integral values.",
 		Example: example{
 			Pre:  "[2 12 4]",
 			Inst: "avg",
@@ -773,8 +773,8 @@ var opcodeData = opcodeInfos{
 	opcodeInfo{
 		Value:   0x95,
 		Name:    "WChoice",
-		Summary: "Selects an item from a list of structs weighted by the given field index.",
-		Doc:     "",
+		Summary: "Selects an item from a list of structs weighted by the given field index, which must be numeric.",
+		Doc:     "TODO: Test for non-numeric results",
 		Example: example{
 			Pre:  "[X Y Z] f",
 			Inst: "wchoice f",
@@ -786,7 +786,7 @@ var opcodeData = opcodeInfos{
 		Value:   0x96,
 		Name:    "Sort",
 		Summary: "Sorts a list of structs by a given field.",
-		Doc:     "",
+		Doc:     "TODO: Doc compare semantics",
 		Example: example{
 			Pre:  "[X Y Z] f",
 			Inst: "sort f",

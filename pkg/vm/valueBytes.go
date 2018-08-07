@@ -27,7 +27,7 @@ func (vt Bytes) Compare(rhs Value) (int, error) {
 
 // IsScalar indicates if this Value is a scalar value type
 func (vt Bytes) IsScalar() bool {
-	return false
+	return true
 }
 
 func (vt Bytes) String() string {

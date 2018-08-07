@@ -177,7 +177,7 @@ func genUnorderedInstruction() string {
 		case OpDef, OpEndDef, OpCall, OpDeco, OpLookup, OpIfNZ, OpIfZ, OpElse, OpEndIf:
 			continue
 		case OpPushB, OpPushA:
-			// append up to 64 extra bytes
+			// append up to 16 extra bytes
 			extra := rand.Intn(16)
 			s = append(s, fmt.Sprintf("%02x", extra))
 			for i := 0; i < extra; i++ {
@@ -193,13 +193,108 @@ func genUnorderedInstruction() string {
 	}
 }
 
+type valueType int
+
+const (
+	vtUnset         valueType = iota
+	vtNumber        valueType = iota
+	vtBytes         valueType = iota
+	vtList          valueType = iota
+	vtTimestamp     valueType = iota
+	vtStruct        valueType = iota
+	vtListOfStructs valueType = iota
+)
+
+// genRandomValue generates a single randomized Value object
+// If it happens to create a list, all the elements in the list will
+// be of the same format, including a list of structs
+func genRandomValue(vt valueType) Value {
+	alltypes := weightings{opts: []option{
+		option{50, vtNumber},
+		option{30, vtList},
+		option{20, vtStruct},
+		option{20, vtListOfStructs},
+		option{10, vtBytes},
+		option{10, vtTimestamp},
+	}}
+
+	scalars := weightings{opts: []option{
+		option{50, vtNumber},
+		option{10, vtBytes},
+		option{10, vtTimestamp},
+	}}
+
+	if vt == vtUnset {
+		vt = choose(alltypes).(valueType)
+	}
+	switch vt {
+	case vtNumber:
+		return NewNumber(rand.Int63())
+	case vtBytes:
+		nbytes := rand.Intn(16)
+		b := make([]byte, nbytes)
+		for i := 0; i < nbytes; i++ {
+			// b[i] = randByte()
+			b[i] = byte(rand.Intn(26) + 97)
+		}
+		return NewBytes(b)
+	case vtList:
+		nitems := rand.Intn(16)
+		itemtype := choose(scalars).(valueType)
+		l := make([]Value, nitems)
+		for i := 0; i < nitems; i++ {
+			l[i] = genRandomValue(itemtype)
+		}
+		return NewList(l...)
+	case vtTimestamp:
+		return NewTimestamp(rand.Int63())
+	case vtStruct:
+		// create a struct of 1-5 scalar members
+		vs := genRandomValues(1, 5)
+		return NewStruct(vs...)
+	case vtListOfStructs:
+		// number of items in the list
+		nitems := rand.Intn(16)
+		// number of fields per struct
+		nfields := rand.Intn(4) + 1
+
+		// initialize the struct
+		l := make([]Value, nitems)
+		for i := 0; i < nitems; i++ {
+			l[i] = NewStruct()
+		}
+
+		// now populate it
+		for f := 0; f < nfields; f++ {
+			ft := choose(scalars).(valueType)
+			for i := 0; i < nitems; i++ {
+				l[i] = l[i].(Struct).Append(genRandomValue(ft))
+			}
+		}
+		return NewList(l...)
+	}
+	// we should never get here
+	return NewNumber(0)
+}
+
+// genRandomValues creates an array of between min and max random Value objects (inclusive);
+// if zeroOk is true, it might not create any at all.
+func genRandomValues(min, max int) []Value {
+	var nValues = rand.Intn(max+1-min) + min
+	ret := []Value{}
+	for i := 0; i < nValues; i++ {
+		ret = append(ret, genRandomValue(vtUnset))
+	}
+	return ret
+}
+
 // key reads an error that may end with extra data and returns only
 // the leading textual part of it so that we can aggregate messages
 // that are similar but not identical. I wouldn't do it this way
 // in production but for testing it's fine.
 func key(err error) string {
 	s := err.Error()
-	p := regexp.MustCompile("^[a-zA-Z ]+")
+	p := regexp.MustCompile("^[a-zA-Z '-]+")
 	return p.FindString(s)
 }
 
@@ -213,11 +308,13 @@ func TestFuzzFunctions(t *testing.T) {
 
 	var prog string
 	var savedvm *ChaincodeVM
+	var startingStack []Value
 	// we want to know what failed if something failed
 	defer func() {
 		if r := recover(); r != nil {
 			fmt.Println("Run caused a panic:", r)
 			fmt.Println("Program: ", prog)
+			fmt.Println("Starting stack:", startingStack)
 			fmt.Println(savedvm)
 			debug.PrintStack()
 			t.Errorf("Test failed.")
@@ -253,7 +350,8 @@ func TestFuzzFunctions(t *testing.T) {
 		savedvm = vm
 
 		// Put a couple of items on the stack
-		vm.Init(NewNumber(1), NewNumber(2))
+		startingStack = genRandomValues(1, 3)
+		vm.Init(startingStack...)
 		err = vm.Run(false)
 		if err == nil {
 			// fmt.Printf("Successfully ran:\n")
@@ -279,11 +377,13 @@ func TestFuzzValid(t *testing.T) {
 
 	var prog string
 	var savedvm *ChaincodeVM
+	var startingStack []Value
 	// we want to know what failed if something failed
 	defer func() {
 		if r := recover(); r != nil {
 			fmt.Println("Run caused a panic:", r)
 			fmt.Println("Program: ", prog)
+			fmt.Println("Starting stack:", startingStack)
 			fmt.Println(savedvm)
 			debug.PrintStack()
 			t.Errorf("Test failed.")
@@ -292,7 +392,7 @@ func TestFuzzValid(t *testing.T) {
 
 	rand.Seed(time.Now().UnixNano())
 	results := make(map[string]int)
-	total := 100
+	total := 1000
 	nruns := os.Getenv("FUZZ_RUNS")
 	if nruns != "" {
 		total, _ = strconv.Atoi(nruns)
@@ -310,7 +410,8 @@ func TestFuzzValid(t *testing.T) {
 		savedvm = vm
 
 		// Put a couple of items on the stack
-		vm.Init(NewNumber(1), NewNumber(2))
+		startingStack = genRandomValues(1, 3)
+		vm.Init(startingStack...)
 		err = vm.Run(false)
 		if err == nil {
 			// fmt.Printf("Successfully ran:\n")
@@ -334,11 +435,13 @@ func TestFuzzJunk(t *testing.T) {
 
 	var prog string
 	var savedvm *ChaincodeVM
+	var startingStack []Value
 	// we want to know what failed if something failed
 	defer func() {
 		if r := recover(); r != nil {
 			fmt.Println("Run caused a panic:", r)
 			fmt.Println("Program: ", prog)
+			fmt.Println("Starting stack:", startingStack)
 			fmt.Println(savedvm)
 			debug.PrintStack()
 			t.Errorf("Test failed.")
@@ -375,7 +478,8 @@ func TestFuzzJunk(t *testing.T) {
 		savedvm = vm
 
 		// Put a couple of items on the stack
-		vm.Init(NewNumber(1), NewNumber(2))
+		startingStack = genRandomValues(1, 3)
+		vm.Init(startingStack...)
 		err = vm.Run(false)
 		if err == nil {
 			// fmt.Printf("Successfully ran:\n")
