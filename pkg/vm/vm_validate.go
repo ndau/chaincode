@@ -68,14 +68,10 @@ func validateStructure(code []Opcode) ([]int, error) {
 	var skipcount int
 	var offsets = []int{}
 
-	for offset, b := range code {
-		// some opcodes have operands and we need to be sure those are skipped
-		if skipcount > 0 {
-			skipcount--
-			continue
-		}
+	// for offset, b := range code {
+	for offset := 0; offset < len(code); offset += skipcount + 1 {
 		skipcount = extraBytes(code, offset)
-		newstate, found := transitions[tr{state, b}]
+		newstate, found := transitions[tr{state, code[offset]}]
 		if !found {
 			continue
 		}

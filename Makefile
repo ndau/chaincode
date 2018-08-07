@@ -2,7 +2,9 @@
 
 fuzz:
 	go test ./... --race -timeout 10s -short
-	FUZZ_RUNS=100 go test --race -v -timeout 10m ./pkg/vm -run "*Fuzz*"
+	FUZZ_RUNS=50000 go test --race -v -timeout 30s ./pkg/vm -run "TestFuzzJunk"
+	FUZZ_RUNS=50000 go test --race -v -timeout 30s ./pkg/vm -run "TestFuzzFunctions"
+	FUZZ_RUNS=10000 go test --race -v -timeout 30s ./pkg/vm -run "TestFuzzValid"
 
 generate: opcodes.md pkg/vm/opcodes.go pkg/vm/miniasmOpcodes.go pkg/vm/opcode_string.go \
 		pkg/vm/extrabytes.go cmd/chasm/chasm.peggo pkg/vm/enabledopcodes.go
