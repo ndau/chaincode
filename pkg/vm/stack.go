@@ -136,7 +136,7 @@ func (st *Stack) PopAsListOfStructs(ix int) (List, error) {
 				return l, err
 			}
 			if _, ok := n.(Number); !ok {
-				return l, stackError(fmt.Sprintf("field %d of element %d was not a Number", ix, i))
+				return l, stackError(fmt.Sprintf("field was not a Number: %d of element %d", ix, i))
 			}
 		}
 	}

@@ -38,9 +38,9 @@ func (vm *ChaincodeVM) skipToMatchingBracket() error {
 				return nil
 			}
 		default:
-			// fail-safe (should never happen)
 			if vm.pc > len(vm.code) {
-				return vm.runtimeError(newRuntimeError("VM RAN OFF THE END!"))
+				// fail-safe (should never happen)
+				panic("VM RAN OFF THE END!")
 			}
 		}
 	}
@@ -724,6 +724,10 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		if err != nil {
 			return vm.runtimeError(err)
 		}
+
+		if src.Len() == 0 {
+			return vm.runtimeError(newRuntimeError("cannot use wchoice on an empty list"))
+		}
 		// because PopAsListOfStructs() validates the data,
 		// we know we're safe to traverse the list of structs
 		// and pull out our specified field as a Number
@@ -754,7 +758,7 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		}
 
 		// if we get here, something is very wrong
-		return vm.runtimeError(newRuntimeError(fmt.Sprintf("wchoice can't happen: %d %d %d", rand, partialSum, total)))
+		panic(fmt.Sprintf("wchoice can't happen: %d %d %d", rand, partialSum, total))
 
 	case OpSort:
 		src, err := vm.stack.PopAsList()
