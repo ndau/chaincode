@@ -1,0 +1,35 @@
+; This is an account approval script that validates that at least two keys have signed
+; the transaction, and that one of those two keys is the special key
+
+context: ACCOUNT
+func main {
+    ; when the context is properly set up, the constants for
+    ; transactions and addresses to select fields would be predefined
+    ; these definitions are just for demonstration purposes right now
+    SIGS = 2    ; the field ID containing the list of signatures in the tx struct
+    KEYS = 4    ; the field ID containing the list of keys authorized on the account
+    SIGKEY = 2  ; the field ID containing the key within a signature
+
+    ; stack top on right -- tx on top, then account
+                            ;acct tx
+    field SIGS              ;acct sigs
+    dup                     ;acct sigs sigs
+    len                     ;acct sigs nsigs
+    one                     ;acct sigs nsigs 1
+    gt                      ;acct signs (nsigs > 1)
+    ifnz                    ;check if (nsigs>1)
+        fail                ;if not, we're done
+    endif                   ;acct sigs
+    lookup haskey 0         ;acct
+                            ; lookup will fail and error out if key was not found
+    true                    ; if the lookup returns, specialkey was found
+}
+
+; checks if the item on the stack has a key equal to the SPECIALKEY
+func hasKey {
+                            ;sig
+    field SIGKEY            ;sigkey
+    pushb addr(000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f)        ;sigkey specialkey
+    eq
+}
+

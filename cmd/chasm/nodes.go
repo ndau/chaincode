@@ -1,8 +1,10 @@
 package main
 
 import (
+	"encoding/hex"
 	"errors"
 	"strconv"
+	"strings"
 
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 
@@ -227,18 +229,27 @@ type PushB struct {
 
 func newPushB(iface interface{}) (*PushB, error) {
 	ia := toIfaceSlice(iface)
-	out := make([]byte, len(ia))
+	out := make([]byte, 0)
 
-	for i, item := range ia {
+	for _, item := range ia {
 		if b, ok := item.([]byte); ok {
-			out[i] = b[0]
+			// if the item is a []byte, it was a quoted string so just embed the bytes of the string
+			out = append(out, b[0])
 		} else {
+			// if the item was a string, it should be parsed as the representation of an byte,
+			// either decimal or hex, or possibly as an address (which starts with "addr(")
 			s := item.(string)
-			v, err := strconv.ParseUint(s, 0, 8)
-			if err != nil {
-				return nil, err
+			if strings.HasPrefix(s, "addr(") {
+				// we couldn't get here if it wasn't valid hex
+				addr, _ := hex.DecodeString(s[5 : len(s)-1])
+				out = append(out, addr...)
+			} else {
+				v, err := strconv.ParseUint(s, 0, 8)
+				if err != nil {
+					return nil, err
+				}
+				out = append(out, byte(v))
 			}
-			out[i] = byte(v)
 		}
 	}
 	return &PushB{out}, nil

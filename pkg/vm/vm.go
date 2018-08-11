@@ -184,6 +184,7 @@ func (vm *ChaincodeVM) Init(values ...Value) {
 	vm.history = []HistoryState{}
 	vm.runstate = RsReady
 	vm.pc = 2 // skip the def 0 at the start
+	vm.infunc = 0
 }
 
 // Run runs a VM from its current state until it ends

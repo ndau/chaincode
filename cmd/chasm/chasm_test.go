@@ -47,6 +47,7 @@ func TestPushB(t *testing.T) {
 			pushb "HI!"
 			pushb 0x01 0x02 0x03
 			pushb 0x01 0x02 0x03 0x04 0x05 0x06 0x07
+			pushb addr(deadbeeffeed5d00d5)
 		}
 `
 	checkParse(t, "PushB", code, `00 8000
@@ -54,6 +55,7 @@ func TestPushB(t *testing.T) {
 	29 03 484921
 	29 03 01 02 03
 	29 07 01 02 03 04 05 06 07
+	29 de ad be ef fe ed 5d 00 d5
 	88`)
 }
 

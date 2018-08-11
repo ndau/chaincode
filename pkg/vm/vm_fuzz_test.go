@@ -397,7 +397,9 @@ func TestFuzzValid(t *testing.T) {
 	if nruns != "" {
 		total, _ = strconv.Atoi(nruns)
 	}
-	for i := 0; i < total; i++ {
+	attempts := 0
+	secondaryFailures := 0
+	for attempts < total {
 		prog = strings.Join(genRandomProgram(), "\n")
 		ops := miniAsm(prog)
 		bin := ChasmBinary{"test", "", "TEST", ops}
@@ -409,20 +411,27 @@ func TestFuzzValid(t *testing.T) {
 		}
 		savedvm = vm
 
-		// Put a couple of items on the stack
-		startingStack = genRandomValues(1, 3)
-		vm.Init(startingStack...)
-		err = vm.Run(false)
-		if err == nil {
+		// if the script runs to completion, try it a few more times with some other
+		// data to see if we can make it fail
+		for runcount := 0; runcount < 10; runcount++ {
+			attempts++
+			// Put a couple of items on the stack
+			startingStack = genRandomValues(1, 3)
+			vm.Init(startingStack...)
+			err = vm.Run(false)
+			if err != nil {
+				results[key(err)]++
+				if runcount > 1 {
+					secondaryFailures++
+				}
+				break
+			}
 			// fmt.Printf("Successfully ran:\n")
 			// vm.DisassembleAll()
 			results["success"]++
-
-		} else {
-			results[key(err)]++
 		}
 	}
-	fmt.Printf("Results for %d runs:\n", total)
+	fmt.Printf("Results for %d runs (%d secondary failures):\n", attempts, secondaryFailures)
 	for k, v := range results {
 		fmt.Printf("%8d: %s\n", v, k)
 	}
