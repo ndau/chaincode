@@ -20,6 +20,8 @@ const (
 	StNull    structureState = iota
 	StDef     structureState = iota
 	StDefPlus structureState = iota
+	StHandler structureState = iota
+	StHndPlus structureState = iota
 	StIf      structureState = iota
 	StIfPlus  structureState = iota
 	StIfMinus structureState = iota
@@ -34,39 +36,53 @@ type tr struct {
 
 // validateStructure reads the script and checks to make sure that the nested
 // elements are properly nested and not out of order or missing.
-func validateStructure(code []Opcode) ([]int, error) {
+func validateStructure(code []Opcode) (map[byte]int, []int, error) {
+	// This is a table of allowed transitions from a given state, depending on the opcode.
+	// For example, from the StNull state, the only allowed transitions are to definitions.
 	transitions := map[tr]structureState{
-		tr{StNull, OpDef}:    StDefPlus,
-		tr{StNull, OpIfZ}:    StError,
-		tr{StNull, OpIfNZ}:   StError,
-		tr{StNull, OpElse}:   StError,
-		tr{StNull, OpEndIf}:  StError,
-		tr{StNull, OpEndDef}: StError,
-		tr{StDef, OpDef}:     StError,
-		tr{StDef, OpIfZ}:     StIfPlus,
-		tr{StDef, OpIfNZ}:    StIfPlus,
-		tr{StDef, OpElse}:    StError,
-		tr{StDef, OpEndIf}:   StError,
-		tr{StDef, OpEndDef}:  StNull,
-		tr{StIf, OpDef}:      StError,
-		tr{StIf, OpIfZ}:      StIfPlus,
-		tr{StIf, OpIfNZ}:     StIfPlus,
-		tr{StIf, OpElse}:     StElse,
-		tr{StIf, OpEndIf}:    StIfMinus,
-		tr{StIf, OpEndDef}:   StError,
-		tr{StElse, OpDef}:    StError,
-		tr{StElse, OpIfZ}:    StIfPlus,
-		tr{StElse, OpIfNZ}:   StIfPlus,
-		tr{StElse, OpElse}:   StError,
-		tr{StElse, OpEndIf}:  StIfMinus,
-		tr{StElse, OpEndDef}: StError,
+		tr{StNull, OpDef}:        StDefPlus,
+		tr{StNull, OpHandler}:    StHndPlus,
+		tr{StNull, OpIfZ}:        StError,
+		tr{StNull, OpIfNZ}:       StError,
+		tr{StNull, OpElse}:       StError,
+		tr{StNull, OpEndIf}:      StError,
+		tr{StNull, OpEndDef}:     StError,
+		tr{StDef, OpDef}:         StError,
+		tr{StDef, OpHandler}:     StError,
+		tr{StDef, OpIfZ}:         StIfPlus,
+		tr{StDef, OpIfNZ}:        StIfPlus,
+		tr{StDef, OpElse}:        StError,
+		tr{StDef, OpEndIf}:       StError,
+		tr{StDef, OpEndDef}:      StNull,
+		tr{StHandler, OpDef}:     StError,
+		tr{StHandler, OpHandler}: StError,
+		tr{StHandler, OpIfZ}:     StIfPlus,
+		tr{StHandler, OpIfNZ}:    StIfPlus,
+		tr{StHandler, OpElse}:    StError,
+		tr{StHandler, OpEndIf}:   StError,
+		tr{StHandler, OpEndDef}:  StNull,
+		tr{StIf, OpDef}:          StError,
+		tr{StIf, OpHandler}:      StError,
+		tr{StIf, OpIfZ}:          StIfPlus,
+		tr{StIf, OpIfNZ}:         StIfPlus,
+		tr{StIf, OpElse}:         StElse,
+		tr{StIf, OpEndIf}:        StIfMinus,
+		tr{StIf, OpEndDef}:       StError,
+		tr{StElse, OpDef}:        StError,
+		tr{StElse, OpHandler}:    StError,
+		tr{StElse, OpIfZ}:        StIfPlus,
+		tr{StElse, OpIfNZ}:       StIfPlus,
+		tr{StElse, OpElse}:       StError,
+		tr{StElse, OpEndIf}:      StIfMinus,
+		tr{StElse, OpEndDef}:     StError,
 	}
 
 	var state structureState
 	var depth int
-	var nfuncs int
+	var nfuncs byte
 	var skipcount int
-	var offsets = []int{}
+	var handlers = make(map[byte]int)
+	var functions = make([]int, 0)
 
 	// for offset, b := range code {
 	for offset := 0; offset < len(code); offset += skipcount + 1 {
@@ -77,15 +93,34 @@ func validateStructure(code []Opcode) ([]int, error) {
 		}
 		switch newstate {
 		case StDefPlus:
-			funcnum := int(code[offset+1])
+			// this is the old code that should be preserved with offsets renamed to functions
+			funcnum := byte(code[offset+1])
 			if funcnum != nfuncs {
-				return offsets, ValidationError{fmt.Sprintf("def should have been %d, found %d", nfuncs, funcnum)}
+				return handlers, functions, ValidationError{fmt.Sprintf("def should have been %d, found %d", nfuncs, funcnum)}
 			}
-			offsets = append(offsets, int(offset+2)) // skip the def opcode, which is 2 bytes
+			functions = append(functions, int(offset+skipcount+1)) // skip the def opcode
 			nfuncs++
 			newstate = StDef
+		case StHndPlus:
+			nhandlers := int(code[offset+1])
+			if len(code) < offset+2+nhandlers {
+				return handlers, functions, ValidationError{"handler count parameter was too large"}
+			}
+			handlerids := code[offset+2 : offset+2+nhandlers]
+			if nhandlers == 0 {
+				// special case -- "handler 0" means define the default
+				handlerids = []Opcode{0}
+			}
+			for i := 0; i < len(handlerids); i++ {
+				handlerID := byte(handlerids[i])
+				if _, found := handlers[handlerID]; found {
+					return handlers, functions, ValidationError{fmt.Sprintf("multiple handlers found for event %d", handlerID)}
+				}
+				handlers[handlerID] = int(offset + skipcount + 1) // skip the handler opcode
+			}
+			newstate = StHandler
 		case StError:
-			return offsets, ValidationError{fmt.Sprintf("invalid program structure [offset=%d]", offset)}
+			return handlers, functions, ValidationError{fmt.Sprintf("invalid program structure [offset=%d]", offset)}
 		case StIfPlus:
 			depth++
 			newstate = StIf
@@ -100,15 +135,15 @@ func validateStructure(code []Opcode) ([]int, error) {
 		state = newstate
 	}
 	if skipcount != 0 {
-		return offsets, ValidationError{"missing operands"}
+		return handlers, functions, ValidationError{"missing operands"}
 	}
 	if state != StNull {
-		return offsets, ValidationError{"missing end"}
+		return handlers, functions, ValidationError{"missing end"}
 	}
-	if nfuncs < 1 {
-		return offsets, ValidationError{"missing def"}
+	if len(handlers) == 0 {
+		return handlers, functions, ValidationError{"no handlers were defined"}
 	}
-	return offsets, nil
+	return handlers, functions, nil
 }
 
 // generateInstructions is a helper that reads a sequence of bytes that has

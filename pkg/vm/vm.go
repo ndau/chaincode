@@ -2,6 +2,7 @@ package vm
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 )
 
@@ -65,16 +66,17 @@ type Nower interface {
 
 // ChaincodeVM is the reason we're here
 type ChaincodeVM struct {
-	runstate RunState
-	context  Opcode
-	code     []Opcode
-	stack    *Stack
-	pc       int // program counter
-	history  []HistoryState
-	infunc   int   // the number of the func we're currently in
-	offsets  []int // byte offsets of the functions
-	rand     Randomer
-	now      Nower
+	runstate  RunState
+	context   Opcode
+	code      []Opcode
+	stack     *Stack
+	pc        int // program counter
+	history   []HistoryState
+	infunc    int          // the number of the func we're currently in
+	handlers  map[byte]int // byte offsets of the handlers by handler ID
+	functions []int        // byte offsets of the functions indexed by function number
+	rand      Randomer
+	now       Nower
 }
 
 // New creates a new VM and loads a ChasmBinary into it (or errors)
@@ -110,20 +112,23 @@ func (vm *ChaincodeVM) SetNow(n Nower) {
 }
 
 // CreateForFunc creates a new VM from this one that is used to run a function
+// and is already in an initialized state to run that function.
+// Just call Run() after this.
 func (vm *ChaincodeVM) CreateForFunc(funcnum int, newpc int, nstack int) (*ChaincodeVM, error) {
 	newstack, err := vm.stack.TopN(nstack)
 	if err != nil {
 		return nil, err
 	}
 	newvm := ChaincodeVM{
-		context:  vm.context,
-		code:     vm.code,
-		runstate: vm.runstate,
-		offsets:  vm.offsets,
-		history:  []HistoryState{},
-		infunc:   funcnum,
-		pc:       newpc,
-		stack:    newstack,
+		context:   vm.context,
+		code:      vm.code,
+		runstate:  vm.runstate,
+		handlers:  vm.handlers,
+		functions: vm.functions,
+		history:   []HistoryState{},
+		infunc:    funcnum,
+		pc:        newpc,
+		stack:     newstack,
 	}
 	return &newvm, nil
 }
@@ -138,6 +143,17 @@ func (vm *ChaincodeVM) History() []HistoryState {
 	return vm.history
 }
 
+// HandlerIDs returns a sorted list of handler IDs that are
+// defined for this VM.
+func (vm *ChaincodeVM) HandlerIDs() []int {
+	ids := []int{}
+	for h := range vm.handlers {
+		ids = append(ids, int(h))
+	}
+	sort.Sort(sort.IntSlice(ids))
+	return ids
+}
+
 // PreLoad is the validation function called before loading a VM to make sure it
 // has a hope of loading properly
 func (vm *ChaincodeVM) PreLoad(cb ChasmBinary) error {
@@ -148,11 +164,12 @@ func (vm *ChaincodeVM) PreLoad(cb ChasmBinary) error {
 		return ValidationError{"code is too long"}
 	}
 	// make sure the executable part of the code is valid
-	offsets, err := validateStructure(cb.Data[1:])
+	handlers, functions, err := validateStructure(cb.Data[1:])
 	if err != nil {
 		return err
 	}
-	vm.offsets = offsets
+	vm.functions = functions
+	vm.handlers = handlers
 
 	// now generate a bitset of used opcodes from the instructions
 	usedOpcodes := getUsedOpcodes(generateInstructions(cb.Data[1:]))
@@ -175,16 +192,28 @@ func (vm *ChaincodeVM) PreLoad(cb ChasmBinary) error {
 	return nil
 }
 
-// Init is called to set up the VM to run
-func (vm *ChaincodeVM) Init(values ...Value) {
+// Init is called to set up the VM to run the handler for a given eventID.
+// It can take an arbitrary list of values to push on the stack, which it pushes
+// in order -- so if you want something on top of the stack, put it last
+// in the argument list. If the VM doesn't have a handler for the specified eventID,
+// and it also doesn't have a handler for event 0, then Init will return an error.
+func (vm *ChaincodeVM) Init(eventID byte, values ...Value) error {
 	vm.stack = newStack()
 	for _, v := range values {
 		vm.stack.Push(v)
 	}
 	vm.history = []HistoryState{}
 	vm.runstate = RsReady
-	vm.pc = 2 // skip the def 0 at the start
-	vm.infunc = 0
+	h, ok := vm.handlers[eventID]
+	if !ok {
+		h, ok = vm.handlers[0]
+		if !ok {
+			return ValidationError{"code does not have a handler for the specified event or a default handler"}
+		}
+	}
+	vm.pc = h
+	vm.infunc = -1 // we're not in a function to start
+	return nil
 }
 
 // Run runs a VM from its current state until it ends
@@ -225,14 +254,14 @@ func (vm *ChaincodeVM) Disassemble(pc int) (string, int) {
 	op := vm.code[pc]
 	numExtra := extraBytes(vm.code, pc)
 	sa := []string{fmt.Sprintf("%3d  %02x", pc, byte(op))}
-	for i := numExtra; i > 0; i-- {
+	for i := 1; i <= numExtra; i++ {
 		sa = append(sa, fmt.Sprintf("%02x", byte(vm.code[pc+i])))
 	}
 	hex := strings.Join(sa, " ")
-	if len(hex) > 30 {
-		hex = hex[:25] + "..."
+	if len(hex) > 32 {
+		hex = hex[:27] + "..."
 	}
-	out := fmt.Sprintf("%-30s  %s", hex, op)
+	out := fmt.Sprintf("%-32s  %s", hex, op)
 
 	return out, numExtra + 1
 }

@@ -4,7 +4,7 @@
 ; a*x*x + b*x + c
 
 context: TEST
-func foo {
+handler 0 {
     A = 3
     B = 5
     C = 7

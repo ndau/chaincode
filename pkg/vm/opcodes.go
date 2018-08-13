@@ -77,4 +77,5 @@ const (
 	OpWChoice Opcode = 0x95
 	OpSort    Opcode = 0x96
 	OpLookup  Opcode = 0x97
+	OpHandler Opcode = 0xa0
 )

@@ -1,4 +1,5 @@
 ; strict majority calculation -- requires more than half
+; and forbids ever changing the script again
 ; def main(tx Transaction, state Account) {
 ;     authorized = len(state.KEYS)
 ;     onBoth = intersect(tx.SIGNATURES, state.KEYS)
@@ -6,7 +7,7 @@
 ; }
 
 context: ACCOUNT
-func majority {
+handler 0 {
     ; when the context is properly set up, the constants for
     ; transactions and addresses to select fields would be predefined
     ; these definitions are just for demonstration purposes right now
@@ -26,3 +27,6 @@ func majority {
     lt                      ;(true if nkeys < 2*nsigs)
 }
 
+handler 12 {
+    false
+}

@@ -72,4 +72,5 @@ var opcodeMap = map[string]Opcode{
 	"wchoice": OpWChoice,
 	"sort":    OpSort,
 	"lookup":  OpLookup,
+	"handler": OpHandler,
 }

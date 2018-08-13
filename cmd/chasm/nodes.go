@@ -82,6 +82,48 @@ func newPreambleNode(ctx vm.ContextByte) (*PreambleNode, error) {
 	return &PreambleNode{context: ctx}, nil
 }
 
+// HandlerDef is a node that expresses the information in a function definition
+type HandlerDef struct {
+	ids   []byte
+	nodes []Node
+}
+
+func (n *HandlerDef) bytes() []byte {
+	b := []byte{byte(vm.OpHandler), byte(len(n.ids))}
+	b = append(b, n.ids...)
+	for _, op := range n.nodes {
+		b = append(b, op.bytes()...)
+	}
+	b = append(b, byte(vm.OpEndDef))
+	return b
+}
+
+func newHandlerDef(sids []string, nodes interface{}, constants map[string]string) (*HandlerDef, error) {
+	sl := toIfaceSlice(nodes)
+	nl := []Node{}
+	for _, v := range sl {
+		if n, ok := v.(Node); ok {
+			nl = append(nl, n)
+		}
+	}
+
+	ids := []byte{}
+	for _, sid := range sids {
+		s, ok := constants[sid]
+		if !ok {
+			s = sid
+		}
+		id, err := strconv.Atoi(s)
+		if err != nil {
+			return nil, errors.New(sid + " is an invalid handler ID")
+		}
+		ids = append(ids, byte(id))
+	}
+
+	f := &HandlerDef{ids: ids, nodes: nl}
+	return f, nil
+}
+
 // FunctionDef is a node that expresses the information in a function definition
 type FunctionDef struct {
 	name  string

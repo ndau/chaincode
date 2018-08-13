@@ -49,7 +49,7 @@ func BuildVMForContext(context ContextByte, bin ChasmBinary, values ...Value) (*
 	if ContextByte(vm.context) != context {
 		return nil, fmt.Errorf("binary context %d does not agree with required context %d", vm.context, context)
 	}
-	vm.Init(values...)
+	vm.Init(0, values...)
 	return vm, nil
 }
 

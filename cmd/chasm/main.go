@@ -15,6 +15,7 @@ func main() {
 		Input   string `arg:"positional"`
 		Output  string `arg:"-o" help:"Output filename"`
 		Comment string `arg:"-c" help:"Comment to embed in the output file."`
+		Debug   bool   `arg:"-d" help:"Dump the code after a successful assembly."`
 	}
 	arg.MustParse(&args)
 
@@ -58,5 +59,19 @@ func main() {
 	err = vm.Serialize(name, args.Comment, b, out)
 	if err != nil {
 		log.Fatal(err)
+	}
+
+	if args.Debug {
+		var buf bytes.Buffer
+		vm.Serialize(name, args.Comment, b, &buf)
+		bin, _ := vm.Deserialize(&buf)
+		if err != nil {
+			log.Fatal(err)
+		}
+		thevm, err := vm.New(bin)
+		if err != nil {
+			log.Fatal(err)
+		}
+		thevm.DisassembleAll()
 	}
 }

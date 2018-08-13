@@ -55,7 +55,7 @@ func TestPushB(t *testing.T) {
 	29 03 484921
 	29 03 01 02 03
 	29 07 01 02 03 04 05 06 07
-	29 de ad be ef fe ed 5d 00 d5
+	29 09 de ad be ef fe ed 5d 00 d5
 	88`)
 }
 

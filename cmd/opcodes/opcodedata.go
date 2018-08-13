@@ -615,7 +615,7 @@ var opcodeData = opcodeInfos{
 	opcodeInfo{
 		Value:   0x80,
 		Name:    "Def",
-		Summary: "Defines function block n, where n is a number larger than any previously defined function in this script. Function 0 is called by the system. Every function must be terminated by end, and function definitions may not be nested.",
+		Summary: "Defines function block n, where n is a number larger than any previously defined function in this script. Functions can only be called by handlers or other functions. Every function must be terminated by enddef, and function definitions may not be nested.",
 		Doc:     "",
 		Example: example{
 			Pre:  "",
@@ -628,8 +628,8 @@ var opcodeData = opcodeInfos{
 	opcodeInfo{
 		Value:   0x81,
 		Name:    "Call",
-		Summary: "Calls the function block, provided that its ID is greater than the index of the function block currently executing (recursion is not permitted). The function runs with a new stack which is initialized with the top n values of the current stack (which are copied, NOT popped). Upon return, the top value on the function's stack is pushed onto the caller's stack.",
-		Doc:     "The function's return value is the top entry on its stack upon return.",
+		Summary: "Calls the function block, provided that its ID is greater than the index of the function block currently executing (recursion is not permitted). The function runs with a new stack which is initialized with the top n values of the current stack (which are copied, NOT popped). Upon return, the top value on the function's stack is pushed onto the caller's stack. If ID == 0, the ID to be used is popped from the top of the stack, which must be a Number.",
+		Doc:     "The function's return value is the top entry on its stack upon return. A switch statement can be implemented by creating a List of function IDs and using index or lookup",
 		Example: example{
 			Pre:  "",
 			Inst: "call n m",
@@ -804,6 +804,18 @@ var opcodeData = opcodeInfos{
 			Inst: "lookup n m",
 			Post: "i"},
 		Parms:   []parm{functionIDParm{}, indexParm{"count"}},
+		Enabled: true,
+	},
+	opcodeInfo{
+		Value:   0xA0,
+		Name:    "Handler",
+		Summary: "Begins the definition of a handler, which is ended with enddef. The following byte defines a count of the number of handler IDs that follow from 1-255; all of the specified events will be sent to this handler. If the count byte is 0, no handler IDs are specified; this defines the default handler which will receive all events not sent to another handler.",
+		Doc:     "",
+		Example: example{
+			Pre:  "",
+			Inst: "handler 1 EVENT_FOOBAR",
+			Post: ""},
+		Parms:   []parm{eventListParm{}},
 		Enabled: true,
 	},
 }

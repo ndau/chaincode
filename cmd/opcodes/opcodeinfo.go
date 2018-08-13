@@ -107,6 +107,25 @@ func (p pushbParm) Placeholder() string {
 	return "ba"
 }
 
+type eventListParm struct {
+}
+
+func (p eventListParm) Nbytes() string {
+	return "int(code[offset+1]) + 1"
+}
+
+func (p eventListParm) PeggoParm() string {
+	return fmt.Sprintf("Bytes")
+}
+
+func (p eventListParm) PeggoTmpl() string {
+	return fmt.Sprintf("Handler")
+}
+
+func (p eventListParm) Placeholder() string {
+	return "events"
+}
+
 type functionIDParm struct{}
 
 func (p functionIDParm) Nbytes() string {

@@ -4,7 +4,7 @@ package vm
 
 import "strconv"
 
-const _Opcode_name = "NopDropDrop2DupDup2SwapOverPickRollTuckRetFailZeroPush1Push2Push3Push4Push5Push6Push7Push8PushBOneNeg1PushTNowPushARandPushLAddSubMulDivModDivModMulDivNotNegIncDecEqGtLtIndexLenAppendExtendSliceFieldFieldLDefCallDecoEndDefIfZIfNZElseEndIfSumAvgMaxMinChoiceWChoiceSortLookup"
+const _Opcode_name = "NopDropDrop2DupDup2SwapOverPickRollTuckRetFailZeroPush1Push2Push3Push4Push5Push6Push7Push8PushBOneNeg1PushTNowPushARandPushLAddSubMulDivModDivModMulDivNotNegIncDecEqGtLtIndexLenAppendExtendSliceFieldFieldLDefCallDecoEndDefIfZIfNZElseEndIfSumAvgMaxMinChoiceWChoiceSortLookupHandler"
 
 var _Opcode_map = map[Opcode]string{
 	0:   _Opcode_name[0:3],
@@ -73,6 +73,7 @@ var _Opcode_map = map[Opcode]string{
 	149: _Opcode_name[256:263],
 	150: _Opcode_name[263:267],
 	151: _Opcode_name[267:273],
+	160: _Opcode_name[273:280],
 }
 
 func (i Opcode) String() string {

@@ -57,8 +57,8 @@ Value|Opcode|Meaning|Stack before|Instr.|Stack after
 0x54|Slice|Expects a list and two indices on top of the stack. Creates a new list containing the designated subset of the elements in the original slice.|[X Y Z] 1 3|slice|[Y Z]
 0x60|Field|Retrieves a field at index f from a struct; if the index is out of bounds, fails.|X|field f|X.f
 0x70|FieldL|Makes a new list by retrieving a given field from all of the structs in a list.|[X Y Z]|fieldl f|[X.f Y.f Z.f]
-0x80|Def|Defines function block n, where n is a number larger than any previously defined function in this script. Function 0 is called by the system. Every function must be terminated by end, and function definitions may not be nested.||def n|
-0x81|Call|Calls the function block, provided that its ID is greater than the index of the function block currently executing (recursion is not permitted). The function runs with a new stack which is initialized with the top n values of the current stack (which are copied, NOT popped). Upon return, the top value on the function's stack is pushed onto the caller's stack.||call n m|
+0x80|Def|Defines function block n, where n is a number larger than any previously defined function in this script. Functions can only be called by handlers or other functions. Every function must be terminated by enddef, and function definitions may not be nested.||def n|
+0x81|Call|Calls the function block, provided that its ID is greater than the index of the function block currently executing (recursion is not permitted). The function runs with a new stack which is initialized with the top n values of the current stack (which are copied, NOT popped). Upon return, the top value on the function's stack is pushed onto the caller's stack. If ID == 0, the ID to be used is popped from the top of the stack, which must be a Number.||call n m|
 0x82|Deco|Decorates a list of structs (on top of the stack, which it pops) by applying the function block to each member of the struct, copying n stack entries to the function block's stack, then copying the struct itself; on return, the top value of the function block stack is appended to the list entry. The resulting new list is pushed onto the stack.||deco n m|
 0x88|EndDef|Ends a function definition; always required.||enddef|
 0x89|IfZ|If the top stack item is zero, executes subsequent code. The top stack item is discarded.||ifz|
@@ -66,13 +66,14 @@ Value|Opcode|Meaning|Stack before|Instr.|Stack after
 0x8e|Else|If the code immediately following an if was not executed, this code (up to end) will be; otherwise it will be skipped.||else|
 0x8f|EndIf|Terminates a conditional block; if this opcode is missing for any block, the program is invalid.||endif|
 0x90|Sum|Given a list of numbers, sums all the values in the list.|[2 12 4]|sum|18
-0x91|Avg|Given a list of numbers, averages all the values in the list.|[2 12 4]|avg|6
+0x91|Avg|Given a list of numbers, averages all the values in the list. The result will always be Floor(average).|[2 12 4]|avg|6
 0x92|Max|Given a list of numbers, finds the maximum value.|[2 12 4]|max|12
 0x93|Min|Given a list of numbers, finds the minimum value.|[2 12 4]|min|2
 0x94|Choice|Selects an item at random from a list and leaves it on the stack as a replacement for the list.|[X Y Z]|choice|
-0x95|WChoice|Selects an item from a list of structs weighted by the given field index.|[X Y Z] f|wchoice f|
+0x95|WChoice|Selects an item from a list of structs weighted by the given field index, which must be numeric.|[X Y Z] f|wchoice f|
 0x96|Sort|Sorts a list of structs by a given field.|[X Y Z] f|sort f|The list sorted by field f
 0x97|Lookup|Selects an item from a list of structs by applying the function block to each item in order, copying n stack entries to the function block's stack, then copying the struct itself; returns the index of the first item in the list where the result is a nonzero number; throws an error if no item returns a nonzero number.|[X Y Z]|lookup n m|i
+0xa0|Handler|Begins the definition of a handler, which is ended with enddef. The following byte defines a count of the number of handler IDs that follow from 1-255; all of the specified events will be sent to this handler. If the count byte is 0, no handler IDs are specified; this defines the default handler which will receive all events not sent to another handler.||handler 1 EVENT_FOOBAR|
 # Disabled Opcodes
 
 Value|Opcode|Meaning|Stack before|Instr.|Stack after

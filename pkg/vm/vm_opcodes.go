@@ -50,10 +50,10 @@ func (vm *ChaincodeVM) skipToMatchingBracket() error {
 // returns the value left on the stack by the called function
 func (vm *ChaincodeVM) callFunction(funcnum int, nargs int, debug bool, extraArgs ...Value) (Value, error) {
 	var retval Value
-	if funcnum <= vm.infunc || funcnum >= len(vm.offsets) {
+	if funcnum <= vm.infunc || funcnum >= len(vm.functions) {
 		return retval, vm.runtimeError(newRuntimeError("invalid function number (no recursion allowed)"))
 	}
-	newpc := vm.offsets[funcnum]
+	newpc := vm.functions[funcnum]
 
 	childvm, err := vm.CreateForFunc(funcnum, newpc, nargs)
 	if err != nil {
@@ -827,7 +827,7 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		}
 
 	default:
-		return vm.runtimeError(newRuntimeError("unimplemented opcode"))
+		return vm.runtimeError(newRuntimeError(fmt.Sprintf("unimplemented opcode %s at %d", instr, vm.pc)))
 	}
 
 	return nil

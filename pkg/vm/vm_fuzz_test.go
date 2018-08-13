@@ -48,20 +48,61 @@ func randByte() byte {
 
 // genRandomProgram generates a program that will pass the VM's validation
 // criteria, so we can make sure that the runtime doesn't just die when presented
-// with any strange code.
+// with any strange code. It generates a set of functions, and then
+// generates a set of handlers that may call those functions.
 func genRandomProgram() []string {
-	// here are some weightings for the number of functions in a program
-	w := weightings{opts: []option{
+	// here are some weightings for the number of handlers in a program
+	whandlers := weightings{opts: []option{
 		option{50, 1},
 		option{30, 2},
 		option{10, 3},
 		option{10, 4},
 	}}
-	nfuncs := choose(w).(int)
+	// here are some weightings for the number of functions in a program
+	wfuncts := weightings{opts: []option{
+		option{50, 1},
+		option{30, 2},
+		option{10, 3},
+		option{10, 4},
+	}}
+
+	nfuncs := choose(wfuncts).(int)
 	s := []string{}
 	for i := 0; i < nfuncs; i++ {
 		s = append(s, genRandomFunc(i, nfuncs-1)...)
 	}
+
+	nhandlers := choose(whandlers).(int)
+	for i := 0; i < nhandlers; i++ {
+		handlerID := rand.Intn(256) // this will sometimes generate duplicated handler IDs, that's OK
+		s = append(s, genRandomHandler(handlerID, nfuncs-1)...)
+	}
+	return s
+}
+
+// genRandomHandler generates a handler with the handler number hnum
+// and also accepts a parameter for the maximum function number it can call.
+func genRandomHandler(hnum, fmax int) []string {
+	// here are some weightings for the number of top-level sequences in a handler
+	w := weightings{opts: []option{
+		option{40, 1},
+		option{20, 2},
+		option{10, 3},
+		option{10, 4},
+		option{5, 5},
+		option{5, 6},
+	}}
+	s := []string{fmt.Sprintf("%s 1 %02x", OpHandler, hnum)}
+	nseqs := choose(w).(int)
+	for i := 0; i < nseqs; i++ {
+		s = append(s, genRandomSequence(0, fmax, 0)...)
+	}
+	// check for empty results  -- that's useless to us
+	// so if we did that, just try again
+	if len(s) == 1 {
+		return genRandomHandler(hnum, fmax)
+	}
+	s = append(s, OpEndDef.String())
 	return s
 }
 
@@ -174,7 +215,7 @@ func genUnorderedInstruction() string {
 		s := []string{op.String()}
 
 		switch op {
-		case OpDef, OpEndDef, OpCall, OpDeco, OpLookup, OpIfNZ, OpIfZ, OpElse, OpEndIf:
+		case OpDef, OpHandler, OpEndDef, OpCall, OpDeco, OpLookup, OpIfNZ, OpIfZ, OpElse, OpEndIf:
 			continue
 		case OpPushB, OpPushA:
 			// append up to 16 extra bytes
@@ -298,10 +339,10 @@ func key(err error) string {
 	return p.FindString(s)
 }
 
-// TestFuzzFunctions generates individual functions of random enabled opocodes -- they have
+// TestFuzzHandlers generates individual handlers of random enabled opcodes -- they have
 // the proper wrappers at the beginning and end but are otherwise random-but-valid opcodes.
 // Many of these will just fail validation.
-func TestFuzzFunctions(t *testing.T) {
+func TestFuzzHandlers(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping test in short mode.")
 	}
@@ -329,7 +370,7 @@ func TestFuzzFunctions(t *testing.T) {
 		total, _ = strconv.Atoi(nruns)
 	}
 	for i := 0; i < total; i++ {
-		s := []string{OpDef.String(), " 00"}
+		s := []string{OpHandler.String(), " 00"}
 		for j := 0; j < rand.Intn(20)+5; j++ {
 			op := Opcode(randByte())
 			if !EnabledOpcodes.Get(int(op)) {
@@ -351,7 +392,7 @@ func TestFuzzFunctions(t *testing.T) {
 
 		// Put a couple of items on the stack
 		startingStack = genRandomValues(1, 3)
-		vm.Init(startingStack...)
+		vm.Init(0, startingStack...)
 		err = vm.Run(false)
 		if err == nil {
 			// fmt.Printf("Successfully ran:\n")
@@ -397,6 +438,7 @@ func TestFuzzValid(t *testing.T) {
 	if nruns != "" {
 		total, _ = strconv.Atoi(nruns)
 	}
+	fmt.Printf("Running %d iterations.\n", total)
 	attempts := 0
 	secondaryFailures := 0
 	for attempts < total {
@@ -405,19 +447,25 @@ func TestFuzzValid(t *testing.T) {
 		bin := ChasmBinary{"test", "", "TEST", ops}
 		vm, err := New(bin)
 		if err != nil {
-			// fmt.Printf("Didn't load because %s: %s\n", err, p)
+			// fmt.Printf("Didn't load because %s: %s\n", err, vm)
 			results[key(err)]++
 			continue
 		}
 		savedvm = vm
 
+		// try the script at least once for each handler
+		events := vm.HandlerIDs()
+		var h byte
+		for hix := 0; hix < len(events); hix++ {
+			h = byte(events[hix])
+		}
 		// if the script runs to completion, try it a few more times with some other
 		// data to see if we can make it fail
 		for runcount := 0; runcount < 10; runcount++ {
 			attempts++
 			// Put a couple of items on the stack
 			startingStack = genRandomValues(1, 3)
-			vm.Init(startingStack...)
+			vm.Init(h, startingStack...)
 			err = vm.Run(false)
 			if err != nil {
 				results[key(err)]++
@@ -488,7 +536,7 @@ func TestFuzzJunk(t *testing.T) {
 
 		// Put a couple of items on the stack
 		startingStack = genRandomValues(1, 3)
-		vm.Init(startingStack...)
+		vm.Init(0, startingStack...)
 		err = vm.Run(false)
 		if err == nil {
 			// fmt.Printf("Successfully ran:\n")
