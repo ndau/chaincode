@@ -1,6 +1,5 @@
 {
   "name": "examples/onePlus1of3.chasm",
   "comment": "1+1of3",
-  "context": "ACCOUNT",
-  "data": "BaABAGACBVEqTooRj5cAACqIgABgAikgAAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh9NiA=="
+  "data": "oABgAgVRKk6KEY+XAAAqiIAAYAIpIAABAgMEBQYHCAkKCwwNDg8QERITFBUWFxgZGhscHR4fTYg="
 }

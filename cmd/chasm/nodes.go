@@ -33,9 +33,8 @@ type Fixupper interface {
 
 // Script is the highest level node in the system
 type Script struct {
-	preamble Node
-	nodes    []Node
-	funcs    map[string]int
+	nodes []Node
+	funcs map[string]int
 }
 
 func (n *Script) fixup() {
@@ -47,18 +46,14 @@ func (n *Script) fixup() {
 }
 
 func (n *Script) bytes() []byte {
-	b := append([]byte{}, n.preamble.bytes()...)
+	var b []byte
 	for _, op := range n.nodes {
 		b = append(b, op.bytes()...)
 	}
 	return b
 }
 
-func newScript(p interface{}, nodes interface{}, funcs map[string]int) (*Script, error) {
-	preamble, ok := p.(*PreambleNode)
-	if !ok {
-		return &Script{}, errors.New("not a preamble node")
-	}
+func newScript(nodes interface{}, funcs map[string]int) (*Script, error) {
 	sl := toIfaceSlice(nodes)
 	nodeArray := []Node{}
 	for _, v := range sl {
@@ -66,20 +61,7 @@ func newScript(p interface{}, nodes interface{}, funcs map[string]int) (*Script,
 			nodeArray = append(nodeArray, n)
 		}
 	}
-	return &Script{preamble: preamble, nodes: nodeArray, funcs: funcs}, nil
-}
-
-// PreambleNode expresses the information in the preamble (which for now is just a context byte)
-type PreambleNode struct {
-	context vm.ContextByte
-}
-
-func (n *PreambleNode) bytes() []byte {
-	return []byte{byte(n.context)}
-}
-
-func newPreambleNode(ctx vm.ContextByte) (*PreambleNode, error) {
-	return &PreambleNode{context: ctx}, nil
+	return &Script{nodes: nodeArray, funcs: funcs}, nil
 }
 
 // HandlerDef is a node that expresses the information in a function definition
@@ -89,6 +71,10 @@ type HandlerDef struct {
 }
 
 func (n *HandlerDef) bytes() []byte {
+	if len(n.ids) == 1 && n.ids[0] == 0 {
+		// optimization: if the only ID is 0 then we can just use "handler 0"
+		n.ids = []byte{}
+	}
 	b := []byte{byte(vm.OpHandler), byte(len(n.ids))}
 	b = append(b, n.ids...)
 	for _, op := range n.nodes {

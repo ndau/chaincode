@@ -1,7 +1,6 @@
 package vm
 
 import (
-	"fmt"
 	"strings"
 )
 
@@ -41,13 +40,10 @@ func ContextLookup(s string) (ContextByte, bool) {
 // BuildVMForContext constructs a new VM in the desired context,
 // checks to make sure that the desired context agrees with the VM's context,
 // and populates the stack with whatever values are specified.
-func BuildVMForContext(context ContextByte, bin ChasmBinary, values ...Value) (*ChaincodeVM, error) {
+func BuildVMForContext(bin ChasmBinary, values ...Value) (*ChaincodeVM, error) {
 	vm, err := New(bin)
 	if err != nil {
 		return nil, err
-	}
-	if ContextByte(vm.context) != context {
-		return nil, fmt.Errorf("binary context %d does not agree with required context %d", vm.context, context)
 	}
 	vm.Init(0, values...)
 	return vm, nil
@@ -56,7 +52,7 @@ func BuildVMForContext(context ContextByte, bin ChasmBinary, values ...Value) (*
 // BuildVMForTest constructs a new VM in the TEST context, and populates the
 // stack with whatever values are specified.
 func BuildVMForTest(bin ChasmBinary, values ...Value) (*ChaincodeVM, error) {
-	return BuildVMForContext(CtxTest, bin, values...)
+	return BuildVMForContext(bin, values...)
 }
 
 // We need parallel constructors for VMs that take the appropriate parameters

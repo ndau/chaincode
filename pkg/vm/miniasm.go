@@ -20,7 +20,6 @@ import (
 //
 // Any failure in parsing causes a panic; there is no error recovery.
 //
-// The resulting stream of instructions is returned prefixed with a 0 byte, which is the "TEST" context.
 // No attempt is made to ensure that opcode parameters or types are correct, and each opcode is individually
 // specified (Push1, Push2, etc).
 //
@@ -37,7 +36,7 @@ func miniAsm(s string) []Opcode {
 	// quoted string without spaces (this is a mini assembler!)
 	qsp := regexp.MustCompile(`"[^" ]+"`)
 	words := wsp.Split(strings.TrimSpace(s), -1)
-	opcodes := []Opcode{0}
+	opcodes := []Opcode{}
 	for _, w := range words {
 		// skip empty words
 		if w == "" {

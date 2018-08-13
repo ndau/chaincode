@@ -3,9 +3,7 @@
 
 }
 
-Script <- EOL* p:Preamble code:Code EOF { return newScript(p, code, c.globalStore["functions"].(map[string]int)) }
-
-Preamble <-  _? "context" _? ":" _? cc:ContextConstant EOL { return newPreambleNode(cc.(vm.ContextByte)) }
+Script <- EOL* code:Code EOF { return newScript(code, c.globalStore["functions"].(map[string]int)) }
 
 Code <-  EOL* rs:RoutineDef+ { return rs, nil }
 
@@ -127,15 +125,6 @@ Opcode =
 Timestamp <- Date 'T' Time 'Z' { return string(c.text), nil }
 Date <- [0-9] [0-9] [0-9] [0-9] '-' [0-9] [0-9] '-' [0-9] [0-9]
 Time <-  [0-9] [0-9] ':' [0-9] [0-9] ':' [0-9] [0-9]
-
-ContextConstant <-
-    ( "TEST" { return vm.CtxTest, nil }
-    / "NODE_PAYOUT" { return vm.CtxNodePayout, nil }
-    / "EAI_TIMING" { return vm.CtxEaiTiming, nil }
-    / "NODE_QUALITY" { return vm.CtxNodeQuality, nil }
-    / "MARKET_PRICE" { return vm.CtxMarketPrice, nil }
-    / "ACCOUNT" { return vm.CtxAccount, nil }
-    )
 
 Value =
     ( Integer

@@ -3,7 +3,6 @@
 ; and x on the stack and calculates
 ; a*x*x + b*x + c
 
-context: TEST
 handler 0 {
     A = 3
     B = 5

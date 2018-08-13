@@ -6,10 +6,9 @@
 ;     return len(onBoth) * 2 >= len(state.KEYS)
 ; }
 
-context: ACCOUNT
 handler 0 {
-    ; when the context is properly set up, the constants for
-    ; transactions and addresses to select fields would be predefined
+    ; when things are properly set up, the constants for
+    ; transactions and addresses to select fields will be predefined
     ; these definitions are just for demonstration purposes right now
     SIGS = 2    ; the field ID containing the list of signatures in the tx struct
     KEYS = 4    ; the field ID containing the list of keys authorized on the account

@@ -381,7 +381,7 @@ func TestFuzzHandlers(t *testing.T) {
 		s = append(s, OpEndDef.String())
 		prog = strings.Join(s, " ")
 		ops := miniAsm(prog)
-		bin := ChasmBinary{"test", "", "TEST", ops}
+		bin := ChasmBinary{"test", "TEST", ops}
 		vm, err := New(bin)
 		if err != nil {
 			// fmt.Printf("Didn't load because %s: %s\n", err, p)
@@ -444,7 +444,7 @@ func TestFuzzValid(t *testing.T) {
 	for attempts < total {
 		prog = strings.Join(genRandomProgram(), "\n")
 		ops := miniAsm(prog)
-		bin := ChasmBinary{"test", "", "TEST", ops}
+		bin := ChasmBinary{"test", "TEST", ops}
 		vm, err := New(bin)
 		if err != nil {
 			// fmt.Printf("Didn't load because %s: %s\n", err, vm)
@@ -525,7 +525,7 @@ func TestFuzzJunk(t *testing.T) {
 		s = append(s, OpEndDef.String())
 		prog = strings.Join(s, " ")
 		ops := miniAsm(prog)
-		bin := ChasmBinary{"test", "", "TEST", ops}
+		bin := ChasmBinary{"test", "TEST", ops}
 		vm, err := New(bin)
 		if err != nil {
 			// fmt.Printf("Didn't load because %s: %s\n", err, p)

@@ -1,9 +1,8 @@
 ; This is an account approval script that validates that at least two keys have signed
 ; the transaction, and that one of those two keys is the special key
 
-context: ACCOUNT
 handler 0 {
-    ; when the context is properly set up, the constants for
+    ; when things are properly set up, the constants for
     ; transactions and addresses to select fields would be predefined
     ; these definitions are just for demonstration purposes right now
     SIGS = 2    ; the field ID containing the list of signatures in the tx struct

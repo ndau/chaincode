@@ -30,7 +30,6 @@ func TestSerialize(t *testing.T) {
 				return
 			}
 			gotW := w.String()
-			assert.Contains(t, gotW, "TEST")
 			assert.Contains(t, gotW, `"name": "test1"`)
 			assert.Contains(t, gotW, "AAE=")
 

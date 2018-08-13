@@ -316,7 +316,7 @@ var opcodeData = opcodeInfos{
 		Value:   0x2D,
 		Name:    "Now",
 		Summary: "Pushes the current timestamp onto the stack.",
-		Doc:     "Note that 'current' may have special meaning depending on the context; in particular, repeated uses of this opcode may (and most likely will) return the same value within a given context.",
+		Doc:     "Note that 'current' may have special meaning depending on the context; in particular, repeated uses of this opcode may (and most likely will) return the same value within a given runtime scenario.",
 		Example: example{
 			Pre:  "",
 			Inst: "now",
@@ -339,7 +339,7 @@ var opcodeData = opcodeInfos{
 	opcodeInfo{
 		Value:   0x2F,
 		Name:    "Rand",
-		Summary: "Pushes a 64-bit random number onto the stack. Note that 'random' may have special meaning depending on context; in particular, repeated uses of this opcode may (and most likely will) return the same value within a given context.",
+		Summary: "Pushes a 64-bit random number onto the stack. Note that 'random' may have special meaning depending on context; in particular, repeated uses of this opcode may (and most likely will) return the same value within a given runtime scenario.",
 		Doc:     "",
 		Example: example{
 			Pre:  "",

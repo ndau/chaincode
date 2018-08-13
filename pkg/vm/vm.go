@@ -25,7 +25,7 @@ func SetMaxCodeLength(n int) {
 
 // Chaincode defines the contract for the virtual machine
 type Chaincode interface {
-	PreLoad(cb ChasmBinary) error // validates that the code to be loaded is compatible with its stated context
+	PreLoad(cb ChasmBinary) error // validates that the code to be loaded is well-formed and plausible
 	Init(values []Value)
 	Run() (Value, error)
 }
@@ -52,8 +52,8 @@ type HistoryState struct {
 	// lists []List
 }
 
-// Randomer is an interface for a type that generates "random" integers (which may be
-// defined by context)
+// Randomer is an interface for a type that generates "random" integers (which may vary
+// depending on context)
 type Randomer interface {
 	RandInt() (int64, error)
 }
@@ -67,7 +67,6 @@ type Nower interface {
 // ChaincodeVM is the reason we're here
 type ChaincodeVM struct {
 	runstate  RunState
-	context   Opcode
 	code      []Opcode
 	stack     *Stack
 	pc        int // program counter
@@ -85,8 +84,7 @@ func New(bin ChasmBinary) (*ChaincodeVM, error) {
 	if err := vm.PreLoad(bin); err != nil {
 		return nil, err
 	}
-	vm.context = bin.Data[0]
-	vm.code = bin.Data[1:]
+	vm.code = bin.Data
 	vm.runstate = RsNotReady // not ready to run until we've called Init
 	r, err := NewDefaultRand()
 	if err != nil {
@@ -120,7 +118,6 @@ func (vm *ChaincodeVM) CreateForFunc(funcnum int, newpc int, nstack int) (*Chain
 		return nil, err
 	}
 	newvm := ChaincodeVM{
-		context:   vm.context,
 		code:      vm.code,
 		runstate:  vm.runstate,
 		handlers:  vm.handlers,
@@ -164,7 +161,7 @@ func (vm *ChaincodeVM) PreLoad(cb ChasmBinary) error {
 		return ValidationError{"code is too long"}
 	}
 	// make sure the executable part of the code is valid
-	handlers, functions, err := validateStructure(cb.Data[1:])
+	handlers, functions, err := validateStructure(cb.Data)
 	if err != nil {
 		return err
 	}
@@ -172,22 +169,12 @@ func (vm *ChaincodeVM) PreLoad(cb ChasmBinary) error {
 	vm.handlers = handlers
 
 	// now generate a bitset of used opcodes from the instructions
-	usedOpcodes := getUsedOpcodes(generateInstructions(cb.Data[1:]))
+	usedOpcodes := getUsedOpcodes(generateInstructions(cb.Data))
 	// if it's not a proper subset of the enabled opcodes, don't let it run
 	if !usedOpcodes.IsSubsetOf(EnabledOpcodes) {
 		return ValidationError{"code contains illegal opcodes"}
 	}
 
-	ctx, ok := ContextLookup(cb.Context)
-	if !ok {
-		return ValidationError{"invalid context string"}
-	}
-	if _, ok := Contexts[ContextByte(cb.Data[0])]; !ok {
-		return ValidationError{"invalid context byte"}
-	}
-	if ctx != ContextByte(cb.Data[0]) {
-		return ValidationError{"context byte and context string disagree"}
-	}
 	// we seem to be OK
 	return nil
 }
