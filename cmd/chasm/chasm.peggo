@@ -144,7 +144,7 @@ Bytes <-
 
 Address <- "nd" [2-9a-km-np-zA-KM-NP-Z]+          { return string(c.text), nil }
 
-Constant <- [A-Z] [A-Z0-9_]*                      { return string(c.text), nil }
+Constant <- [A-Za-z] [A-Za-z0-9_]*                { return string(c.text), nil }
 FunctionName <- [A-Za-z] [A-Za-z0-9_]+            { return string(c.text), nil }
 
 

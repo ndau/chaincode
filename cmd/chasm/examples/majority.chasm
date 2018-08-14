@@ -6,26 +6,20 @@
 ;     return len(onBoth) * 2 >= len(state.KEYS)
 ; }
 
-handler 0 {
-    ; when things are properly set up, the constants for
-    ; transactions and addresses to select fields will be predefined
-    ; these definitions are just for demonstration purposes right now
-    SIGS = 2    ; the field ID containing the list of signatures in the tx struct
-    KEYS = 4    ; the field ID containing the list of keys authorized on the account
-
+handler Event_Default {
     ; stack top on right -- tx on top, then account
                             ;acct tx
-    field SIGS              ;acct sigs
-    swap                    ;sigs acct
-    field KEYS              ;sigs keys
-    len                     ;sigs nkeys
-    swap                    ;nkeys sigs
+    field Tx_Signatures     ;acct [sigs]
+    swap                    ;[sigs] acct
+    field Account_Keys      ;[sigs] [keys]
+    len                     ;[sigs] nkeys
+    swap                    ;nkeys [sigs]
     len                     ;nkeys nsigs
     dup                     ;nkeys nsigs nsigs
     add                     ;nkeys 2*nsigs
     lt                      ;(true if nkeys < 2*nsigs)
 }
 
-handler 12 {
+handler Event_ChangeTransferKey {
     false
 }
