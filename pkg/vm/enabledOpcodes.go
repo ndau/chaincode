@@ -74,4 +74,9 @@ var EnabledOpcodes = bitset256.New(
 	int(OpSort),
 	int(OpLookup),
 	int(OpHandler),
+	int(OpOr),
+	int(OpAnd),
+	int(OpXor),
+	int(OpCount1s),
+	int(OpBNot),
 )

@@ -1,31 +1,21 @@
 ; This is an account approval script that validates that at least 2 signatures are on
 ; the transaction, and that one of those two sigs is from the first key listed on the account
+; Expected arguments on the stack in order from bottom to top are:
+;    account
+;    transaction
+;    bitmask of which authorized keys were found in the signature list
 
 handler Event_Default {
-    ; stack top on right -- tx on top, then account
-                            ;acct tx
-    field Tx_Signatures     ;acct [sigs]
-    dup                     ;acct [sigs] [sigs]
-    len                     ;acct [sigs] nsigs
-    one                     ;acct [sigs] nsigs 1
-    gt                      ;acct [sigs] (nsigs > 1)
+    ; stack top on right -- sig bitmask on top, then tx, then account
+                            ;acct tx bm
+    dup                     ;acct tx bm bm
+    count1s                 ;acct tx bm nsigs
+    len                     ;acct tx bm nsigs
+    one                     ;acct tx bm nsigs 1
+    gt                      ;acct tx bm (nsigs > 1)
     ifnz                    ;check if (nsigs>1)
         fail                ;if not, we're done
-    endif                   ;acct [sigs]
-    swap                    ;[sigs] acct
-    field Account_Keys      ;[sigs] [keys]
-    zero                    ;[sigs] [keys] 0
-    index                   ;[sigs] key0
-    swap                    ;key0 [sigs]
-    lookup isKey 2          ;key0 [sigs] index
-                            ; lookup will fail and error out if key was not found
-    true                    ; if the lookup returns, specialkey was found
+    endif                   ;acct tx bm
+    one                     ;acct tx bm 1
+    and                     ;acct tx (was sig 0 used)
 }
-
-; receives a key and a single sig -- checks to see if the key matches the sig
-func issKey {
-                            ;key sig
-    field Signature_Key     ;key sigkey
-    eq                      ;(key == sigkey)
-}
-

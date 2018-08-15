@@ -66,3 +66,8 @@ func (vt Struct) String() string {
 	}
 	return fmt.Sprintf("str(%d)[%s]", vt.id, strings.Join(sa, ", "))
 }
+
+// IsTrue indicates if this Value evaluates to true
+func (vt Struct) IsTrue() bool {
+	return false
+}

@@ -5,4 +5,5 @@ type Value interface {
 	Compare(rhs Value) (int, error)
 	IsScalar() bool
 	String() string
+	IsTrue() bool
 }

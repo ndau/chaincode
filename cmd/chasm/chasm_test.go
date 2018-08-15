@@ -149,7 +149,7 @@ func TestUnitaryOpcodes1(t *testing.T) {
 	checkParse(t, "Unitary1", code, `
 		8000
 		00 0102 0506 090C
-		1011 2020 2a2a 2b2d
+		1011 2020 2a2b 2b2d
 		2f40 4142 4344 4546
 		4849 4A4B 5051 5253
 		5488`)

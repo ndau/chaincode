@@ -1,23 +1,21 @@
-; strict majority calculation -- requires more than half
+; strict majority calculation -- requires more than half of all keys to sign
 ; and forbids ever changing the script again
-; def main(tx Transaction, state Account) {
-;     authorized = len(state.KEYS)
-;     onBoth = intersect(tx.SIGNATURES, state.KEYS)
-;     return len(onBoth) * 2 >= len(state.KEYS)
-; }
+; Expected arguments on the stack in order from bottom to top are:
+;    account
+;    transaction
+;    bitmask of which authorized keys were found in the signature list
 
 handler Event_Default {
-    ; stack top on right -- tx on top, then account
-                            ;acct tx
-    field Tx_Signatures     ;acct [sigs]
-    swap                    ;[sigs] acct
-    field Account_Keys      ;[sigs] [keys]
-    len                     ;[sigs] nkeys
-    swap                    ;nkeys [sigs]
-    len                     ;nkeys nsigs
-    dup                     ;nkeys nsigs nsigs
-    add                     ;nkeys 2*nsigs
-    lt                      ;(true if nkeys < 2*nsigs)
+    ; stack top on right -- sig bitmask on top, then tx, then account
+                            ;acct tx bm
+    count1s                 ;acct tx nsigs
+    roll 2                  ;tx nsigs acct
+    field Account_Keys      ;tx nsigs [keys]
+    len                     ;tx nsigs nkeys
+    swap                    ;tx nkeys nsigs
+    dup                     ;tx nkeys nsigs nsigs
+    add                     ;tx nkeys 2*nsigs
+    lt                      ;tx (true if nkeys < 2*nsigs)
 }
 
 handler Event_ChangeTransferKey {

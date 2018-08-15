@@ -56,6 +56,11 @@ func (vt List) String() string {
 	return "[" + strings.Join(sa, ", ") + "]"
 }
 
+// IsTrue indicates if this Value evaluates to true
+func (vt List) IsTrue() bool {
+	return false
+}
+
 // Len returns the length of a List as an int64
 func (vt List) Len() int64 {
 	return int64(len(vt))

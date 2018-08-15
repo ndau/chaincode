@@ -33,3 +33,8 @@ func (vt Bytes) IsScalar() bool {
 func (vt Bytes) String() string {
 	return string(vt.b)
 }
+
+// IsTrue indicates if this Value evaluates to true
+func (vt Bytes) IsTrue() bool {
+	return false
+}

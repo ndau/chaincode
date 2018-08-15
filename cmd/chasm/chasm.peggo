@@ -61,6 +61,7 @@ Opcode =
 // VVVVV---GENERATED CODE BETWEEN THESE MARKERS, DO NOT EDIT---VVVVV
 
 	/ "zero" { return newUnitaryOpcode(vm.OpZero) }
+	/ "xor" { return newUnitaryOpcode(vm.OpXor) }
 	/ "wchoice" _ ix:Value { return newBinaryOpcode(vm.OpWChoice, ix.(string)) }
 	/ "tuck" _ offset:Value { return newBinaryOpcode(vm.OpTuck, offset.(string)) }
 	/ "true" { return newUnitaryOpcode(vm.OpTrue) }
@@ -78,6 +79,7 @@ Opcode =
 	/ "pusha" _ a:Address { return newPushAddr(a.(string)) }
 	/ "pick" _ offset:Value { return newBinaryOpcode(vm.OpPick, offset.(string)) }
 	/ "over" { return newUnitaryOpcode(vm.OpOver) }
+	/ "or" { return newUnitaryOpcode(vm.OpOr) }
 	/ "one" { return newUnitaryOpcode(vm.OpOne) }
 	/ "now" { return newUnitaryOpcode(vm.OpNow) }
 	/ "not" { return newUnitaryOpcode(vm.OpNot) }
@@ -112,10 +114,13 @@ Opcode =
 	/ "div" { return newUnitaryOpcode(vm.OpDiv) }
     / "deco" _ id:FunctionName _ count:Value { return newCallOpcode(vm.OpDeco, id.(string), count.(string)) }
 	/ "dec" { return newUnitaryOpcode(vm.OpDec) }
+	/ "count1s" { return newUnitaryOpcode(vm.OpCount1s) }
 	/ "choice" { return newUnitaryOpcode(vm.OpChoice) }
     / "call" _ id:FunctionName _ count:Value { return newCallOpcode(vm.OpCall, id.(string), count.(string)) }
+	/ "bnot" { return newUnitaryOpcode(vm.OpBNot) }
 	/ "avg" { return newUnitaryOpcode(vm.OpAvg) }
 	/ "append" { return newUnitaryOpcode(vm.OpAppend) }
+	/ "and" { return newUnitaryOpcode(vm.OpAnd) }
 	/ "add" { return newUnitaryOpcode(vm.OpAdd) }
 // ^^^^^---GENERATED CODE BETWEEN THESE MARKERS, DO NOT EDIT---^^^^^
 // The opcode below is particularly special -- it does not exist as its own opcode but does some smart manipulation

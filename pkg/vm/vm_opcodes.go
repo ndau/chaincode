@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"math/bits"
 	"math/rand"
 	"sort"
 
@@ -378,17 +379,27 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		if err := vm.stack.Push(NewNumber(t)); err != nil {
 			return vm.runtimeError(err)
 		}
-	case OpNot, OpNeg, OpInc, OpDec:
+
+	case OpNot:
+		v, err := vm.stack.Pop()
+		if err != nil {
+			return vm.runtimeError(err)
+		}
+		b := NewNumber(-1)
+		if v.IsTrue() {
+			b = NewNumber(0)
+		}
+		if err := vm.stack.Push(b); err != nil {
+			return vm.runtimeError(err)
+		}
+
+	case OpNeg, OpInc, OpDec:
 		n1, err := vm.stack.PopAsInt64()
 		if err != nil {
 			return vm.runtimeError(err)
 		}
 		var t int64
 		switch instr {
-		case OpNot:
-			if n1 == 0 {
-				t = 1
-			}
 		case OpNeg:
 			t = -n1
 		case OpInc:
@@ -823,6 +834,47 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 			return vm.runtimeError(errors.New("lookup failed"))
 		}
 		if err := vm.stack.Push(NewNumber(int64(foundix))); err != nil {
+			return vm.runtimeError(err)
+		}
+
+	case OpOr, OpAnd, OpXor:
+		n1, err := vm.stack.PopAsInt64()
+		if err != nil {
+			return vm.runtimeError(err)
+		}
+		n2, err := vm.stack.PopAsInt64()
+		if err != nil {
+			return vm.runtimeError(err)
+		}
+		var t int64
+		switch instr {
+		case OpOr:
+			t = n1 | n2
+		case OpAnd:
+			t = n1 & n2
+		case OpXor:
+			t = n1 ^ n2
+		}
+		if err := vm.stack.Push(NewNumber(t)); err != nil {
+			return vm.runtimeError(err)
+		}
+
+	case OpBNot:
+		n, err := vm.stack.PopAsInt64()
+		if err != nil {
+			return vm.runtimeError(err)
+		}
+		if err := vm.stack.Push(NewNumber(^n)); err != nil {
+			return vm.runtimeError(err)
+		}
+
+	case OpCount1s:
+		v, err := vm.stack.PopAsInt64()
+		if err != nil {
+			return vm.runtimeError(err)
+		}
+		n := bits.OnesCount64(uint64(v))
+		if err := vm.stack.Push(NewNumber(int64(n))); err != nil {
 			return vm.runtimeError(err)
 		}
 

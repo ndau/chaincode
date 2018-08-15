@@ -278,7 +278,6 @@ var opcodeData = opcodeInfos{
 	opcodeInfo{
 		Value:   0x2A,
 		Name:    "One",
-		Synonym: "True",
 		Summary: "Pushes 1 onto the stack.",
 		Doc:     "",
 		Example: example{
@@ -291,6 +290,7 @@ var opcodeData = opcodeInfos{
 	opcodeInfo{
 		Value:   0x2B,
 		Name:    "Neg1",
+		Synonym: "True",
 		Summary: "Pushes -1 onto the stack.",
 		Doc:     "",
 		Example: example{
@@ -411,7 +411,7 @@ var opcodeData = opcodeInfos{
 	opcodeInfo{
 		Value:   0x44,
 		Name:    "Mod",
-		Summary: "Divides the second numeric value on the stack by the top and puts the integer remainder on top of the stack. attempting to divide non-numeric values is an error, as is dividing by zero.",
+		Summary: "If the stack has y on top and x in the second position, Mod returns the integer remainder of x/y. The magnitude of the result is less than y and its sign agrees with that of x. Attempting to calculate the mod of non-numeric values is an error. It is also an error if y is zero.",
 		Doc:     "",
 		Example: example{
 			Pre:  "A B",
@@ -447,8 +447,8 @@ var opcodeData = opcodeInfos{
 	opcodeInfo{
 		Value:   0x48,
 		Name:    "Not",
-		Summary: "If the top of the stack is 0, it is replaced by 1 -- otherwise, it is replaced by 0.",
-		Doc:     "",
+		Summary: "Evaluates the truthiness of the value on top of the stack, and replaces it with True if the result was False, and with False if the result was True.",
+		Doc:     "One can convert any value of any type to its truthiness state with 'not not'.",
 		Example: example{
 			Pre:  "5 6 7",
 			Inst: "not",
@@ -628,8 +628,8 @@ var opcodeData = opcodeInfos{
 	opcodeInfo{
 		Value:   0x81,
 		Name:    "Call",
-		Summary: "Calls the function block, provided that its ID is greater than the index of the function block currently executing (recursion is not permitted). The function runs with a new stack which is initialized with the top n values of the current stack (which are copied, NOT popped). Upon return, the top value on the function's stack is pushed onto the caller's stack. If ID == 0, the ID to be used is popped from the top of the stack, which must be a Number.",
-		Doc:     "The function's return value is the top entry on its stack upon return. A switch statement can be implemented by creating a List of function IDs and using index or lookup",
+		Summary: "Calls the function block, provided that its ID is greater than the index of the function block currently executing (recursion is not permitted). The function runs with a new stack which is initialized with the top n values of the current stack (which are copied, NOT popped). Upon return, the top value on the function's stack is pushed onto the caller's stack.",
+		Doc:     "The function's return value is the top entry on its stack upon return.",
 		Example: example{
 			Pre:  "",
 			Inst: "call n m",
@@ -816,6 +816,66 @@ var opcodeData = opcodeInfos{
 			Inst: "handler 1 EVENT_FOOBAR",
 			Post: ""},
 		Parms:   []parm{eventListParm{}},
+		Enabled: true,
+	},
+	opcodeInfo{
+		Value:   0xB0,
+		Name:    "Or",
+		Summary: "Does a bitwise OR of the top two values on the stack (which must both be numeric) and puts the result on top of the stack. Attempting to operate on non-numeric values is an error.",
+		Doc:     "",
+		Example: example{
+			Pre:  "0x55 0x0F",
+			Inst: "or",
+			Post: "0x5F"},
+		Parms:   []parm{},
+		Enabled: true,
+	},
+	opcodeInfo{
+		Value:   0xB1,
+		Name:    "And",
+		Summary: "Does a bitwise AND of the top two values on the stack (which must both be numeric) and puts the result on top of the stack. Attempting to operate on non-numeric values is an error.",
+		Doc:     "",
+		Example: example{
+			Pre:  "0x55 0x0F",
+			Inst: "and",
+			Post: "0x05"},
+		Parms:   []parm{},
+		Enabled: true,
+	},
+	opcodeInfo{
+		Value:   0xB2,
+		Name:    "Xor",
+		Summary: "Does a bitwise exclusive OR (XOR) of the top two values on the stack (which must both be numeric) and puts the result on top of the stack. Attempting to operate on non-numeric values is an error.",
+		Doc:     "",
+		Example: example{
+			Pre:  "0x55 0x0F",
+			Inst: "xor",
+			Post: "0x5A"},
+		Parms:   []parm{},
+		Enabled: true,
+	},
+	opcodeInfo{
+		Value:   0xBC,
+		Name:    "Count1s",
+		Summary: "Returns the number of 1 bits in the top value on the stack (which must be numeric) and puts the result on top of the stack. Attempting to operate on a non-numeric value is an error.",
+		Doc:     "the result of the program 'neg1 count1s' is 64",
+		Example: example{
+			Pre:  "0x55",
+			Inst: "count1s",
+			Post: "4"},
+		Parms:   []parm{},
+		Enabled: true,
+	},
+	opcodeInfo{
+		Value:   0xBF,
+		Name:    "BNot",
+		Summary: "Does a bitwise NOT (1's complement) of the top value on the stack (which must be numeric) and puts the result on top of the stack. Attempting to operate on a non-numeric value is an error.",
+		Doc:     "",
+		Example: example{
+			Pre:  "5",
+			Inst: "bnot",
+			Post: "-6"},
+		Parms:   []parm{},
 		Enabled: true,
 	},
 }

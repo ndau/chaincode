@@ -2,8 +2,6 @@ package vm
 
 import (
 	"math"
-	"regexp"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -277,12 +275,20 @@ func TestMathOverflows(t *testing.T) {
 	assert.NotNil(t, err, "sub overflow")
 }
 
+func TestNot(t *testing.T) {
+	vm := buildVM(t, "handler 0 push1 7 not zero not pushl not enddef")
+	vm.Init(0)
+	err := vm.Run(false)
+	assert.Nil(t, err)
+	checkStack(t, vm.Stack(), 0, -1, -1)
+}
+
 func TestNotNegIncDec(t *testing.T) {
 	vm := buildVM(t, "handler 0 push1 7 not dup not push1 8 neg push1 4 inc push1 6 dec enddef")
 	vm.Init(0)
 	err := vm.Run(false)
 	assert.Nil(t, err)
-	checkStack(t, vm.Stack(), 0, 1, -8, 5, 5)
+	checkStack(t, vm.Stack(), 0, -1, -8, 5, 5)
 }
 
 func TestIf1(t *testing.T) {
@@ -863,278 +869,4 @@ func TestCallFail3(t *testing.T) {
 	vm.Init(0)
 	err := vm.Run(false)
 	assert.NotNil(t, err)
-}
-
-func TestDeco1(t *testing.T) {
-	vm := buildVM(t, `
-		handler 0 deco 0 0 fieldl 2 sum enddef
-		def 0 dup field 0 dup mul swap  field 1 dup mul add enddef
-	`)
-	l := NewList()
-	for i := int64(0); i < 5; i++ {
-		st := NewStruct(NewNumber(2*i), NewNumber(3*i+1))
-		l = l.Append(st)
-	}
-	vm.Init(0, l)
-	err := vm.Run(false)
-	assert.Nil(t, err)
-	checkStack(t, vm.Stack(), 455)
-}
-
-func TestStringers(t *testing.T) {
-	assert.Equal(t, "Call", OpCall.String())
-	vid := NewBytes([]byte("hi"))
-	assert.Equal(t, "hi", vid.String())
-	vn := NewNumber(123)
-	assert.Equal(t, "123", vn.String())
-	vt := NewTimestamp(0)
-	assert.Equal(t, "2000-01-01T00:00:00Z", vt.String())
-	vl := NewList()
-	vl = vl.Append(NewBytes([]byte("July"))).Append(NewNumber(18))
-	assert.Equal(t, "[July, 18]", vl.String())
-	vs := NewStruct(NewBytes([]byte("July")), NewNumber(18))
-	assert.Equal(t, "str(0)[July, 18]", vs.String())
-}
-
-func TestExerciseStrings(t *testing.T) {
-	vm := buildVM(t, "handler 0 sort 6 push1 3 index field 1 enddef")
-	vm.Init(0)
-
-	assert.Contains(t, vm.String(), "Sort")
-	da, n := vm.Disassemble(4)
-	assert.Equal(t, 2, n)
-	assert.Contains(t, da, "Push1")
-}
-
-func TestLookup1(t *testing.T) {
-	vm := buildVM(t, `
-		handler 0 lookup 0 0 enddef
-		def 0 field 0 push1 4 gt enddef
-	`)
-	l := NewList()
-	for i := int64(0); i < 5; i++ {
-		st := NewStruct(NewNumber(2*i), NewNumber(3*i+1))
-		l = l.Append(st)
-	}
-	vm.Init(0, l)
-	err := vm.Run(false)
-	assert.Nil(t, err)
-	checkStack(t, vm.Stack(), 3)
-}
-
-func TestLookup2(t *testing.T) {
-	vm := buildVM(t, `
-		handler 0 lookup 0 0 enddef
-		def 0 field 1 push1 4 gt enddef
-	`)
-	l := NewList()
-	for i := int64(0); i < 5; i++ {
-		st := NewStruct(NewNumber(2*i), NewNumber(3*i+1))
-		l = l.Append(st)
-	}
-	vm.Init(0, l)
-	err := vm.Run(false)
-	assert.Nil(t, err)
-	checkStack(t, vm.Stack(), 2)
-}
-
-func TestLookupFail1(t *testing.T) {
-	vm := buildVM(t, `
-		handler 0 lookup 0 0 enddef
-		def 0 field 1 push1 FF gt enddef
-	`)
-	l := NewList()
-	for i := int64(0); i < 5; i++ {
-		st := NewStruct(NewNumber(2*i), NewNumber(3*i+1))
-		l = l.Append(st)
-	}
-	vm.Init(0, l)
-	err := vm.Run(false)
-	assert.NotNil(t, err)
-}
-
-func TestUnimplemented(t *testing.T) {
-	// first make sure that the validation check forbids an invalid opcode
-	buildVMfail(t, "handler 0 FF enddef")
-
-	// now let's hack a VM after it passes validation to contain illegal data
-	vm := buildVM(t, "handler 0 NOP enddef")
-	// replace the nop with FF and try to run it; should still fail
-	vm.code[3] = Opcode(0xFF)
-	vm.Init(0)
-	err := vm.Run(false)
-	assert.NotNil(t, err)
-}
-
-func TestUnderflows(t *testing.T) {
-	p := regexp.MustCompile("[[:space:]]+")
-	keywords := p.Split(`drop drop2 dup dup2 swap over
-		add sub mul div mod divmod muldiv not neg inc dec
-		eq lt gt index len append extend slice sum avg max min`, -1)
-	for _, k := range keywords {
-		prog := "handler 0 " + k + " enddef"
-		vm := buildVM(t, prog)
-		vm.Init(0)
-		err := vm.Run(false)
-		assert.NotNil(t, err)
-		correct := strings.HasPrefix(err.Error(), "stack underflow") ||
-			strings.HasPrefix(err.Error(), "stack index error")
-		assert.True(t, correct, "Keyword=%s msg=%s", k, err)
-	}
-}
-
-func TestDisableOpcode(t *testing.T) {
-	// now let's hack a VM after it passes validation to contain illegal data
-	vm := buildVM(t, "handler 0 NOP enddef")
-	vm.Init(0)
-	err := vm.Run(false)
-	assert.Nil(t, err)
-
-	DisableOpcode(OpNop)
-	// now the validation check should fail an invalid opcode
-	buildVMfail(t, "handler 0 NOP enddef")
-	// but we have to re-enable Nop or other tests might fail
-	EnabledOpcodes.Set(int(OpNop))
-}
-
-func TestNegativeIndex(t *testing.T) {
-	prog := `Handler 00
-		Neg1 Index
-		EndDef`
-	vm := buildVM(t, prog)
-	vm.Init(0, NewList().Append(NewNumber(1)).Append(NewNumber(2)))
-	err := vm.Run(false)
-	assert.NotNil(t, err)
-}
-
-func TestIndex2(t *testing.T) {
-	// this test is making sure that the 8f embedded into the PushB doesn't
-	// cause skipToMatchingBracket to fail
-	prog := `Handler 00
-		IfZ
-		PushB 8 b6 42 59 a3 8f 28 81 70
-		EndIf
-		EndDef`
-	vm := buildVM(t, prog)
-	vm.Init(0, NewList().Append(NewNumber(1)).Append(NewNumber(2)))
-	err := vm.Run(false)
-	assert.Nil(t, err)
-}
-
-func TestNoHandlers(t *testing.T) {
-	// this test is making sure that if no handlers are defined, the vm won't load
-	buildVMfail(t, "Def 00 Nop EndDef")
-}
-
-func TestMultipleHandlers(t *testing.T) {
-	// this tests that we can define and call multiple handlers
-	prog := `handler 1 10 add enddef
-		handler 1 8 sub enddef
-		handler 1 30 mul enddef
-		handler 1 3 div enddef
-		`
-	vm := buildVM(t, prog)
-
-	vm.Init(16, NewNumber(12), NewNumber(4))
-	err := vm.Run(false)
-	assert.Nil(t, err)
-	checkStack(t, vm.Stack(), 16)
-
-	vm.Init(8, NewNumber(12), NewNumber(4))
-	err = vm.Run(false)
-	assert.Nil(t, err)
-	checkStack(t, vm.Stack(), 8)
-
-	vm.Init(48, NewNumber(12), NewNumber(4))
-	err = vm.Run(false)
-	assert.Nil(t, err)
-	checkStack(t, vm.Stack(), 48)
-
-	vm.Init(3, NewNumber(12), NewNumber(4))
-	err = vm.Run(false)
-	assert.Nil(t, err)
-	checkStack(t, vm.Stack(), 3)
-}
-
-func TestDefaultHandler(t *testing.T) {
-	// this tests that we can define a different default handler
-	// and also that it gets called if we invoke an event not in our list
-	prog := `handler 1 10 add enddef
-		handler 1 8 sub enddef
-		handler 0 mod enddef
-		handler 1 30 mul enddef
-		handler 1 3 div enddef
-		`
-	vm := buildVM(t, prog)
-
-	vm.Init(0, NewNumber(12), NewNumber(4))
-	err := vm.Run(false)
-	assert.Nil(t, err)
-	checkStack(t, vm.Stack(), 0)
-
-	vm.Init(8, NewNumber(12), NewNumber(4))
-	err = vm.Run(false)
-	assert.Nil(t, err)
-	checkStack(t, vm.Stack(), 8)
-
-	vm.Init(77, NewNumber(12), NewNumber(4))
-	err = vm.Run(false)
-	assert.Nil(t, err)
-	checkStack(t, vm.Stack(), 0)
-}
-
-func TestMultipleEvents(t *testing.T) {
-	// this tests that we can define a different default handler
-	// and also that it gets called if we invoke an event not in our list
-	prog := `handler 3 10 12 14 add enddef
-		handler 2 0 5 mul enddef
-		`
-	vm := buildVM(t, prog)
-
-	vm.Init(18, NewNumber(12), NewNumber(4))
-	err := vm.Run(false)
-	assert.Nil(t, err)
-	checkStack(t, vm.Stack(), 16)
-
-	vm.Init(18, NewNumber(12), NewNumber(4))
-	err = vm.Run(false)
-	assert.Nil(t, err)
-	checkStack(t, vm.Stack(), 16)
-
-	vm.Init(20, NewNumber(12), NewNumber(4))
-	err = vm.Run(false)
-	assert.Nil(t, err)
-	checkStack(t, vm.Stack(), 16)
-
-	vm.Init(0, NewNumber(12), NewNumber(4))
-	err = vm.Run(false)
-	assert.Nil(t, err)
-	checkStack(t, vm.Stack(), 48)
-
-	vm.Init(5, NewNumber(12), NewNumber(4))
-	err = vm.Run(false)
-	assert.Nil(t, err)
-	checkStack(t, vm.Stack(), 48)
-
-	vm.Init(77, NewNumber(12), NewNumber(4))
-	err = vm.Run(false)
-	assert.Nil(t, err)
-	checkStack(t, vm.Stack(), 48)
-}
-
-func TestHandlerIDs(t *testing.T) {
-	// this tests that the HandlerIDs function works right
-	prog := `handler 3 10 12 14 add enddef
-		handler 2 0 5 mul enddef
-		`
-	vm := buildVM(t, prog)
-	assert.Equal(t, []int{0, 5, 16, 18, 20}, vm.HandlerIDs())
-
-	prog = `handler 1 1 add enddef`
-	vm = buildVM(t, prog)
-	assert.Equal(t, []int{1}, vm.HandlerIDs())
-
-	prog = `handler 0 add enddef`
-	vm = buildVM(t, prog)
-	assert.Equal(t, []int{0}, vm.HandlerIDs())
 }
