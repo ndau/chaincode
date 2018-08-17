@@ -410,7 +410,7 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		if err := vm.stack.Push(NewNumber(t)); err != nil {
 			return vm.runtimeError(err)
 		}
-	case OpEq, OpGt, OpLt:
+	case OpEq, OpGt, OpLt, OpLte, OpGte:
 		v2, err := vm.stack.Pop()
 		if err != nil {
 			return vm.runtimeError(err)

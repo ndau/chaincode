@@ -47,11 +47,11 @@ func TestPushB(t *testing.T) {
 		}
 `
 	checkParse(t, "PushB", code, `8000
-	29 0b 050102030405060708090a
-	29 03 484921
-	29 03 01 02 03
-	29 07 01 02 03 04 05 06 07
-	29 09 de ad be ef fe ed 5d 00 d5
+	2A 0b 050102030405060708090a
+	2A 03 484921
+	2A 03 01 02 03
+	2A 07 01 02 03 04 05 06 07
+	2A 09 de ad be ef fe ed 5d 00 d5
 	88`)
 }
 
@@ -63,7 +63,7 @@ func TestPushT(t *testing.T) {
 		}
 `
 	checkParse(t, "PushT", code, `8000
-	2c 40 6a e1 72  43 07 02 00
+	2b 40 6a e1 72  43 07 02 00
 	88`)
 }
 
@@ -81,7 +81,7 @@ func TestFunc(t *testing.T) {
 			add
 		}
 `
-	checkParse(t, "Func", code, "8000 20 810201 88 8001 88 8002 2a 40 88")
+	checkParse(t, "Func", code, "8000 20 810201 88 8001 88 8002 1a 40 88")
 }
 
 func TestSeveralPushes(t *testing.T) {
@@ -94,7 +94,7 @@ func TestSeveralPushes(t *testing.T) {
 			push 12
 		}
 `
-	checkParse(t, "SeveralPushes", code, "8000 2b2a2102210c 88")
+	checkParse(t, "SeveralPushes", code, "8000 1b1a2102210c 88")
 }
 
 func TestConstants(t *testing.T) {
@@ -149,8 +149,8 @@ func TestUnitaryOpcodes1(t *testing.T) {
 	checkParse(t, "Unitary1", code, `
 		8000
 		00 0102 0506 090C
-		1011 2020 2a2b 2b2d
-		2f40 4142 4344 4546
+		1011 2020 1a1b 1b2c
+		2e40 4142 4344 4546
 		4849 4A4B 5051 5253
 		5488`)
 }
@@ -169,13 +169,15 @@ func TestUnitaryOpcodes2(t *testing.T) {
 			max
 			min
 			pushl
-			eq
-			gt
 			lt
+			lte
+			eq
+			gte
+			gt
 		}
 `
 	checkParse(t, "Unitary2", code,
-		"800094 898a8e8f9091929330 4d4e4f 88")
+		"800094 898a8e8f909192932f c0c1c2c3c4 88")
 }
 
 func TestBinary(t *testing.T) {

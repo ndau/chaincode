@@ -125,7 +125,7 @@ var opcodeData = opcodeInfos{
 	opcodeInfo{
 		Value:   0x10,
 		Name:    "Ret",
-		Summary: "Terminates the function; the values on the stack (if any) are the return values.",
+		Summary: "Terminates the function or handler; the top value on the stack (if there is one) are the return values.",
 		Doc:     "",
 		Example: example{
 			Pre:  "",
@@ -137,12 +137,37 @@ var opcodeData = opcodeInfos{
 	opcodeInfo{
 		Value:   0x11,
 		Name:    "Fail",
-		Summary: "Terminates the function and indicates an error.",
+		Summary: "Terminates the function or handler and indicates an error.",
 		Doc:     "",
 		Example: example{
 			Pre:  "",
 			Inst: "fail",
 			Post: ""},
+		Parms:   []parm{},
+		Enabled: true,
+	},
+	opcodeInfo{
+		Value:   0x1A,
+		Name:    "One",
+		Summary: "Pushes 1 onto the stack.",
+		Doc:     "",
+		Example: example{
+			Pre:  "",
+			Inst: "one, true",
+			Post: "1"},
+		Parms:   []parm{},
+		Enabled: true,
+	},
+	opcodeInfo{
+		Value:   0x1B,
+		Name:    "Neg1",
+		Synonym: "True",
+		Summary: "Pushes -1 onto the stack.",
+		Doc:     "",
+		Example: example{
+			Pre:  "",
+			Inst: "neg1",
+			Post: "-1"},
 		Parms:   []parm{},
 		Enabled: true,
 	},
@@ -264,7 +289,7 @@ var opcodeData = opcodeInfos{
 		NoAsm:   true,
 	},
 	opcodeInfo{
-		Value:   0x29,
+		Value:   0x2A,
 		Name:    "PushB",
 		Summary: "Pushes the specified number of following bytes onto the stack as a Bytes object.",
 		Doc:     "",
@@ -276,32 +301,7 @@ var opcodeData = opcodeInfos{
 		Enabled: true,
 	},
 	opcodeInfo{
-		Value:   0x2A,
-		Name:    "One",
-		Summary: "Pushes 1 onto the stack.",
-		Doc:     "",
-		Example: example{
-			Pre:  "",
-			Inst: "one, true",
-			Post: "1"},
-		Parms:   []parm{},
-		Enabled: true,
-	},
-	opcodeInfo{
 		Value:   0x2B,
-		Name:    "Neg1",
-		Synonym: "True",
-		Summary: "Pushes -1 onto the stack.",
-		Doc:     "",
-		Example: example{
-			Pre:  "",
-			Inst: "neg1",
-			Post: "-1"},
-		Parms:   []parm{},
-		Enabled: true,
-	},
-	opcodeInfo{
-		Value:   0x2C,
 		Name:    "PushT",
 		Summary: "Concatenates the next 8 bytes and pushes them onto the stack as a timestamp.",
 		Doc:     "",
@@ -313,7 +313,7 @@ var opcodeData = opcodeInfos{
 		Enabled: true,
 	},
 	opcodeInfo{
-		Value:   0x2D,
+		Value:   0x2C,
 		Name:    "Now",
 		Summary: "Pushes the current timestamp onto the stack.",
 		Doc:     "Note that 'current' may have special meaning depending on the context; in particular, repeated uses of this opcode may (and most likely will) return the same value within a given runtime scenario.",
@@ -325,7 +325,7 @@ var opcodeData = opcodeInfos{
 		Enabled: true,
 	},
 	opcodeInfo{
-		Value:   0x2E,
+		Value:   0x2D,
 		Name:    "PushA",
 		Summary: "Evaluates a to make sure it is formatted as a valid ndau-style address; if so, pushes it onto the stack as a Bytes object. If not, error.",
 		Doc:     "",
@@ -337,7 +337,7 @@ var opcodeData = opcodeInfos{
 		Enabled: true,
 	},
 	opcodeInfo{
-		Value:   0x2F,
+		Value:   0x2E,
 		Name:    "Rand",
 		Summary: "Pushes a 64-bit random number onto the stack. Note that 'random' may have special meaning depending on context; in particular, repeated uses of this opcode may (and most likely will) return the same value within a given runtime scenario.",
 		Doc:     "",
@@ -349,7 +349,7 @@ var opcodeData = opcodeInfos{
 		Enabled: true,
 	},
 	opcodeInfo{
-		Value:   0x30,
+		Value:   0x2F,
 		Name:    "PushL",
 		Summary: "Pushes an empty list onto the stack.",
 		Doc:     "",
@@ -471,7 +471,7 @@ var opcodeData = opcodeInfos{
 	opcodeInfo{
 		Value:   0x4A,
 		Name:    "Inc",
-		Summary: "Adds 1 to the number on top of the stack.",
+		Summary: "Adds 1 to the number on top of the stack, which must be a Number.",
 		Doc:     "",
 		Example: example{
 			Pre:  "A",
@@ -483,7 +483,7 @@ var opcodeData = opcodeInfos{
 	opcodeInfo{
 		Value:   0x4B,
 		Name:    "Dec",
-		Summary: "Subtracts 1 from the number on top of the stack.",
+		Summary: "Subtracts 1 from the number on top of the stack, which must be a Number.",
 		Doc:     "",
 		Example: example{
 			Pre:  "A",
@@ -845,7 +845,7 @@ var opcodeData = opcodeInfos{
 	opcodeInfo{
 		Value:   0xC0,
 		Name:    "Lt",
-		Summary: "Compares (and discards) the two top stack elements. If the types are different, fails execution. If the types are the same, compares the values, and leaves TRUE when the top item is strictly less than the second item according to the comparison rules.",
+		Summary: "Compares (and discards) the two top stack elements. If the types are different, fails execution. If the types are the same, compares the values, and leaves TRUE when the second item is strictly less than thetopd item according to the comparison rules.",
 		Doc:     "Numbers, Timestamps: numeric comparison; Lists: length of list; Struct: comparison of fields in order; Bytes: comparison of bytes in order.",
 		Example: example{
 			Pre:  "A B",
@@ -857,7 +857,7 @@ var opcodeData = opcodeInfos{
 	opcodeInfo{
 		Value:   0xC1,
 		Name:    "Lte",
-		Summary: "Compares (and discards) the two top stack elements. If the types are different, fails execution. If the types are the same, compares the values, and leaves TRUE when the top item is less than or equal to the second item according to the comparison rules.",
+		Summary: "Compares (and discards) the two top stack elements. If the types are different, fails execution. If the types are the same, compares the values, and leaves TRUE when the second item is less than or equal to thetopd item according to the comparison rules.",
 		Doc:     "",
 		Example: example{
 			Pre:  "A B",
@@ -869,7 +869,7 @@ var opcodeData = opcodeInfos{
 	opcodeInfo{
 		Value:   0xC2,
 		Name:    "Eq",
-		Summary: "Compares (and discards) the two top stack elements. If they are equal in both type and value, leaves TRUE (1) on top of the stack, otherwise leaves FALSE (0) on top of the stack.",
+		Summary: "Compares (and discards) the two top stack elements. If the types are different, fails execution. Otherwise, if they are equal in both type and value, leaves TRUE (1) on top of the stack, otherwise leaves FALSE (0) on top of the stack.",
 		Doc:     "",
 		Example: example{
 			Pre:  "A B",
@@ -881,7 +881,7 @@ var opcodeData = opcodeInfos{
 	opcodeInfo{
 		Value:   0xC3,
 		Name:    "Gte",
-		Summary: "Compares (and discards) the two top stack elements. If the types are different, fails execution. If the types are the same, compares the values, and leaves TRUE when the top item is greater than or equal to the second item according to the comparison rules.",
+		Summary: "Compares (and discards) the two top stack elements. If the types are different, fails execution. If the types are the same, compares the values, and leaves TRUE when the second item is greater than or equal to the top item according to the comparison rules.",
 		Doc:     "",
 		Example: example{
 			Pre:  "A B",
@@ -893,7 +893,7 @@ var opcodeData = opcodeInfos{
 	opcodeInfo{
 		Value:   0xC4,
 		Name:    "Gt",
-		Summary: "Compares (and discards) the two top stack elements. If the types are different, fails execution. If the types are the same, compares the values, and leaves TRUE when the top item is strictly greater than the second item according to the comparison rules.",
+		Summary: "Compares (and discards) the two top stack elements. If the types are different, fails execution. If the types are the same, compares the values, and leaves TRUE when the second item is strictly greater than thetopd item according to the comparison rules.",
 		Doc:     "",
 		Example: example{
 			Pre:  "A B",

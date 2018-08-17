@@ -17,8 +17,10 @@ Value|Opcode|Meaning|Stack before|Instr.|Stack after
 0x0d|Pick|The item back in the stack by the specified offset is copied to the top.|A B C D|pick 2|A B C D B
 0x0e|Roll|The item back in the stack by the specified offset is moved to the top.|A B C D|roll 2|A C D B
 0x0f|Tuck|The top of the stack is dropped N entries back into the stack after removing it from the top.|A B C D|tuck 2|A D B C
-0x10|Ret|Terminates the function; the values on the stack (if any) are the return values.||ret|
-0x11|Fail|Terminates the function and indicates an error.||fail|
+0x10|Ret|Terminates the function or handler; the top value on the stack (if there is one) are the return values.||ret|
+0x11|Fail|Terminates the function or handler and indicates an error.||fail|
+0x1a|One|Pushes 1 onto the stack.||one, true|1
+0x1b|Neg1 (True)|Pushes -1 onto the stack.||neg1|-1
 0x20|Zero (False)|Pushes 0 onto the stack.||zero|0
 0x21|Push1|Evaluates the next byte as a signed little-endian numeric value and pushes it onto the stack.||push1|A
 0x22|Push2|Evaluates the next 2 bytes as a signed little-endian numeric value and pushes it onto the stack.||push2|A
@@ -28,14 +30,12 @@ Value|Opcode|Meaning|Stack before|Instr.|Stack after
 0x26|Push6|Evaluates the next 6 bytes as a signed little-endian numeric value and pushes it onto the stack.||push6|A
 0x27|Push7|Evaluates the next 7 bytes as a signed little-endian numeric value and pushes it onto the stack.||push7|A
 0x28|Push8|Evaluates the next 8 bytes as a signed little-endian numeric value and pushes it onto the stack.||push8|A
-0x29|PushB|Pushes the specified number of following bytes onto the stack as a Bytes object.||pushb 3 0x41 0x42 0x43|"ABC"
-0x2a|One|Pushes 1 onto the stack.||one, true|1
-0x2b|Neg1 (True)|Pushes -1 onto the stack.||neg1|-1
-0x2c|PushT|Concatenates the next 8 bytes and pushes them onto the stack as a timestamp.||pusht|timestamp A
-0x2d|Now|Pushes the current timestamp onto the stack.||now|(current time as timestamp)
-0x2e|PushA|Evaluates a to make sure it is formatted as a valid ndau-style address; if so, pushes it onto the stack as a Bytes object. If not, error.||pusha nda234...4b3|nda234...4b3
-0x2f|Rand|Pushes a 64-bit random number onto the stack. Note that 'random' may have special meaning depending on context; in particular, repeated uses of this opcode may (and most likely will) return the same value within a given runtime scenario.||rand|
-0x30|PushL|Pushes an empty list onto the stack.||pushl|[]
+0x2a|PushB|Pushes the specified number of following bytes onto the stack as a Bytes object.||pushb 3 0x41 0x42 0x43|"ABC"
+0x2b|PushT|Concatenates the next 8 bytes and pushes them onto the stack as a timestamp.||pusht|timestamp A
+0x2c|Now|Pushes the current timestamp onto the stack.||now|(current time as timestamp)
+0x2d|PushA|Evaluates a to make sure it is formatted as a valid ndau-style address; if so, pushes it onto the stack as a Bytes object. If not, error.||pusha nda234...4b3|nda234...4b3
+0x2e|Rand|Pushes a 64-bit random number onto the stack. Note that 'random' may have special meaning depending on context; in particular, repeated uses of this opcode may (and most likely will) return the same value within a given runtime scenario.||rand|
+0x2f|PushL|Pushes an empty list onto the stack.||pushl|[]
 0x40|Add|Adds the top two numeric values on the stack and puts their sum on top of the stack. attempting to add non-numeric values is an error.|A B|add|A+B
 0x41|Sub|Subtracts the top numeric value on the stack from the second and puts the difference on top of the stack. attempting to subtract non-numeric values is an error.|A B|sub|A-B
 0x42|Mul|Multiplies the top two numeric values on the stack and puts their product on top of the stack. attempting to multiply non-numeric values is an error.|A B|mul|A*B
@@ -45,8 +45,8 @@ Value|Opcode|Meaning|Stack before|Instr.|Stack after
 0x46|MulDiv|Multiplies the third numeric item on the stack by the fraction created by dividing the second numeric item by the top; guaranteed not to overflow as long as the fraction is less than 1. An overflow is an error.|A B C|muldiv|int(A*(B/C))
 0x48|Not|Evaluates the truthiness of the value on top of the stack, and replaces it with True if the result was False, and with False if the result was True.|5 6 7|not|5 6 0
 0x49|Neg|The sign of the number on top of the stack is negated.|A|neg|-A
-0x4a|Inc|Adds 1 to the number on top of the stack.|A|inc|A+1
-0x4b|Dec|Subtracts 1 from the number on top of the stack.|A|dec|A-1
+0x4a|Inc|Adds 1 to the number on top of the stack, which must be a Number.|A|inc|A+1
+0x4b|Dec|Subtracts 1 from the number on top of the stack, which must be a Number.|A|dec|A-1
 0x50|Index|Selects a zero-indexed element (the index is the top of the stack) from a list reference which is the second item on the stack (both are discarded) and leaves it on top of the stack. Error if index is out of bounds or a list is not on top of the stack.|[X Y Z] 2|index|Z
 0x51|Len|Returns the length of a list.|[X Y Z]|len|3
 0x52|Append|Creates a new list, appending the new value to it.|[X Y] Z|append|[X Y Z]
