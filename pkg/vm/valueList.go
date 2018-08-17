@@ -1,6 +1,8 @@
 package vm
 
-import "strings"
+import (
+	"strings"
+)
 
 // MaxListSize is the max number of List elements that can result from append or extend
 const MaxListSize = 1024
@@ -19,28 +21,46 @@ func NewList(vs ...Value) List {
 	return vs
 }
 
-// Compare implements comparison for List
-// If lists are different lengths, the shorter
-// is "less than" the longer.
-// If they are the same length, they are compared
-// and the result is the first element that compares nonzero.
-func (vt List) Compare(rhs Value) (int, error) {
+// Less implements comparison for List
+// The lists are compared on a per-element basis
+// and the result is the result of the first element
+// that is not equal to its counterpart.
+// If lists are different lengths but equal for comparative
+// lengths, the shorter is less than the longer.
+func (vt List) Less(rhs Value) (bool, error) {
 	switch other := rhs.(type) {
 	case List:
-		if len(vt) < len(other) {
-			return -1, nil
-		} else if len(vt) > len(other) {
-			return 1, nil
-		}
-		for i := range vt {
-			if r, err := vt[i].Compare(other[i]); err != nil || r != 0 {
-				return r, err
+		for i := int64(0); true; i++ {
+			// if the lists have compared equal so far (which they have since we got here)
+			// and v2 runs off the end, then the result is definitely false
+			v2, err := other.Index(i)
+			if err != nil {
+				return false, nil
+			}
+			// if v1 runs off the end first, then the result is true
+			v1, err := vt.Index(i)
+			if err != nil {
+				return true, nil
+			}
+			// if v1 < v2 errors return the error
+			r1, err := v1.Less(v2)
+			if err != nil {
+				return false, err
+			}
+			// if v1 < v2 return true
+			if r1 {
+				return true, nil
+			}
+			// if v1 > v2 return false, otherwise go around again
+			if r2, _ := v2.Less(v1); r2 {
+				return false, nil
 			}
 		}
-		return 0, nil
 	default:
-		return 0, ValueError{"comparing incompatible types"}
+		return false, ValueError{"comparing incompatible types"}
 	}
+	// this is here because go's escape analysis is failing
+	panic("List: can't happen")
 }
 
 // IsScalar indicates if this Value is a scalar value type
@@ -64,6 +84,17 @@ func (vt List) IsTrue() bool {
 // Len returns the length of a List as an int64
 func (vt List) Len() int64 {
 	return int64(len(vt))
+}
+
+// Index returns the value at the given index, or error
+func (vt List) Index(n int64) (Value, error) {
+	if n >= vt.Len() || n < -vt.Len() {
+		return nil, ValueError{"list index out of bounds"}
+	}
+	if n < 0 {
+		return vt[int(vt.Len()+n)], nil
+	}
+	return vt[n], nil
 }
 
 // Append adds a new Value to the end of a list

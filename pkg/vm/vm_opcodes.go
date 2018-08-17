@@ -419,26 +419,31 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		if err != nil {
 			return vm.runtimeError(err)
 		}
-		r, err := v1.Compare(v2)
+		isLess, err := v1.Less(v2)
 		if err != nil {
 			return vm.runtimeError(err)
 		}
-		var result int64
+		isGreater, _ := v2.Less(v1)
+		result := false
 		switch instr {
-		case OpEq:
-			if r == 0 {
-				result = 1
-			}
-		case OpGt:
-			if r > 0 {
-				result = 1
-			}
 		case OpLt:
-			if r < 0 {
-				result = 1
-			}
+			result = isLess
+		case OpLte:
+			result = isLess || (!isLess && !isGreater)
+		case OpEq:
+			result = (!isLess && !isGreater)
+		case OpGte:
+			result = isGreater || (!isLess && !isGreater)
+		case OpGt:
+			result = isGreater
 		}
-		if err := vm.stack.Push(NewNumber(result)); err != nil {
+		var n Value
+		if result {
+			n = NewNumber(-1)
+		} else {
+			n = NewNumber(0)
+		}
+		if err := vm.stack.Push(n); err != nil {
 			return vm.runtimeError(err)
 		}
 
@@ -451,10 +456,11 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		if err != nil {
 			return vm.runtimeError(err)
 		}
-		if n >= l.Len() || n < 0 {
-			return vm.runtimeError(newRuntimeError("list index out of bounds"))
+		v, err := l.Index(n)
+		if err != nil {
+			return vm.runtimeError(err)
 		}
-		if err := vm.stack.Push(l[n]); err != nil {
+		if err := vm.stack.Push(v); err != nil {
 			return vm.runtimeError(err)
 		}
 
@@ -677,15 +683,13 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 			return NewNumber(prev.(Number).v + c.v)
 		}
 		max := func(prev, current Value) Value {
-			cmp, _ := prev.Compare(current)
-			if cmp < 0 {
+			if cmp, _ := prev.Less(current); cmp {
 				return current
 			}
 			return prev
 		}
 		min := func(prev, current Value) Value {
-			cmp, _ := current.Compare(prev)
-			if cmp < 0 {
+			if cmp, _ := current.Less(prev); cmp {
 				return current
 			}
 			return prev
@@ -792,11 +796,11 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 			}
 			fi, e1 := si.Field(int(fix))
 			fj, e2 := sj.Field(int(fix))
-			cmp, e3 := fi.Compare(fj)
+			isLess, e3 := fi.Less(fj)
 			if e1 != nil || e2 != nil || e3 != nil {
 				hadErr = true
 			}
-			return cmp == -1
+			return isLess
 		}
 		sort.Slice(src, less)
 		if hadErr {

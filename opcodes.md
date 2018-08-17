@@ -40,16 +40,13 @@ Value|Opcode|Meaning|Stack before|Instr.|Stack after
 0x41|Sub|Subtracts the top numeric value on the stack from the second and puts the difference on top of the stack. attempting to subtract non-numeric values is an error.|A B|sub|A-B
 0x42|Mul|Multiplies the top two numeric values on the stack and puts their product on top of the stack. attempting to multiply non-numeric values is an error.|A B|mul|A*B
 0x43|Div|Divides the second numeric value on the stack by the top and puts the integer quotient on top of the stack. attempting to divide non-numeric values is an error, as is dividing by zero.|A B|div|int(A/B)
-0x44|Mod|If the stack has y on top and x in the second position, Mod returns the integer remainder of x/y. The magnitude of the result is less than y and its sign agrees with that of x. Attempting to calculate the mod of non-numeric values is an error. It is also an error if y is zero.|A B|mod|A % B
-0x45|DivMod|Divides the second numeric value on the stack by the top and puts the integer quotient on top of the stack and the remainder in the second item on the stack. attempting to divide non-numeric values is an error, as is dividing by zero.|A B|divmod|A%B int(A/B)
+0x44|Mod|If the stack has y on top and x in the second position, Mod returns the integer remainder of x/y according to the method that both JavaScript and Go use, which is that it calculates such that q = x/y with the result truncated to zero, where m = x - y*q. The magnitude of the result is less than y and its sign agrees with that of x. Attempting to calculate the mod of non-numeric values is an error. It is also an error if y is zero.|A B|mod|A % B
+0x45|DivMod|Divides the second numeric value on the stack by the top and puts the integer quotient on top of the stack and the integer remainder in the second item on the stack, such that q = x/y with the result truncated to zero, where m = x - y*q. Attempting to use non-numeric values is an error, as is dividing by zero.|A B|divmod|A%B int(A/B)
 0x46|MulDiv|Multiplies the third numeric item on the stack by the fraction created by dividing the second numeric item by the top; guaranteed not to overflow as long as the fraction is less than 1. An overflow is an error.|A B C|muldiv|int(A*(B/C))
 0x48|Not|Evaluates the truthiness of the value on top of the stack, and replaces it with True if the result was False, and with False if the result was True.|5 6 7|not|5 6 0
 0x49|Neg|The sign of the number on top of the stack is negated.|A|neg|-A
 0x4a|Inc|Adds 1 to the number on top of the stack.|A|inc|A+1
 0x4b|Dec|Subtracts 1 from the number on top of the stack.|A|dec|A-1
-0x4d|Eq|Compares (and discards) the two top stack elements. If they are equal in both type and value, leaves TRUE (1) on top of the stack, otherwise leaves FALSE (0) on top of the stack.|A B|eq|FALSE
-0x4e|Gt|Compares (and discards) the two top stack elements. If the types are different, fails execution. If the types are the same, compares the values, and leaves TRUE when: a) the top Number or Timestamp or ID is numerically greater than the second, b) the top list is longer than the second list, c) the top struct compares greater than the second by iterating in field order and using rules a) and b). .|A B|gt|TRUE
-0x4f|Lt|Like gt, using less than instead of greater than.|A B|lt|FALSE
 0x50|Index|Selects a zero-indexed element (the index is the top of the stack) from a list reference which is the second item on the stack (both are discarded) and leaves it on top of the stack. Error if index is out of bounds or a list is not on top of the stack.|[X Y Z] 2|index|Z
 0x51|Len|Returns the length of a list.|[X Y Z]|len|3
 0x52|Append|Creates a new list, appending the new value to it.|[X Y] Z|append|[X Y Z]
@@ -79,6 +76,11 @@ Value|Opcode|Meaning|Stack before|Instr.|Stack after
 0xb2|Xor|Does a bitwise exclusive OR (XOR) of the top two values on the stack (which must both be numeric) and puts the result on top of the stack. Attempting to operate on non-numeric values is an error.|0x55 0x0F|xor|0x5A
 0xbc|Count1s|Returns the number of 1 bits in the top value on the stack (which must be numeric) and puts the result on top of the stack. Attempting to operate on a non-numeric value is an error.|0x55|count1s|4
 0xbf|BNot|Does a bitwise NOT (1's complement) of the top value on the stack (which must be numeric) and puts the result on top of the stack. Attempting to operate on a non-numeric value is an error.|5|bnot|-6
+0xc0|Lt|Compares (and discards) the two top stack elements. If the types are different, fails execution. If the types are the same, compares the values, and leaves TRUE when the top item is strictly less than the second item according to the comparison rules.|A B|lt|FALSE
+0xc1|Lte|Compares (and discards) the two top stack elements. If the types are different, fails execution. If the types are the same, compares the values, and leaves TRUE when the top item is less than or equal to the second item according to the comparison rules.|A B|lte|FALSE
+0xc2|Eq|Compares (and discards) the two top stack elements. If they are equal in both type and value, leaves TRUE (1) on top of the stack, otherwise leaves FALSE (0) on top of the stack.|A B|eq|FALSE
+0xc3|Gte|Compares (and discards) the two top stack elements. If the types are different, fails execution. If the types are the same, compares the values, and leaves TRUE when the top item is greater than or equal to the second item according to the comparison rules.|A B|gte|TRUE
+0xc4|Gt|Compares (and discards) the two top stack elements. If the types are different, fails execution. If the types are the same, compares the values, and leaves TRUE when the top item is strictly greater than the second item according to the comparison rules.|A B|gt|TRUE
 # Disabled Opcodes
 
 Value|Opcode|Meaning|Stack before|Instr.|Stack after

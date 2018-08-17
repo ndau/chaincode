@@ -15,13 +15,13 @@ func NewBytes(ab []byte) Bytes {
 	return Bytes{b: ab}
 }
 
-// Compare implements comparison for Bytes
-func (vt Bytes) Compare(rhs Value) (int, error) {
+// Less implements comparison for Bytes
+func (vt Bytes) Less(rhs Value) (bool, error) {
 	switch other := rhs.(type) {
 	case Bytes:
-		return bytes.Compare(vt.b, other.b), nil
+		return bytes.Compare(vt.b, other.b) < 0, nil
 	default:
-		return 0, ValueError{"comparing incompatible types"}
+		return false, ValueError{"comparing incompatible types"}
 	}
 }
 

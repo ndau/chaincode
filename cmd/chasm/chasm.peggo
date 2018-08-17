@@ -90,6 +90,7 @@ Opcode =
 	/ "mod" { return newUnitaryOpcode(vm.OpMod) }
 	/ "min" { return newUnitaryOpcode(vm.OpMin) }
 	/ "max" { return newUnitaryOpcode(vm.OpMax) }
+	/ "lte" { return newUnitaryOpcode(vm.OpLte) }
 	/ "lt" { return newUnitaryOpcode(vm.OpLt) }
     / "lookup" _ id:FunctionName _ count:Value { return newCallOpcode(vm.OpLookup, id.(string), count.(string)) }
 	/ "len" { return newUnitaryOpcode(vm.OpLen) }
@@ -97,6 +98,7 @@ Opcode =
 	/ "inc" { return newUnitaryOpcode(vm.OpInc) }
 	/ "ifz" { return newUnitaryOpcode(vm.OpIfZ) }
 	/ "ifnz" { return newUnitaryOpcode(vm.OpIfNZ) }
+	/ "gte" { return newUnitaryOpcode(vm.OpGte) }
 	/ "gt" { return newUnitaryOpcode(vm.OpGt) }
 	/ "fieldl" _ ix:Value { return newBinaryOpcode(vm.OpFieldL, ix.(string)) }
 	/ "field" _ ix:Value { return newBinaryOpcode(vm.OpField, ix.(string)) }

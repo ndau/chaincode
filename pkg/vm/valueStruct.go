@@ -33,25 +33,45 @@ func (vt Struct) Field(ix int) (Value, error) {
 	return vt.fields[ix], nil
 }
 
-// Compare implements comparison for Struct
+// Less implements comparison for Struct
 // If structs have different IDs, or rhs is not a Struct, errors.
 // If they are the same ID, they are compared field by field
 // and the result is the first element that compares nonzero.
-func (vt Struct) Compare(rhs Value) (int, error) {
+// If the iteration runs off the end, the shorter struct is less.
+func (vt Struct) Less(rhs Value) (bool, error) {
 	switch other := rhs.(type) {
 	case Struct:
-		if vt.id != other.id {
-			return 0, ValueError{"comparing different structs"}
-		}
-		for i := range vt.fields {
-			if r, err := vt.fields[i].Compare(other.fields[i]); err != nil || r != 0 {
-				return r, err
+		for i := 0; true; i++ {
+			// if the structs have compared equal so far (which they have since we got here)
+			// and v2 runs off the end, then the result is definitely false
+			v2, err := other.Field(i)
+			if err != nil {
+				return false, nil
+			}
+			// if v1 runs off the end first, then the result is true
+			v1, err := vt.Field(i)
+			if err != nil {
+				return true, nil
+			}
+			// if v1 < v2 errors return the error
+			r1, err := v1.Less(v2)
+			if err != nil {
+				return false, err
+			}
+			// if v1 < v2 return true
+			if r1 {
+				return true, nil
+			}
+			// if v1 > v2 return false, otherwise go around again
+			if r2, _ := v2.Less(v1); r2 {
+				return false, nil
 			}
 		}
-		return 0, nil
 	default:
-		return 0, ValueError{"comparing incompatible types"}
+		return false, ValueError{"comparing incompatible types"}
 	}
+	// this is here because go's escape analysis is failing
+	panic("List: can't happen")
 }
 
 // IsScalar indicates if this Value is a scalar value type

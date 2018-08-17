@@ -31,13 +31,13 @@ func ParseTimestamp(s string) (Timestamp, error) {
 	return Timestamp{ts}, err
 }
 
-// Compare implements comparison for Timestamp
-func (vt Timestamp) Compare(rhs Value) (int, error) {
+// Less implements comparison for Timestamp
+func (vt Timestamp) Less(rhs Value) (bool, error) {
 	switch other := rhs.(type) {
 	case Timestamp:
-		return vt.t.Compare(other.t), nil
+		return vt.t.Compare(other.t) < 0, nil
 	default:
-		return 0, ValueError{"comparing incompatible types"}
+		return false, ValueError{"comparing incompatible types"}
 	}
 }
 

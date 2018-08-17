@@ -625,11 +625,11 @@ func TestDefaultRand(t *testing.T) {
 }
 
 func TestList1(t *testing.T) {
-	vm := buildVM(t, "handler 0 pushl one append push1 7 append dup len swap one index enddef")
+	vm := buildVM(t, "handler 0 pushl push1 0d append push1 7 append dup len swap dup one index swap push1 2 neg index enddef")
 	vm.Init(0)
 	err := vm.Run(false)
 	assert.Nil(t, err)
-	checkStack(t, vm.Stack(), 2, 7)
+	checkStack(t, vm.Stack(), 2, 7, 13)
 }
 
 func TestExtend(t *testing.T) {
