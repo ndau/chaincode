@@ -49,7 +49,7 @@ func main() {
 		n := vm.NewNumber(v)
 		startingStack = append(startingStack, n)
 	}
-	machine.Init(startingStack...)
+	machine.Init(0, startingStack...)
 	fmt.Println(machine.Stack())
 	fmt.Println("Running")
 	err = machine.Run(args.Trace)

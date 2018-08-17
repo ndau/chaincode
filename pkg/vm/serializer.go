@@ -9,11 +9,10 @@ import (
 type ChasmBinary struct {
 	Name    string   `json:"name"`
 	Comment string   `json:"comment"`
-	Context string   `json:"context"`
 	Data    []Opcode `json:"data"`
 }
 
-// Serialize takes a stream of bytes (including the context marker) and sends it to
+// Serialize takes a stream of bytes and sends it to
 // a Writer in ChasmBinary format
 func Serialize(name string, comment string, b []byte, w io.Writer) error {
 	opcodes := make([]Opcode, len(b))
@@ -23,7 +22,6 @@ func Serialize(name string, comment string, b []byte, w io.Writer) error {
 	output := ChasmBinary{
 		Name:    name,
 		Comment: comment,
-		Context: Contexts[ContextByte(b[0])],
 		Data:    opcodes,
 	}
 	enc := json.NewEncoder(w)

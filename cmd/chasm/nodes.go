@@ -1,8 +1,10 @@
 package main
 
 import (
+	"encoding/hex"
 	"errors"
 	"strconv"
+	"strings"
 
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
 
@@ -31,9 +33,8 @@ type Fixupper interface {
 
 // Script is the highest level node in the system
 type Script struct {
-	preamble Node
-	nodes    []Node
-	funcs    map[string]int
+	nodes []Node
+	funcs map[string]int
 }
 
 func (n *Script) fixup() {
@@ -45,18 +46,14 @@ func (n *Script) fixup() {
 }
 
 func (n *Script) bytes() []byte {
-	b := append([]byte{}, n.preamble.bytes()...)
+	var b []byte
 	for _, op := range n.nodes {
 		b = append(b, op.bytes()...)
 	}
 	return b
 }
 
-func newScript(p interface{}, nodes interface{}, funcs map[string]int) (*Script, error) {
-	preamble, ok := p.(*PreambleNode)
-	if !ok {
-		return &Script{}, errors.New("not a preamble node")
-	}
+func newScript(nodes interface{}, funcs map[string]int) (*Script, error) {
 	sl := toIfaceSlice(nodes)
 	nodeArray := []Node{}
 	for _, v := range sl {
@@ -64,20 +61,53 @@ func newScript(p interface{}, nodes interface{}, funcs map[string]int) (*Script,
 			nodeArray = append(nodeArray, n)
 		}
 	}
-	return &Script{preamble: preamble, nodes: nodeArray, funcs: funcs}, nil
+	return &Script{nodes: nodeArray, funcs: funcs}, nil
 }
 
-// PreambleNode expresses the information in the preamble (which for now is just a context byte)
-type PreambleNode struct {
-	context vm.ContextByte
+// HandlerDef is a node that expresses the information in a function definition
+type HandlerDef struct {
+	ids   []byte
+	nodes []Node
 }
 
-func (n *PreambleNode) bytes() []byte {
-	return []byte{byte(n.context)}
+func (n *HandlerDef) bytes() []byte {
+	if len(n.ids) == 1 && n.ids[0] == 0 {
+		// optimization: if the only ID is 0 then we can just use "handler 0"
+		n.ids = []byte{}
+	}
+	b := []byte{byte(vm.OpHandler), byte(len(n.ids))}
+	b = append(b, n.ids...)
+	for _, op := range n.nodes {
+		b = append(b, op.bytes()...)
+	}
+	b = append(b, byte(vm.OpEndDef))
+	return b
 }
 
-func newPreambleNode(ctx vm.ContextByte) (*PreambleNode, error) {
-	return &PreambleNode{context: ctx}, nil
+func newHandlerDef(sids []string, nodes interface{}, constants map[string]string) (*HandlerDef, error) {
+	sl := toIfaceSlice(nodes)
+	nl := []Node{}
+	for _, v := range sl {
+		if n, ok := v.(Node); ok {
+			nl = append(nl, n)
+		}
+	}
+
+	ids := []byte{}
+	for _, sid := range sids {
+		s, ok := constants[sid]
+		if !ok {
+			s = sid
+		}
+		id, err := strconv.Atoi(s)
+		if err != nil {
+			return nil, errors.New(sid + " is an invalid handler ID")
+		}
+		ids = append(ids, byte(id))
+	}
+
+	f := &HandlerDef{ids: ids, nodes: nl}
+	return f, nil
 }
 
 // FunctionDef is a node that expresses the information in a function definition
@@ -227,18 +257,27 @@ type PushB struct {
 
 func newPushB(iface interface{}) (*PushB, error) {
 	ia := toIfaceSlice(iface)
-	out := make([]byte, len(ia))
+	out := make([]byte, 0)
 
-	for i, item := range ia {
+	for _, item := range ia {
 		if b, ok := item.([]byte); ok {
-			out[i] = b[0]
+			// if the item is a []byte, it was a quoted string so just embed the bytes of the string
+			out = append(out, b[0])
 		} else {
+			// if the item was a string, it should be parsed as the representation of an byte,
+			// either decimal or hex, or possibly as an address (which starts with "addr(")
 			s := item.(string)
-			v, err := strconv.ParseUint(s, 0, 8)
-			if err != nil {
-				return nil, err
+			if strings.HasPrefix(s, "addr(") {
+				// we couldn't get here if it wasn't valid hex
+				addr, _ := hex.DecodeString(s[5 : len(s)-1])
+				out = append(out, addr...)
+			} else {
+				v, err := strconv.ParseUint(s, 0, 8)
+				if err != nil {
+					return nil, err
+				}
+				out = append(out, byte(v))
 			}
-			out[i] = byte(v)
 		}
 	}
 	return &PushB{out}, nil

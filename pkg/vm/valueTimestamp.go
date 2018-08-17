@@ -50,6 +50,11 @@ func (vt Timestamp) String() string {
 	return vt.t.String()
 }
 
+// IsTrue indicates if this Value evaluates to true
+func (vt Timestamp) IsTrue() bool {
+	return false
+}
+
 // T returns the timestamp as a int64 duration in uSec since the start of epoch.
 func (vt Timestamp) T() int64 {
 	return int64(vt.t)

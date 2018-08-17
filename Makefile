@@ -1,10 +1,19 @@
-.PHONY: generate clean fuzz
+.PHONY: generate clean fuzz fuzzmillion benchmarks
 
 fuzz:
 	go test ./... --race -timeout 10s -short
 	FUZZ_RUNS=50000 go test --race -v -timeout 30s ./pkg/vm -run "TestFuzzJunk"
-	FUZZ_RUNS=50000 go test --race -v -timeout 30s ./pkg/vm -run "TestFuzzFunctions"
-	FUZZ_RUNS=10000 go test --race -v -timeout 30s ./pkg/vm -run "TestFuzzValid"
+	FUZZ_RUNS=50000 go test --race -v -timeout 30s ./pkg/vm -run "TestFuzzHandlers"
+	FUZZ_RUNS=5000 go test --race -v -timeout 30s ./pkg/vm -run "TestFuzzValid"
+
+fuzzmillion:
+	go test ./... --race -timeout 10s -short
+	FUZZ_RUNS=1000000 go test --race -v -timeout 1h ./pkg/vm -run "TestFuzzJunk"
+	FUZZ_RUNS=1000000 go test --race -v -timeout 1h ./pkg/vm -run "TestFuzzHandlers"
+	FUZZ_RUNS=1000000 go test --race -v -timeout 2h ./pkg/vm -run "TestFuzzValid"
+
+benchmarks:
+	go test -bench ./pkg/vm -benchmem
 
 generate: opcodes.md pkg/vm/opcodes.go pkg/vm/miniasmOpcodes.go pkg/vm/opcode_string.go \
 		pkg/vm/extrabytes.go cmd/chasm/chasm.peggo pkg/vm/enabledopcodes.go

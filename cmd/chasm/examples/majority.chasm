@@ -1,28 +1,23 @@
-; strict majority calculation -- requires more than half
-; def main(tx Transaction, state Account) {
-;     authorized = len(state.KEYS)
-;     onBoth = intersect(tx.SIGNATURES, state.KEYS)
-;     return len(onBoth) * 2 >= len(state.KEYS)
-; }
+; strict majority calculation -- requires more than half of all keys to sign
+; and forbids ever changing the script again
+; Expected arguments on the stack in order from bottom to top are:
+;    account
+;    transaction
+;    bitmask of which authorized keys were found in the signature list
 
-context: ACCOUNT
-func majority {
-    ; when the context is properly set up, the constants for
-    ; transactions and addresses to select fields would be predefined
-    ; these definitions are just for demonstration purposes right now
-    SIGS = 2    ; the field ID containing the list of signatures in the tx struct
-    KEYS = 4    ; the field ID containing the list of keys authorized on the account
-
-    ; stack top on right -- tx on top, then account
-                            ;acct tx
-    field SIGS              ;acct sigs
-    swap                    ;sigs acct
-    field KEYS              ;sigs keys
-    len                     ;sigs nkeys
-    swap                    ;nkeys sigs
-    len                     ;nkeys nsigs
-    dup                     ;nkeys nsigs nsigs
-    add                     ;nkeys 2*nsigs
-    lt                      ;(true if nkeys < 2*nsigs)
+handler Event_Default {
+    ; stack top on right -- sig bitmask on top, then tx, then account
+                            ;acct tx bm
+    count1s                 ;acct tx nsigs
+    roll 2                  ;tx nsigs acct
+    field Account_Keys      ;tx nsigs [keys]
+    len                     ;tx nsigs nkeys
+    swap                    ;tx nkeys nsigs
+    dup                     ;tx nkeys nsigs nsigs
+    add                     ;tx nkeys 2*nsigs
+    lt                      ;tx (true if nkeys < 2*nsigs)
 }
 
+handler Event_ChangeTransferKey {
+    false
+}

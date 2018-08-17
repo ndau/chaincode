@@ -3,8 +3,7 @@
 ; and x on the stack and calculates
 ; a*x*x + b*x + c
 
-context: TEST
-func foo {
+handler Event_Default {
     A = 3
     B = 5
     C = 7
@@ -24,5 +23,4 @@ func foo {
     mul		; CRS
     add		; CR
     add		; R
-    ret
 }

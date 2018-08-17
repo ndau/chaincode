@@ -51,6 +51,8 @@ func extraBytes(code []Opcode, offset int) int {
 		numExtra = 1
 	case OpLookup:
 		numExtra = 2
+	case OpHandler:
+		numExtra = int(code[offset+1]) + 1
 	}
 	return numExtra
 }

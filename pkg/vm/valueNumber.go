@@ -39,6 +39,11 @@ func (vt Number) String() string {
 	return strconv.FormatInt(vt.v, 10)
 }
 
+// IsTrue indicates if this Value evaluates to true
+func (vt Number) IsTrue() bool {
+	return vt.v != 0
+}
+
 // AsInt64 allows retrieving the contents of a Number object as an int64
 func (vt Number) AsInt64() int64 {
 	return vt.v

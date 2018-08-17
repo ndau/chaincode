@@ -33,8 +33,8 @@ const (
 	OpPush8   Opcode = 0x28
 	OpPushB   Opcode = 0x29
 	OpOne     Opcode = 0x2a
-	OpTrue    Opcode = 0x2a
 	OpNeg1    Opcode = 0x2b
+	OpTrue    Opcode = 0x2b
 	OpPushT   Opcode = 0x2c
 	OpNow     Opcode = 0x2d
 	OpPushA   Opcode = 0x2e
@@ -77,4 +77,10 @@ const (
 	OpWChoice Opcode = 0x95
 	OpSort    Opcode = 0x96
 	OpLookup  Opcode = 0x97
+	OpHandler Opcode = 0xa0
+	OpOr      Opcode = 0xb0
+	OpAnd     Opcode = 0xb1
+	OpXor     Opcode = 0xb2
+	OpCount1s Opcode = 0xbc
+	OpBNot    Opcode = 0xbf
 )

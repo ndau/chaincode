@@ -22,7 +22,7 @@ func checkr(expected int64, b *testing.B) {
 
 func benchmarkVM(s string, b *testing.B) {
 	ops := miniAsm(s)
-	bin := ChasmBinary{"test", "", "TEST", ops}
+	bin := ChasmBinary{"test", "TEST", ops}
 	benchmarkBin(bin, b)
 }
 
@@ -35,7 +35,7 @@ func benchmarkBin(bin ChasmBinary, b *testing.B) {
 	// the setup above can be expensive, so make sure we're only benchmarking the runtime
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		vm.Init()
+		vm.Init(0)
 		err := vm.Run(false)
 		if err != nil {
 			b.Errorf("Run() had an error:%s", err)
@@ -49,7 +49,7 @@ func benchmarkBin(bin ChasmBinary, b *testing.B) {
 }
 
 func benchmarkN(n int, instrs string, b *testing.B) {
-	prg := "def 0 " + strings.Repeat(instrs, n) + "enddef"
+	prg := "handler 0 " + strings.Repeat(instrs, n) + "enddef"
 	benchmarkVM(prg, b)
 }
 
