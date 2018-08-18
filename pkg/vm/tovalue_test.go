@@ -72,7 +72,7 @@ func TestToValue(t *testing.T) {
 			struct {
 				X int `chain:"0"`
 			}{3},
-		}, NewStruct(NewNumber(3)), false},
+		}, NewTestStruct(NewNumber(3)), false},
 		{"badtag", args{
 			struct {
 				X int `chain:"x"`
@@ -84,21 +84,21 @@ func TestToValue(t *testing.T) {
 				Y int `chain:"1"`
 				Z int `chain:"2"`
 			}{3, 4, 5},
-		}, NewStruct(NewNumber(3), NewNumber(4), NewNumber(5)), false},
+		}, NewTestStruct(NewNumber(3), NewNumber(4), NewNumber(5)), false},
 		{"out of order", args{
 			struct {
 				X int `chain:"2"`
 				Y int `chain:"0"`
 				Z int `chain:"1"`
 			}{3, 4, 5},
-		}, NewStruct(NewNumber(4), NewNumber(5), NewNumber(3)), false},
-		{"not continuous should error", args{
+		}, NewTestStruct(NewNumber(4), NewNumber(5), NewNumber(3)), false},
+		{"not continuous should not error", args{
 			struct {
 				X int `chain:"3"`
 				Y int `chain:"0"`
 				Z int `chain:"1"`
 			}{3, 4, 5},
-		}, nil, true},
+		}, NewStruct().Set(0, NewNumber(4)).Set(1, NewNumber(5)).Set(3, NewNumber(3)), false},
 		{"mixed types", args{
 			struct {
 				X string    `chain:"0"`
@@ -106,7 +106,7 @@ func TestToValue(t *testing.T) {
 				Z byte      `chain:"2"`
 				T time.Time `chain:"3"`
 			}{"hi", math.MaxInt64, 0x2A, tt},
-		}, NewStruct(NewBytes([]byte("hi")), NewNumber(math.MaxInt64), NewNumber(42), ts), false},
+		}, NewTestStruct(NewBytes([]byte("hi")), NewNumber(math.MaxInt64), NewNumber(42), ts), false},
 		{"illegal field type", args{
 			struct {
 				X int32 `chain:"0"`
@@ -120,12 +120,12 @@ func TestToValue(t *testing.T) {
 				st{"had", "job", 1, "nothing", "you"},
 				st{"for", "phore", 4, "four", "fore"},
 			},
-		}, NewList().Append(NewStruct(
+		}, NewList().Append(NewTestStruct(
 			NewBytes([]byte("you")),
 			NewBytes([]byte("had")),
 			NewNumber(1),
 			NewBytes([]byte("job")),
-		)).Append(NewStruct(
+		)).Append(NewTestStruct(
 			NewBytes([]byte("fore")),
 			NewBytes([]byte("for")),
 			NewNumber(4),
@@ -191,13 +191,13 @@ func TestExtractConstants(t *testing.T) {
 				Z int `chain:"1"`
 			}{3, 4, 5},
 		}, map[string]int{"X": 2, "Y": 0, "Z": 1}, false},
-		{"not continuous should error", args{
+		{"not continuous should not error", args{
 			struct {
 				X int `chain:"3"`
 				Y int `chain:"0"`
 				Z int `chain:"1"`
 			}{3, 4, 5},
-		}, nil, true},
+		}, map[string]int{"X": 3, "Y": 0, "Z": 1}, false},
 		{"mixed types", args{
 			struct {
 				X string `chain:"0"`

@@ -90,7 +90,7 @@ func TestString(t *testing.T) {
 func listOfStructs() List {
 	l := NewList()
 	for i := int64(0); i < 5; i++ {
-		s := NewStruct().Append(NewNumber(i)).Append(NewNumber(5 - i)).Append(NewBytes([]byte("hi")))
+		s := NewStruct().Set(0, NewNumber(i)).Set(1, NewNumber(5-i)).Set(13, NewBytes([]byte("hi")))
 		l = l.Append(s)
 	}
 	return l
@@ -133,52 +133,44 @@ func TestPopAsListOfStructs(t *testing.T) {
 func TestPopAsListOfStructsFail(t *testing.T) {
 	st := newStack()
 	st.Push(NewNumber(0))
-	// fail because top is not a list
 	_, err := st.PopAsListOfStructs(2)
-	assert.NotNil(t, err)
+	assert.NotNil(t, err, "fail because top is not a list")
 	st.Push(listOfStructs())
-	// fail because field 2 is not a number
 	_, err = st.PopAsListOfStructs(2)
-	assert.NotNil(t, err)
+	assert.NotNil(t, err, "fail because field 2 is not a number")
 
 	l := NewList()
 	l = l.Append(NewNumber(0))
 	st.Push(l)
-	// fail because list doesn't contain structs
 	_, err = st.PopAsListOfStructs(0)
-	assert.NotNil(t, err)
+	assert.NotNil(t, err, "fail because list doesn't contain structs")
 
 	l2 := NewList()
-	l2 = l2.Append(NewStruct().Append(NewNumber(1))).Append(NewNumber(0))
+	l2 = l2.Append(NewTestStruct(NewNumber(1))).Append(NewNumber(0))
 	st.Push(l2)
-	// fail because list's second element isn't a struct
 	_, err = st.PopAsListOfStructs(0)
-	assert.NotNil(t, err)
+	assert.NotNil(t, err, "fail because list's second element isn't a struct")
 
 	l3 := NewList()
-	l3 = l3.Append(NewStruct().Append(NewNumber(1))).Append(NewStruct().Append(NewList()))
+	l3 = l3.Append(NewTestStruct(NewNumber(1))).Append(NewTestStruct(NewList()))
 	st.Push(l3)
-	// check that ix of -1 doesn't fail
 	_, err = st.PopAsListOfStructs(-1)
-	assert.Nil(t, err)
+	assert.Nil(t, err, "check that ix of -1 doesn't fail")
 	st.Push(l3)
-	// fail because second struct's field 0 isn't a number
 	_, err = st.PopAsListOfStructs(0)
-	assert.NotNil(t, err)
+	assert.NotNil(t, err, "fail because second struct's field 0 isn't a number")
 
 	l4 := NewList()
-	l4 = l4.Append(NewStruct().Append(NewNumber(1))).Append(NewStruct())
+	l4 = l4.Append(NewTestStruct(NewNumber(1))).Append(NewStruct())
 	st.Push(l4)
-	// fail because second struct doesn't have any fields
 	_, err = st.PopAsListOfStructs(0)
-	assert.NotNil(t, err)
+	assert.NotNil(t, err, "fail because second struct doesn't have any fields")
 
-	// fail on empty stack
 	_, err = st.PopAsListOfStructs(0)
-	assert.NotNil(t, err)
+	assert.NotNil(t, err, "fail on empty stack")
 
 	l5 := listOfStructs()
-	l5 = l5.Append(NewStruct().Append(NewNumber(1)))
+	l5 = l5.Append(NewTestStruct(NewNumber(1)))
 	st.Push(l5)
 	// fail because the last struct has the wrong number of fields
 	_, err = st.PopAsListOfStructs(0)

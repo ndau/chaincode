@@ -462,7 +462,7 @@ func TestCompare7(t *testing.T) {
 	vm := buildVM(t, "handler 0 dup zero index pick 1 one index eq enddef")
 	l := NewList()
 	for i := int64(0); i < 5; i++ {
-		st := NewStruct(NewNumber(3*i), NewNumber(3*i+1), NewNumber(3*i+2))
+		st := NewTestStruct(NewNumber(3*i), NewNumber(3*i+1), NewNumber(3*i+2))
 		l = l.Append(st)
 	}
 	vm.Init(0, l)
@@ -682,7 +682,7 @@ func TestWChoice1(t *testing.T) {
 
 	l := NewList()
 	for i := int64(0); i < 6; i++ {
-		st := NewStruct(NewNumber(i))
+		st := NewTestStruct(NewNumber(i))
 		l = l.Append(st)
 	}
 	vm.Init(0, l)
@@ -699,7 +699,7 @@ func TestWChoice2(t *testing.T) {
 
 	l := NewList()
 	for i := int64(0); i < 6; i++ {
-		st := NewStruct(NewNumber(6 - i))
+		st := NewTestStruct(NewNumber(6 - i))
 		l = l.Append(st)
 	}
 	vm.Init(0, l)
@@ -754,7 +754,7 @@ func TestAvgFail(t *testing.T) {
 
 func TestField(t *testing.T) {
 	vm := buildVM(t, "handler 0 field 2 enddef")
-	st := NewStruct(NewNumber(3), NewNumber(9), NewNumber(27))
+	st := NewTestStruct(NewNumber(3), NewNumber(9), NewNumber(27))
 	vm.Init(0, st)
 	err := vm.Run(false)
 	assert.Nil(t, err)
@@ -763,7 +763,7 @@ func TestField(t *testing.T) {
 
 func TestFieldFail(t *testing.T) {
 	vm := buildVM(t, "handler 0 field 9 enddef")
-	st := NewStruct(NewNumber(3), NewNumber(9), NewNumber(27))
+	st := NewTestStruct(NewNumber(3), NewNumber(9), NewNumber(27))
 	vm.Init(0, st)
 	err := vm.Run(false)
 	assert.NotNil(t, err)
@@ -773,7 +773,7 @@ func TestFieldL(t *testing.T) {
 	vm := buildVM(t, "handler 0 fieldl 2 one index enddef")
 	l := NewList()
 	for i := int64(0); i < 5; i++ {
-		st := NewStruct(NewNumber(3*i), NewNumber(3*i+1), NewNumber(3*i+2))
+		st := NewTestStruct(NewNumber(3*i), NewNumber(3*i+1), NewNumber(3*i+2))
 		l = l.Append(st)
 	}
 	vm.Init(0, l)
@@ -786,7 +786,7 @@ func TestFieldLFail(t *testing.T) {
 	vm := buildVM(t, "handler 0 fieldl 9 one index enddef")
 	l := NewList()
 	for i := int64(0); i < 5; i++ {
-		st := NewStruct(NewNumber(3*i), NewNumber(3*i+1), NewNumber(3*i+2))
+		st := NewTestStruct(NewNumber(3*i), NewNumber(3*i+1), NewNumber(3*i+2))
 		l = l.Append(st)
 	}
 	vm.Init(0, l)
@@ -798,7 +798,7 @@ func TestSortFields(t *testing.T) {
 	vm := buildVM(t, "handler 0 sort 2 push1 3 index field 1 enddef")
 	l := NewList()
 	for i := int64(0); i < 5; i++ {
-		st := NewStruct(NewNumber(2*i), NewNumber(3*i+1), NewNumber(4*(6-i)))
+		st := NewTestStruct(NewNumber(2*i), NewNumber(3*i+1), NewNumber(4*(6-i)))
 		l = l.Append(st)
 	}
 	vm.Init(0, l)
@@ -811,7 +811,7 @@ func TestSortFail(t *testing.T) {
 	vm := buildVM(t, "handler 0 sort 6 push1 3 index field 1 enddef")
 	l := NewList()
 	for i := int64(0); i < 5; i++ {
-		st := NewStruct(NewNumber(2*i), NewNumber(3*i+1), NewNumber(4*(6-i)))
+		st := NewTestStruct(NewNumber(2*i), NewNumber(3*i+1), NewNumber(4*(6-i)))
 		l = l.Append(st)
 	}
 	vm.Init(0, l)
@@ -831,7 +831,7 @@ func TestNestingFail1(t *testing.T) {
 }
 
 func TestCall1(t *testing.T) {
-	vm := buildVM(t, "handler 0 one call 0 1 enddef def 0 push1 2 add enddef")
+	vm := buildVM(t, "handler 0 one call 0 enddef def 0 1 push1 2 add enddef")
 	vm.Init(0)
 	err := vm.Run(false)
 	assert.Nil(t, err)
@@ -840,9 +840,9 @@ func TestCall1(t *testing.T) {
 
 func TestCall2(t *testing.T) {
 	vm := buildVM(t, `
-		handler 0 one call 0 1 enddef
-		def 0 push1 2 call 1 2 enddef
-		def 1 add enddef
+		handler 0 one call 0 enddef
+		def 0 1 push1 2 call 1 enddef
+		def 1 2 add enddef
 	`)
 	vm.Init(0)
 	err := vm.Run(false)
@@ -851,21 +851,21 @@ func TestCall2(t *testing.T) {
 }
 
 func TestCallFail1(t *testing.T) {
-	vm := buildVM(t, "handler 0 one call 1 1 enddef def 0 push1 2 add enddef")
+	vm := buildVM(t, "handler 0 one call 1 enddef def 0 1 push1 2 add enddef")
 	vm.Init(0)
 	err := vm.Run(false)
 	assert.NotNil(t, err)
 }
 
 func TestCallFail2(t *testing.T) {
-	vm := buildVM(t, "handler 0 one call 0 2 enddef def 0 push1 2 add enddef")
+	vm := buildVM(t, "handler 0 one call 0 enddef def 0 2 push1 2 add enddef")
 	vm.Init(0)
 	err := vm.Run(false)
 	assert.NotNil(t, err)
 }
 
 func TestCallFail3(t *testing.T) {
-	vm := buildVM(t, "handler 0 one call 0 1 enddef def 0 push1 2 add drop enddef")
+	vm := buildVM(t, "handler 0 one call 0 enddef def 0 1 push1 2 add drop enddef")
 	vm.Init(0)
 	err := vm.Run(false)
 	assert.NotNil(t, err)

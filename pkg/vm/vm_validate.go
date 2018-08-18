@@ -36,7 +36,7 @@ type tr struct {
 
 // validateStructure reads the script and checks to make sure that the nested
 // elements are properly nested and not out of order or missing.
-func validateStructure(code []Opcode) (map[byte]int, []int, error) {
+func validateStructure(code []Opcode) (map[byte]int, []funcInfo, error) {
 	// This is a table of allowed transitions from a given state, depending on the opcode.
 	// For example, from the StNull state, the only allowed transitions are to definitions.
 	transitions := map[tr]structureState{
@@ -82,7 +82,7 @@ func validateStructure(code []Opcode) (map[byte]int, []int, error) {
 	var nfuncs byte
 	var skipcount int
 	var handlers = make(map[byte]int)
-	var functions = make([]int, 0)
+	var functions = make([]funcInfo, 0)
 
 	// for offset, b := range code {
 	for offset := 0; offset < len(code); offset += skipcount + 1 {
@@ -98,7 +98,10 @@ func validateStructure(code []Opcode) (map[byte]int, []int, error) {
 			if funcnum != nfuncs {
 				return handlers, functions, ValidationError{fmt.Sprintf("def should have been %d, found %d", nfuncs, funcnum)}
 			}
-			functions = append(functions, int(offset+skipcount+1)) // skip the def opcode
+			functions = append(functions, funcInfo{
+				offset: int(offset + skipcount + 1), // skip the def opcode and parms
+				nargs:  int(code[offset+2]),
+			})
 			nfuncs++
 			newstate = StDef
 		case StHndPlus:

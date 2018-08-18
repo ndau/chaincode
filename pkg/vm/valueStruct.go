@@ -3,91 +3,116 @@ package vm
 import (
 	"fmt"
 	"strings"
+
+	"github.com/oneiro-ndev/ndaumath/pkg/bitset256"
 )
 
-// Struct maintains a single struct object; it maintains an array of fields
+// Struct maintains a single struct object; it maintains a map of byte ids to fields
 type Struct struct {
-	id     byte
-	fields []Value
+	validFields *bitset256.Bitset256
+	fields      map[byte]Value
 }
 
 // assert that Struct really is a Value
-var _ = Value(Struct{})
+var _ = Value(&Struct{})
 
-// NewStruct creates a new struct with an arbitrary set of fields.
-func NewStruct(vs ...Value) Struct {
-	return Struct{fields: vs}
+// NewStruct creates a new, empty struct.
+func NewStruct() *Struct {
+	return &Struct{
+		validFields: bitset256.New(),
+		fields:      make(map[byte]Value),
+	}
 }
 
-// Append adds a new field to the end of the Struct and returns it as a new Struct
-func (vt Struct) Append(v Value) Struct {
-	vt.fields = append(vt.fields, v)
+// NewTestStruct creates a new struct with an arbitrary list of fields.
+// The fields will be created with an index in order beginning at 0.
+// This is really only intended for testing.
+func NewTestStruct(vs ...Value) *Struct {
+	st := NewStruct()
+	for i, v := range vs {
+		st.Set(byte(i), v)
+	}
+	return st
+}
+
+// Set assigns a value to a field at index ix and returns it.
+func (vt *Struct) Set(ix byte, v Value) *Struct {
+	vt.validFields.Set(int(ix))
+	vt.fields[ix] = v
 	return vt
 }
 
-// Field retrieves the field at a given index
-func (vt Struct) Field(ix int) (Value, error) {
-	if ix >= len(vt.fields) || ix < 0 {
+// Get retrieves the field at a given index
+func (vt *Struct) Get(ix byte) (Value, error) {
+	f, ok := vt.fields[ix]
+	if !ok {
 		return NewNumber(0), ValueError{"invalid field index"}
 	}
-	return vt.fields[ix], nil
+	return f, nil
 }
 
-// Less implements comparison for Struct
-// If structs have different IDs, or rhs is not a Struct, errors.
-// If they are the same ID, they are compared field by field
-// and the result is the first element that compares nonzero.
-// If the iteration runs off the end, the shorter struct is less.
-func (vt Struct) Less(rhs Value) (bool, error) {
+// IsCompatible returns true if the other struct list of validFields
+// is equal to the receiver's list.
+func (vt *Struct) IsCompatible(other *Struct) bool {
+	return vt.validFields.Equals(other.validFields)
+}
+
+// Less implements comparison for Struct. If rhs is not a Struct, errors. If the
+// two structs have different values for validFields, then the result is the
+// result of comparing the new validFields objects. If they have the same field
+// set, they are compared field by field in numeric order and the result is the
+// result of the first element that compares nonzero.
+func (vt *Struct) Less(rhs Value) (bool, error) {
 	switch other := rhs.(type) {
-	case Struct:
-		for i := 0; true; i++ {
-			// if the structs have compared equal so far (which they have since we got here)
-			// and v2 runs off the end, then the result is definitely false
-			v2, err := other.Field(i)
-			if err != nil {
-				return false, nil
-			}
-			// if v1 runs off the end first, then the result is true
-			v1, err := vt.Field(i)
-			if err != nil {
-				return true, nil
-			}
-			// if v1 < v2 errors return the error
-			r1, err := v1.Less(v2)
+	case *Struct:
+		if !vt.IsCompatible(other) {
+			return vt.validFields.Less(other.validFields), nil
+		}
+		fieldIDs := vt.validFields.Indices()
+		for _, ix := range fieldIDs {
+			// we know that the structs both have the same field IDs so we're
+			// safe in ignoring errors
+			f1 := vt.fields[byte(ix)]
+			f2 := other.fields[byte(ix)]
+			r1, err := f1.Less(f2)
 			if err != nil {
 				return false, err
 			}
-			// if v1 < v2 return true
 			if r1 {
-				return true, nil
+				return true, err
 			}
-			// if v1 > v2 return false, otherwise go around again
-			if r2, _ := v2.Less(v1); r2 {
-				return false, nil
+			r2, err := f2.Less(f1)
+			if err != nil {
+				return false, err
 			}
+			if r2 {
+				return false, err
+			}
+			// otherwise, they were equal at this field, so look at the next field
 		}
+		// if we get here, the two structs were equal, so therefore not less
+		return false, nil
 	default:
 		return false, ValueError{"comparing incompatible types"}
 	}
-	// this is here because go's escape analysis is failing
-	panic("List: can't happen")
 }
 
 // IsScalar indicates if this Value is a scalar value type
-func (vt Struct) IsScalar() bool {
+func (vt *Struct) IsScalar() bool {
 	return false
 }
 
-func (vt Struct) String() string {
+func (vt *Struct) String() string {
 	sa := make([]string, len(vt.fields))
-	for i, v := range vt.fields {
-		sa[i] = v.String()
+	i := 0
+	for _, k := range vt.validFields.Indices() {
+		sa[i] = fmt.Sprintf("%d: %s", k, vt.fields[byte(k)].String())
+		i++
 	}
-	return fmt.Sprintf("str(%d)[%s]", vt.id, strings.Join(sa, ", "))
+	return fmt.Sprintf("struct{%s}", strings.Join(sa, ", "))
 }
 
 // IsTrue indicates if this Value evaluates to true
-func (vt Struct) IsTrue() bool {
+func (vt *Struct) IsTrue() bool {
 	return false
 }

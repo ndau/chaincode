@@ -40,9 +40,9 @@ func extraBytes(code []Opcode, offset int) int {
 	case OpFieldL:
 		numExtra = 1
 	case OpDef:
-		numExtra = 1
-	case OpCall:
 		numExtra = 2
+	case OpCall:
+		numExtra = 1
 	case OpDeco:
 		numExtra = 2
 	case OpWChoice:
@@ -50,7 +50,7 @@ func extraBytes(code []Opcode, offset int) int {
 	case OpSort:
 		numExtra = 1
 	case OpLookup:
-		numExtra = 2
+		numExtra = 1
 	case OpHandler:
 		numExtra = int(code[offset+1]) + 1
 	}

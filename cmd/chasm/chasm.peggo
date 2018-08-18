@@ -92,7 +92,6 @@ Opcode =
 	/ "max" { return newUnitaryOpcode(vm.OpMax) }
 	/ "lte" { return newUnitaryOpcode(vm.OpLte) }
 	/ "lt" { return newUnitaryOpcode(vm.OpLt) }
-    / "lookup" _ id:FunctionName _ count:Value { return newCallOpcode(vm.OpLookup, id.(string), count.(string)) }
 	/ "len" { return newUnitaryOpcode(vm.OpLen) }
 	/ "index" { return newUnitaryOpcode(vm.OpIndex) }
 	/ "inc" { return newUnitaryOpcode(vm.OpInc) }
@@ -118,7 +117,6 @@ Opcode =
 	/ "dec" { return newUnitaryOpcode(vm.OpDec) }
 	/ "count1s" { return newUnitaryOpcode(vm.OpCount1s) }
 	/ "choice" { return newUnitaryOpcode(vm.OpChoice) }
-    / "call" _ id:FunctionName _ count:Value { return newCallOpcode(vm.OpCall, id.(string), count.(string)) }
 	/ "bnot" { return newUnitaryOpcode(vm.OpBNot) }
 	/ "avg" { return newUnitaryOpcode(vm.OpAvg) }
 	/ "append" { return newUnitaryOpcode(vm.OpAppend) }

@@ -137,15 +137,10 @@ func ToValue(x interface{}) (Value, error) {
 				return nil, err
 			}
 		}
-		// if we get here, we have a map of indices and values; we want that map to have
-		// indices from 0 to len(fm)-1 or the tags are messed up
+		// if we get here, we have a map of indices and values; add them to the struct
 		st := NewStruct()
-		for i := 0; i < len(fm); i++ {
-			v, ok := fm[i]
-			if !ok {
-				return nil, errors.New("struct indices were not adjacent")
-			}
-			st = st.Append(v)
+		for k, v := range fm {
+			st.Set(byte(k), v)
 		}
 		return st, nil
 
@@ -183,16 +178,6 @@ func ExtractConstants(x interface{}) (map[string]int, error) {
 		}
 		if len(result) == 0 {
 			return nil, errors.New("no chain tags found in struct")
-		}
-		// now validate that they're all there with no gaps
-		valset := make(map[int]struct{})
-		for _, v := range result {
-			valset[v] = struct{}{}
-		}
-		for i := 0; i < len(valset); i++ {
-			if _, ok := valset[i]; !ok {
-				return nil, errors.New("struct indices were not adjacent")
-			}
 		}
 		return result, nil
 
