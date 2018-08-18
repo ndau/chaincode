@@ -72,7 +72,12 @@ func ToValueScalar(x interface{}) (Value, error) {
 			// it's a time.Time so convert it to a Timestamp
 			return NewTimestampFromTime(x.(time.Time))
 		}
-		return nil, errors.New("is struct, not a scalar")
+		// try calling the struct parser recursively
+		level2, err := ToValue(x)
+		if err != nil {
+			return nil, err
+		}
+		return level2, nil
 	case reflect.Interface:
 		// we can't handle generic interfaces
 		return nil, errors.New("is interface, not a scalar")
@@ -84,7 +89,8 @@ func ToValueScalar(x interface{}) (Value, error) {
 }
 
 // ToValue returns a Go value as a VM value, including if the Go value is a struct or array.
-// Structs are not treated recursively; only the top level is examined.
+// Structs are treated recursively; all field IDs must be distinct at all levels, because
+// the generated struct is flat.
 // Arrays create a list of values in the array
 func ToValue(x interface{}) (Value, error) {
 	vx := reflect.ValueOf(x)
@@ -127,15 +133,27 @@ func ToValue(x interface{}) (Value, error) {
 			if err != nil {
 				return nil, err
 			}
-			// if there's no chain tag, just move on
+
+			child, err := ToValueScalar(vx.FieldByIndex(fld.Index).Interface())
+			if err != nil {
+				return nil, err
+			}
+			if chstr, ok := child.(*Struct); ok {
+				for k, v := range chstr.fields {
+					if _, found := fm[int(k)]; found {
+						return nil, errors.New("nested struct had duplicate values in parent")
+					}
+					fm[int(k)] = v
+				}
+				continue
+			}
+
+			// if there's no chain tag (and it wasn't a struct), just move on
 			if ix < 0 {
 				continue
 			}
 
-			fm[ix], err = ToValueScalar(vx.FieldByIndex(fld.Index).Interface())
-			if err != nil {
-				return nil, err
-			}
+			fm[ix] = child
 		}
 		// if we get here, we have a map of indices and values; add them to the struct
 		st := NewStruct()

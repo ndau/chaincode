@@ -59,6 +59,17 @@ func TestToValue(t *testing.T) {
 		Y string `chain:"0"`
 	}
 
+	type nest2 struct {
+		P string `chain:"15"`
+		Q string `chain:"16"`
+	}
+
+	type nest1 struct {
+		H string `chain:"1"`
+		J string `chain:"3"`
+		M nest2
+	}
+
 	type args struct {
 		x interface{}
 	}
@@ -131,6 +142,14 @@ func TestToValue(t *testing.T) {
 			NewNumber(4),
 			NewBytes([]byte("phore")),
 		)), false},
+		{"nested struct", args{
+			nest1{"a", "b", nest2{"c", "d"}}},
+			NewStruct().
+				Set(1, NewBytes([]byte("a"))).
+				Set(3, NewBytes([]byte("b"))).
+				Set(15, NewBytes([]byte("c"))).
+				Set(16, NewBytes([]byte("d"))),
+			false},
 		{"int", args{int(1)}, NewNumber(1), false},
 		{"int64", args{int64(1000)}, NewNumber(1000), false},
 		{"minus 1", args{int(-1)}, NewNumber(-1), false},
