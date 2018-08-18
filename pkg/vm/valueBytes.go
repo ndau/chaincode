@@ -15,6 +15,16 @@ func NewBytes(ab []byte) *Bytes {
 	return &Bytes{b: ab}
 }
 
+// Equal implements equality testing for Bytes
+func (vt *Bytes) Equal(rhs Value) bool {
+	switch other := rhs.(type) {
+	case *Bytes:
+		return bytes.Compare(vt.b, other.b) == 0
+	default:
+		return false
+	}
+}
+
 // Less implements comparison for Bytes
 func (vt *Bytes) Less(rhs Value) (bool, error) {
 	switch other := rhs.(type) {

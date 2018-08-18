@@ -15,14 +15,21 @@ func NewNumber(n int64) Number {
 	return Number{n}
 }
 
+// Equal implements equality testing for Number
+func (vt Number) Equal(rhs Value) bool {
+	switch other := rhs.(type) {
+	case Number:
+		return vt.v == other.v
+	default:
+		return false
+	}
+}
+
 // Less implements comparison for Number
 func (vt Number) Less(rhs Value) (bool, error) {
 	switch other := rhs.(type) {
 	case Number:
-		if vt.v < other.v {
-			return true, nil
-		}
-		return false, nil
+		return vt.v < other.v, nil
 	default:
 		return false, ValueError{"comparing incompatible types"}
 	}

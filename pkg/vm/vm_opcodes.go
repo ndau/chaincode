@@ -422,19 +422,19 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		if err != nil {
 			return vm.runtimeError(err)
 		}
-		isGreater, _ := v2.Less(v1)
+		isEqual := v1.Equal(v2)
 		result := false
 		switch instr {
 		case OpLt:
 			result = isLess
 		case OpLte:
-			result = isLess || (!isLess && !isGreater)
+			result = isLess || isEqual
 		case OpEq:
-			result = (!isLess && !isGreater)
+			result = isEqual
 		case OpGte:
-			result = isGreater || (!isLess && !isGreater)
+			result = !isLess
 		case OpGt:
-			result = isGreater
+			result = !isLess && !isEqual
 		}
 		var n Value
 		if result {

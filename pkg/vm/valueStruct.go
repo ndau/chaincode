@@ -57,11 +57,39 @@ func (vt *Struct) IsCompatible(other *Struct) bool {
 	return vt.validFields.Equals(other.validFields)
 }
 
+// Equal implements comparison for Struct. If rhs is not a Struct, errors. If
+// the two structs have different values for validFields, then the result is
+// false. If they have the same field set, they are compared field by field in
+// numeric order and the result is the result from the first element that is not
+// equal to its counterpart.
+func (vt *Struct) Equal(rhs Value) bool {
+	switch other := rhs.(type) {
+	case *Struct:
+		if !vt.IsCompatible(other) {
+			return false
+		}
+		fieldIDs := vt.validFields.Indices()
+		for _, ix := range fieldIDs {
+			// we know that the structs both have the same field IDs so we're
+			// safe in ignoring errors
+			f1 := vt.fields[byte(ix)]
+			f2 := other.fields[byte(ix)]
+			if !f1.Equal(f2) {
+				return false
+			}
+		}
+		// if we get here, the two structs were equal, so therefore not less
+		return true
+	default:
+		return false
+	}
+}
+
 // Less implements comparison for Struct. If rhs is not a Struct, errors. If the
 // two structs have different values for validFields, then the result is the
 // result of comparing the new validFields objects. If they have the same field
 // set, they are compared field by field in numeric order and the result is the
-// result of the first element that compares nonzero.
+// result from the first element that is not equal to its counterpart.
 func (vt *Struct) Less(rhs Value) (bool, error) {
 	switch other := rhs.(type) {
 	case *Struct:
@@ -71,24 +99,13 @@ func (vt *Struct) Less(rhs Value) (bool, error) {
 		fieldIDs := vt.validFields.Indices()
 		for _, ix := range fieldIDs {
 			// we know that the structs both have the same field IDs so we're
-			// safe in ignoring errors
+			// safe in ignoring errors (any type errors at the field level will
+			// be caught by Less).
 			f1 := vt.fields[byte(ix)]
 			f2 := other.fields[byte(ix)]
-			r1, err := f1.Less(f2)
-			if err != nil {
-				return false, err
+			if !f1.Equal(f2) {
+				return f1.Less(f2)
 			}
-			if r1 {
-				return true, err
-			}
-			r2, err := f2.Less(f1)
-			if err != nil {
-				return false, err
-			}
-			if r2 {
-				return false, err
-			}
-			// otherwise, they were equal at this field, so look at the next field
 		}
 		// if we get here, the two structs were equal, so therefore not less
 		return false, nil
