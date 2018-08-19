@@ -38,7 +38,7 @@ func NewTestStruct(vs ...Value) *Struct {
 
 // Set assigns a value to a field at index ix and returns it.
 func (vt *Struct) Set(ix byte, v Value) *Struct {
-	vt.validFields.Set(int(ix))
+	vt.validFields.Set(ix)
 	vt.fields[ix] = v
 	return vt
 }
@@ -46,7 +46,7 @@ func (vt *Struct) Set(ix byte, v Value) *Struct {
 // SafeSet assigns a value to a field at index ix, only if the
 // there is no field already at that index.
 func (vt *Struct) SafeSet(ix byte, v Value) (*Struct, error) {
-	if vt.validFields.Get(int(ix)) {
+	if vt.validFields.Get(ix) {
 		return nil, errors.New("attempt to overwrite existing struct member")
 	}
 	return vt.Set(ix, v), nil
@@ -82,8 +82,8 @@ func (vt *Struct) Equal(rhs Value) bool {
 		for _, ix := range fieldIDs {
 			// we know that the structs both have the same field IDs so we're
 			// safe in ignoring errors
-			f1 := vt.fields[byte(ix)]
-			f2 := other.fields[byte(ix)]
+			f1 := vt.fields[ix]
+			f2 := other.fields[ix]
 			if !f1.Equal(f2) {
 				return false
 			}
@@ -111,8 +111,8 @@ func (vt *Struct) Less(rhs Value) (bool, error) {
 			// we know that the structs both have the same field IDs so we're
 			// safe in ignoring errors (any type errors at the field level will
 			// be caught by Less).
-			f1 := vt.fields[byte(ix)]
-			f2 := other.fields[byte(ix)]
+			f1 := vt.fields[ix]
+			f2 := other.fields[ix]
 			if !f1.Equal(f2) {
 				return f1.Less(f2)
 			}
@@ -133,7 +133,7 @@ func (vt *Struct) String() string {
 	sa := make([]string, len(vt.fields))
 	i := 0
 	for _, k := range vt.validFields.Indices() {
-		sa[i] = fmt.Sprintf("%d: %s", k, vt.fields[byte(k)].String())
+		sa[i] = fmt.Sprintf("%d: %s", k, vt.fields[k].String())
 		i++
 	}
 	return fmt.Sprintf("struct{%s}", strings.Join(sa, ", "))
@@ -150,6 +150,6 @@ func (vt *Struct) Len() int {
 }
 
 // Indices returns the list of indices that are defined in this struct.
-func (vt *Struct) Indices() []int {
+func (vt *Struct) Indices() []byte {
 	return vt.validFields.Indices()
 }

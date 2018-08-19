@@ -201,49 +201,49 @@ func TestExtractConstants(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    map[string]int
+		want    map[string]byte
 		wantErr bool
 	}{
 		{"simple", args{
 			struct {
 				X int `chain:"0"`
 			}{3},
-		}, map[string]int{"X": 0}, false},
+		}, map[string]byte{"X": 0}, false},
 		{"in order", args{
 			struct {
 				X int `chain:"0"`
 				Y int `chain:"1"`
 				Z int `chain:"2"`
 			}{3, 4, 5},
-		}, map[string]int{"X": 0, "Y": 1, "Z": 2}, false},
+		}, map[string]byte{"X": 0, "Y": 1, "Z": 2}, false},
 		{"out of order", args{
 			struct {
 				X int `chain:"2"`
 				Y int `chain:"0"`
 				Z int `chain:"1"`
 			}{3, 4, 5},
-		}, map[string]int{"X": 2, "Y": 0, "Z": 1}, false},
+		}, map[string]byte{"X": 2, "Y": 0, "Z": 1}, false},
 		{"not continuous should not error", args{
 			struct {
 				X int `chain:"3"`
 				Y int `chain:"0"`
 				Z int `chain:"1"`
 			}{3, 4, 5},
-		}, map[string]int{"X": 3, "Y": 0, "Z": 1}, false},
+		}, map[string]byte{"X": 3, "Y": 0, "Z": 1}, false},
 		{"mixed types", args{
 			struct {
 				X string `chain:"0"`
 				Y int64  `chain:"1"`
 				Z byte   `chain:"2"`
 			}{"hi", math.MaxInt64, 0x2A},
-		}, map[string]int{"X": 0, "Y": 1, "Z": 2}, false},
+		}, map[string]byte{"X": 0, "Y": 1, "Z": 2}, false},
 		{"rename", args{
 			struct {
 				X int `chain:"0,foo"`
 				Y int `chain:"1,Bar"`
 				Z int `chain:"2"`
 			}{3, 4, 5},
-		}, map[string]int{"FOO": 0, "BAR": 1, "Z": 2}, false},
+		}, map[string]byte{"FOO": 0, "BAR": 1, "Z": 2}, false},
 		{"bad number", args{
 			struct {
 				X int `chain:"x"`
@@ -265,7 +265,7 @@ func TestExtractConstants(t *testing.T) {
 				Y int
 				Z int `chain:"1"`
 			}{3, 4, 5},
-		}, map[string]int{"X": 0, "Z": 1}, false},
+		}, map[string]byte{"X": 0, "Z": 1}, false},
 		{"no chain tags", args{
 			struct {
 				X int

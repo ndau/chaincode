@@ -210,7 +210,7 @@ func genLinearSequence() string {
 func genUnorderedInstruction() string {
 	for {
 		op := Opcode(randByte())
-		if !EnabledOpcodes.Get(int(op)) {
+		if !EnabledOpcodes.Get(byte(op)) {
 			continue
 		}
 		s := []string{op.String()}
@@ -374,7 +374,7 @@ func TestFuzzHandlers(t *testing.T) {
 		s := []string{OpHandler.String(), " 00"}
 		for j := 0; j < rand.Intn(20)+5; j++ {
 			op := Opcode(randByte())
-			if !EnabledOpcodes.Get(int(op)) {
+			if !EnabledOpcodes.Get(byte(op)) {
 				continue
 			}
 			s = append(s, op.String())

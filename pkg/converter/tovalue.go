@@ -19,11 +19,8 @@ import (
 // field name is used). Names are converted to uppercase for use in the assembler. Names, when
 // converted to uppercase, must be valid CHASM constant names ([A-Z][A-Z0-9_]*)
 
-// parseChainTag interprets a tag string
-func parseChainTag(tag string, name string) (int, string, error) {
-	if tag == "" {
-		return -1, "", nil
-	}
+// parseChainTag interprets a tag string.
+func parseChainTag(tag string, name string) (byte, string, error) {
 	sp := strings.Split(tag, ",")
 	ix, err := strconv.ParseInt(sp[0], 10, 8)
 	if err != nil {
@@ -36,7 +33,7 @@ func parseChainTag(tag string, name string) (int, string, error) {
 		}
 		name = sp[1]
 	}
-	return int(ix), strings.ToUpper(name), nil
+	return byte(ix), strings.ToUpper(name), nil
 }
 
 // ToValueScalar converts a scalar value to a VM Value object
@@ -152,8 +149,8 @@ func ToValue(x interface{}) (vm.Value, error) {
 			}
 			if chstr, ok := child.(*vm.Struct); ok {
 				for _, ind := range chstr.Indices() {
-					v, _ := chstr.Get(byte(ind))
-					st, err = st.SafeSet(byte(ind), v)
+					v, _ := chstr.Get(ind)
+					st, err = st.SafeSet(ind, v)
 					if err != nil {
 						return nil, err
 					}
@@ -166,7 +163,7 @@ func ToValue(x interface{}) (vm.Value, error) {
 				continue
 			}
 
-			st, err = st.SafeSet(byte(ix), child)
+			st, err = st.SafeSet(ix, child)
 			if err != nil {
 				return nil, err
 			}
@@ -181,7 +178,7 @@ func ToValue(x interface{}) (vm.Value, error) {
 
 // ExtractConstants takes an interface which should be a Go language struct with
 // "chain" Struct Tags, and extracts a map of names to indices in the generated vm struct
-func ExtractConstants(x interface{}) (map[string]int, error) {
+func ExtractConstants(x interface{}) (map[string]byte, error) {
 	vx := reflect.ValueOf(x)
 	tx := reflect.TypeOf(x)
 	switch vx.Kind() {
@@ -189,18 +186,18 @@ func ExtractConstants(x interface{}) (map[string]int, error) {
 		// if it's a struct, iterate the members and look to see if they have "chain:" tags;
 		// if so, assemble a map from all the members that do. If no chain tags exist, then
 		// error.
-		result := make(map[string]int)
+		result := make(map[string]byte)
 		for i := 0; i < tx.NumField(); i++ {
 			fld := tx.Field(i)
 			tag := fld.Tag.Get("chain")
+			// if there's no chain tag, just move on
+			if tag == "" {
+				continue
+			}
 
 			ix, name, err := parseChainTag(tag, fld.Name)
 			if err != nil {
 				return nil, err
-			}
-			// if there's no chain tag, just move on
-			if ix < 0 {
-				continue
 			}
 
 			result[name] = ix

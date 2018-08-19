@@ -232,7 +232,7 @@ func (n *PushOpcode) bytes() []byte {
 		b := vm.ToBytes(n.arg)
 		var suppress byte
 		if n.arg < 0 {
-			suppress = byte(0xFF)
+			suppress = 0xFF
 		}
 		for b[len(b)-1] == suppress {
 			b = b[:len(b)-1]

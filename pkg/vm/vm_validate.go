@@ -170,7 +170,7 @@ func generateInstructions(code []Opcode) []Instruction {
 func getUsedOpcodes(instrs []Instruction) *bitset256.Bitset256 {
 	bitset := bitset256.New()
 	for i := 0; i < len(instrs); i++ {
-		bitset.Set(int(instrs[i][0]))
+		bitset.Set(byte(instrs[i][0]))
 	}
 	return bitset
 }
@@ -179,7 +179,7 @@ func getUsedOpcodes(instrs []Instruction) *bitset256.Bitset256 {
 func bitsetToOpcodes(b *bitset256.Bitset256) string {
 	sa := []string{}
 	for i := 0; i < 256; i++ {
-		if b.Get(i) {
+		if b.Get(byte(i)) {
 			sa = append(sa, Opcode(i).String())
 		}
 	}
@@ -198,7 +198,7 @@ func bitsetToOpcodes(b *bitset256.Bitset256) string {
 // will not be affected by this operation. The function returns true if the
 // opcode was previously enabled (i.e., if it has had an effect).
 func DisableOpcode(op Opcode) bool {
-	ret := EnabledOpcodes.Get(int(op))
-	EnabledOpcodes.Clear(int(op))
+	ret := EnabledOpcodes.Get(byte(op))
+	EnabledOpcodes.Clear(byte(op))
 	return ret
 }

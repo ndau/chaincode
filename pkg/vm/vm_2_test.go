@@ -137,7 +137,7 @@ func TestDisableOpcode(t *testing.T) {
 	// now the validation check should fail an invalid opcode
 	buildVMfail(t, "handler 0 NOP enddef")
 	// but we have to re-enable Nop or other tests might fail
-	EnabledOpcodes.Set(int(OpNop))
+	EnabledOpcodes.Set(byte(OpNop))
 }
 
 func TestBadNegativeIndex(t *testing.T) {
