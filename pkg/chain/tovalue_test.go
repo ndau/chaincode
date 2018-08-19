@@ -1,4 +1,4 @@
-package converter
+package chain
 
 import (
 	"math"
@@ -75,6 +75,12 @@ func TestToValue(t *testing.T) {
 	}
 
 	type nest1 struct {
+		H string `chain:"1"`
+		J string `chain:"3"`
+		M nest2  `chain:"."`
+	}
+
+	type nonest1 struct {
 		H string `chain:"1"`
 		J string `chain:"3"`
 		M nest2
@@ -162,6 +168,12 @@ func TestToValue(t *testing.T) {
 				Set(3, vm.NewBytes([]byte("b"))).
 				Set(15, vm.NewBytes([]byte("c"))).
 				Set(16, vm.NewBytes([]byte("d"))),
+			false},
+		{"nested struct with no . tag", args{
+			nonest1{"a", "b", nest2{"c", "d"}}},
+			vm.NewStruct().
+				Set(1, vm.NewBytes([]byte("a"))).
+				Set(3, vm.NewBytes([]byte("b"))),
 			false},
 		{"int", args{int(1)}, vm.NewNumber(1), false},
 		{"int64", args{int64(1000)}, vm.NewNumber(1000), false},

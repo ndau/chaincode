@@ -1,4 +1,4 @@
-package converter
+package chain
 
 import (
 	"errors"
@@ -19,8 +19,11 @@ import (
 // field name is used). Names are converted to uppercase for use in the assembler. Names, when
 // converted to uppercase, must be valid CHASM constant names ([A-Z][A-Z0-9_]*)
 
-// parseChainTag interprets a tag string.
+// parseChainTag interprets a tag string. The tag string "." is treated specially.
 func parseChainTag(tag string, name string) (byte, string, error) {
+	if tag == "." {
+		return 0, tag, nil
+	}
 	sp := strings.Split(tag, ",")
 	ix, err := strconv.ParseInt(sp[0], 10, 8)
 	if err != nil {
@@ -132,17 +135,25 @@ func ToValue(x interface{}) (vm.Value, error) {
 
 		// if it's a struct, iterate the members and look to see if they have "chain:" tags;
 		// if so, assemble a struct from all the members that do. If no chain tags exist, then
-		// error.
+		// error. This works recursively provided that the parent struct also has a chain
+		// tag -- but the parent-level tag is ignored. Set these tags explicitly to ".".
 		st := vm.NewStruct()
 		for i := 0; i < tx.NumField(); i++ {
 			fld := tx.Field(i)
 			tag := fld.Tag.Get("chain")
+
+			// if there's no chain tag (and it wasn't a struct), just move on
+			if tag == "" {
+				continue
+			}
 
 			ix, _, err := parseChainTag(tag, "")
 			if err != nil {
 				return nil, err
 			}
 
+			// we have to traverse into structs even if they don't have a chain tag, in case
+			// their children do.
 			child, err := ToValueScalar(vx.FieldByIndex(fld.Index).Interface())
 			if err != nil {
 				return nil, err
@@ -155,11 +166,6 @@ func ToValue(x interface{}) (vm.Value, error) {
 						return nil, err
 					}
 				}
-				continue
-			}
-
-			// if there's no chain tag (and it wasn't a struct), just move on
-			if ix < 0 {
 				continue
 			}
 
