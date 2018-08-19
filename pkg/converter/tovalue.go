@@ -1,4 +1,4 @@
-package vm
+package converter
 
 import (
 	"errors"
@@ -8,6 +8,10 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/oneiro-ndev/chaincode/pkg/vm"
+	"github.com/oneiro-ndev/ndaumath/pkg/address"
+	"github.com/oneiro-ndev/signature/pkg/signature"
 )
 
 // chain tags have comma-separated values. The first is always a numeric field index, the second
@@ -38,46 +42,54 @@ func parseChainTag(tag string, name string) (int, string, error) {
 // ToValueScalar converts a scalar value to a VM Value object
 // it handles ints of several types, bool, string, time.Time, and
 // pointers to these.
-func ToValueScalar(x interface{}) (Value, error) {
+func ToValueScalar(x interface{}) (vm.Value, error) {
 	v := reflect.ValueOf(x)
 	switch v.Kind() {
 	case reflect.Bool:
-		if x.(bool) {
-			return NewNumber(1), nil
+		if v.Bool() {
+			return vm.NewTrue(), nil
 		}
-		return NewNumber(0), nil
-	case reflect.Int:
-		n := int64(x.(int))
-		return NewNumber(n), nil
-	case reflect.Int64:
-		n := x.(int64)
-		return NewNumber(n), nil
-	case reflect.Uint64:
-		n := x.(uint64)
+		return vm.NewFalse(), nil
+	case reflect.Int, reflect.Int64:
+		n := v.Int()
+		return vm.NewNumber(n), nil
+	case reflect.Uint64, reflect.Uint8:
+		n := v.Uint()
 		if n > math.MaxInt64 {
 			return nil, errors.New("value doesn't fit into a Number")
 		}
-		return NewNumber(int64(n)), nil
-	case reflect.Uint8:
-		n := int64(x.(uint8))
-		return NewNumber(n), nil
+		return vm.NewNumber(int64(n)), nil
 	case reflect.String:
-		return NewBytes([]byte(x.(string))), nil
+		return vm.NewBytes([]byte(x.(string))), nil
 	case reflect.Ptr:
 		// convert pointers to the object they point to and try again recursively
 		return ToValueScalar(v.Elem().Interface())
 	case reflect.Struct:
-		// if we get a struct at this level it should be a timestamp
-		if v.Type() == reflect.ValueOf(time.Time{}).Type() {
-			// it's a time.Time so convert it to a Timestamp
-			return NewTimestampFromTime(x.(time.Time))
+		// if we get a struct at this level, we have to see if it is one of our
+		// special types we already understand
+		switch v.Type() {
+		case reflect.ValueOf(time.Time{}).Type():
+			return vm.NewTimestampFromTime(x.(time.Time))
+		case reflect.ValueOf(address.Address{}).Type():
+			data, err := x.(address.Address).MarshalText()
+			if err != nil {
+				return nil, err
+			}
+			return vm.NewBytes(data), nil
+		case reflect.ValueOf(signature.Signature{}).Type():
+			data, err := x.(signature.Signature).Marshal()
+			if err != nil {
+				return nil, err
+			}
+			return vm.NewBytes(data), nil
+		default:
+			// try calling the struct parser recursively
+			level2, err := ToValue(x)
+			if err != nil {
+				return nil, err
+			}
+			return level2, nil
 		}
-		// try calling the struct parser recursively
-		level2, err := ToValue(x)
-		if err != nil {
-			return nil, err
-		}
-		return level2, nil
 	case reflect.Interface:
 		// we can't handle generic interfaces
 		return nil, errors.New("is interface, not a scalar")
@@ -92,7 +104,7 @@ func ToValueScalar(x interface{}) (Value, error) {
 // Structs are treated recursively; all field IDs must be distinct at all levels, because
 // the generated struct is flat.
 // Arrays create a list of values in the array
-func ToValue(x interface{}) (Value, error) {
+func ToValue(x interface{}) (vm.Value, error) {
 	vx := reflect.ValueOf(x)
 	tx := reflect.TypeOf(x)
 	switch vx.Kind() {
@@ -103,7 +115,7 @@ func ToValue(x interface{}) (Value, error) {
 		}
 		// if it's an array, create a list out of the individual items by calling this function
 		// recursively. This will also work for arrays of arrays or arrays of structs.
-		li := NewList()
+		li := vm.NewList()
 		for i := 0; i < vx.Len(); i++ {
 			item := vx.Index(i).Interface()
 			v, err := ToValue(item)
@@ -118,13 +130,13 @@ func ToValue(x interface{}) (Value, error) {
 		// first check to see if it's just a timestamp
 		if vx.Type() == reflect.ValueOf(time.Time{}).Type() {
 			// it's a time.Time so convert it to a Timestamp
-			return NewTimestampFromTime(x.(time.Time))
+			return vm.NewTimestampFromTime(x.(time.Time))
 		}
 
 		// if it's a struct, iterate the members and look to see if they have "chain:" tags;
 		// if so, assemble a struct from all the members that do. If no chain tags exist, then
 		// error.
-		fm := make(map[int]Value)
+		st := vm.NewStruct()
 		for i := 0; i < tx.NumField(); i++ {
 			fld := tx.Field(i)
 			tag := fld.Tag.Get("chain")
@@ -138,12 +150,13 @@ func ToValue(x interface{}) (Value, error) {
 			if err != nil {
 				return nil, err
 			}
-			if chstr, ok := child.(*Struct); ok {
-				for k, v := range chstr.fields {
-					if _, found := fm[int(k)]; found {
-						return nil, errors.New("nested struct had duplicate values in parent")
+			if chstr, ok := child.(*vm.Struct); ok {
+				for _, ind := range chstr.Indices() {
+					v, _ := chstr.Get(byte(ind))
+					st, err = st.SafeSet(byte(ind), v)
+					if err != nil {
+						return nil, err
 					}
-					fm[int(k)] = v
 				}
 				continue
 			}
@@ -153,12 +166,10 @@ func ToValue(x interface{}) (Value, error) {
 				continue
 			}
 
-			fm[ix] = child
-		}
-		// if we get here, we have a map of indices and values; add them to the struct
-		st := NewStruct()
-		for k, v := range fm {
-			st.Set(byte(k), v)
+			st, err = st.SafeSet(byte(ix), child)
+			if err != nil {
+				return nil, err
+			}
 		}
 		return st, nil
 

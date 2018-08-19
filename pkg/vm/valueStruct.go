@@ -1,6 +1,7 @@
 package vm
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -40,6 +41,15 @@ func (vt *Struct) Set(ix byte, v Value) *Struct {
 	vt.validFields.Set(int(ix))
 	vt.fields[ix] = v
 	return vt
+}
+
+// SafeSet assigns a value to a field at index ix, only if the
+// there is no field already at that index.
+func (vt *Struct) SafeSet(ix byte, v Value) (*Struct, error) {
+	if vt.validFields.Get(int(ix)) {
+		return nil, errors.New("attempt to overwrite existing struct member")
+	}
+	return vt.Set(ix, v), nil
 }
 
 // Get retrieves the field at a given index
@@ -132,4 +142,14 @@ func (vt *Struct) String() string {
 // IsTrue indicates if this Value evaluates to true
 func (vt *Struct) IsTrue() bool {
 	return false
+}
+
+// Len returns the number of fields in this struct
+func (vt *Struct) Len() int {
+	return len(vt.fields)
+}
+
+// Indices returns the list of indices that are defined in this struct.
+func (vt *Struct) Indices() []int {
+	return vt.validFields.Indices()
 }
