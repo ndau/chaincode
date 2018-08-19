@@ -384,9 +384,9 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		if err != nil {
 			return vm.runtimeError(err)
 		}
-		b := NewNumber(-1)
+		b := NewTrue()
 		if v.IsTrue() {
-			b = NewNumber(0)
+			b = NewFalse()
 		}
 		if err := vm.stack.Push(b); err != nil {
 			return vm.runtimeError(err)
@@ -436,13 +436,13 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		case OpGt:
 			result = !isLess && !isEqual
 		}
-		var n Value
+		var b Value
 		if result {
-			n = NewNumber(-1)
+			b = NewTrue()
 		} else {
-			n = NewNumber(0)
+			b = NewFalse()
 		}
-		if err := vm.stack.Push(n); err != nil {
+		if err := vm.stack.Push(b); err != nil {
 			return vm.runtimeError(err)
 		}
 

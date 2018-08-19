@@ -15,6 +15,16 @@ func NewNumber(n int64) Number {
 	return Number{n}
 }
 
+// NewTrue returns a number that is considered to be true
+func NewTrue() Number {
+	return Number{-1}
+}
+
+// NewFalse returns a number that is considered to be false
+func NewFalse() Number {
+	return Number{0}
+}
+
 // Equal implements equality testing for Number
 func (vt Number) Equal(rhs Value) bool {
 	switch other := rhs.(type) {
