@@ -30,14 +30,14 @@ func TestOne(t *testing.T) {
 	op, err := newPushOpcode("1")
 	assert.Nil(t, err)
 	b := op.bytes()
-	bcheck(t, b, "2A")
+	bcheck(t, b, "1A")
 }
 
 func TestNegOne(t *testing.T) {
 	op, err := newPushOpcode("-1")
 	assert.Nil(t, err)
 	b := op.bytes()
-	bcheck(t, b, "2B")
+	bcheck(t, b, "1B")
 }
 
 func TestPushLobyte(t *testing.T) {
@@ -121,7 +121,7 @@ func TestPushAddress(t *testing.T) {
 	op, err := newPushAddr("ndadprx764ciigti8d8whtw2kct733r85qvjukhqhke3dka4")
 	assert.Nil(t, err)
 	b := op.bytes()
-	bcheck(t, b, "29306e64616470727837363463696967746938643877687477326b637437333372383571766a756b6871686b6533646b6134")
+	bcheck(t, b, "2a306e64616470727837363463696967746938643877687477326b637437333372383571766a756b6871686b6533646b6134")
 }
 
 func TestPushBadAddress(t *testing.T) {
@@ -133,5 +133,5 @@ func TestPushTimestamp(t *testing.T) {
 	op, err := newPushTimestamp("2018-07-18T20:00:58Z")
 	assert.Nil(t, err)
 	b := op.bytes()
-	bcheck(t, b, "2c 80 b2 2c 4a 4a 14 02  00")
+	bcheck(t, b, "2b 80 b2 2c 4a 4a 14 02  00")
 }

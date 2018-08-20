@@ -396,27 +396,27 @@ func TestIfNull2(t *testing.T) {
 }
 
 func TestCompares1(t *testing.T) {
-	vm := buildVM(t, "handler 0 one neg1 eq one neg1 lt one neg1 gt enddef")
+	vm := buildVM(t, "handler 0 one neg1 eq one neg1 lt one neg1 gt one neg1 lte one neg1 gte enddef")
 	vm.Init(0)
 	err := vm.Run(false)
 	assert.Nil(t, err)
-	checkStack(t, vm.Stack(), 0, 0, 1)
+	checkStack(t, vm.Stack(), 0, 0, -1, 0, -1)
 }
 
 func TestCompares2(t *testing.T) {
-	vm := buildVM(t, "handler 0 one one eq one one lt one one gt enddef")
+	vm := buildVM(t, "handler 0 one one eq one one lt one one gt one one lte one one gte enddef")
 	vm.Init(0)
 	err := vm.Run(false)
 	assert.Nil(t, err)
-	checkStack(t, vm.Stack(), 1, 0, 0)
+	checkStack(t, vm.Stack(), -1, 0, 0, -1, -1)
 }
 
 func TestCompares3(t *testing.T) {
-	vm := buildVM(t, "handler 0 neg1 one eq neg1 one lt neg1 one gt enddef")
+	vm := buildVM(t, "handler 0 neg1 one eq neg1 one lt neg1 one gt neg1 one lte neg1 one gte enddef")
 	vm.Init(0)
 	err := vm.Run(false)
 	assert.Nil(t, err)
-	checkStack(t, vm.Stack(), 0, 1, 0)
+	checkStack(t, vm.Stack(), 0, -1, 0, -1, 0)
 }
 
 func TestCompares4(t *testing.T) {
@@ -431,15 +431,15 @@ func TestCompares5(t *testing.T) {
 	vm.Init(0)
 	err := vm.Run(false)
 	assert.Nil(t, err)
-	checkStack(t, vm.Stack(), 0, 1)
+	checkStack(t, vm.Stack(), 0, -1)
 }
 
 func TestCompareLists1(t *testing.T) {
-	vm := buildVM(t, `handler 0 pushl zero append one append dup dup eq swap dup gt enddef`)
+	vm := buildVM(t, `handler 0 pushl zero append one append dup dup eq swap dup dup gt swap dup gte enddef`)
 	vm.Init(0)
 	err := vm.Run(false)
 	assert.Nil(t, err)
-	checkStack(t, vm.Stack(), 1, 0)
+	checkStack(t, vm.Stack(), -1, 0, -1)
 }
 
 func TestCompareLists2(t *testing.T) {
@@ -447,7 +447,7 @@ func TestCompareLists2(t *testing.T) {
 	vm.Init(0)
 	err := vm.Run(false)
 	assert.Nil(t, err)
-	checkStack(t, vm.Stack(), 0, 1)
+	checkStack(t, vm.Stack(), 0, -1)
 }
 
 func TestCompareLists3(t *testing.T) {
@@ -484,7 +484,7 @@ func TestCompareTimestampGt(t *testing.T) {
 	vm.Init(0)
 	err := vm.Run(false)
 	assert.Nil(t, err)
-	checkStack(t, vm.Stack(), 1, 0, 0)
+	checkStack(t, vm.Stack(), -1, 0, 0)
 }
 
 func TestCompareTimestampLt(t *testing.T) {
@@ -500,7 +500,7 @@ func TestCompareTimestampLt(t *testing.T) {
 	vm.Init(0)
 	err := vm.Run(false)
 	assert.Nil(t, err)
-	checkStack(t, vm.Stack(), 0, 1, 0)
+	checkStack(t, vm.Stack(), 0, -1, 0)
 }
 
 func TestCompareTimestampEq(t *testing.T) {
@@ -516,7 +516,7 @@ func TestCompareTimestampEq(t *testing.T) {
 	vm.Init(0)
 	err := vm.Run(false)
 	assert.Nil(t, err)
-	checkStack(t, vm.Stack(), 0, 0, 1)
+	checkStack(t, vm.Stack(), 0, 0, -1)
 }
 
 func TestTimestamp1(t *testing.T) {
@@ -602,7 +602,7 @@ func TestTimestampDefaultNow(t *testing.T) {
 	vm.Init(0)
 	err := vm.Run(false)
 	assert.Nil(t, err)
-	checkStack(t, vm.Stack(), 0, 0, 1)
+	checkStack(t, vm.Stack(), 0, 0, -1)
 }
 
 func TestInjectedRand(t *testing.T) {
@@ -613,7 +613,7 @@ func TestInjectedRand(t *testing.T) {
 	vm.Init(0)
 	err = vm.Run(false)
 	assert.Nil(t, err)
-	checkStack(t, vm.Stack(), 1, 1)
+	checkStack(t, vm.Stack(), -1, -1)
 }
 
 func TestDefaultRand(t *testing.T) {
@@ -625,11 +625,11 @@ func TestDefaultRand(t *testing.T) {
 }
 
 func TestList1(t *testing.T) {
-	vm := buildVM(t, "handler 0 pushl one append push1 7 append dup len swap one index enddef")
+	vm := buildVM(t, "handler 0 pushl push1 0d append push1 7 append dup len swap dup one index swap push1 2 neg index enddef")
 	vm.Init(0)
 	err := vm.Run(false)
 	assert.Nil(t, err)
-	checkStack(t, vm.Stack(), 2, 7)
+	checkStack(t, vm.Stack(), 2, 7, 13)
 }
 
 func TestExtend(t *testing.T) {

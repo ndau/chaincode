@@ -17,7 +17,7 @@ func bcheck(t *testing.T, b []byte, s string) {
 	p := regexp.MustCompile("[ \t\r\n]")
 	s = p.ReplaceAllString(s, "")
 
-	assert.Equal(t, len(b), len(s)/2, "expected string is wrong length")
+	assert.Equal(t, len(s)/2, len(b), "expected length doesn't match")
 	// then split it up into bytes
 	for i := 0; i < len(s); i += 2 {
 		sb := s[i : i+2]
@@ -25,7 +25,7 @@ func bcheck(t *testing.T, b []byte, s string) {
 		assert.Nil(t, err)
 		shouldbe = append(shouldbe, byte(sv))
 	}
-	assert.Equal(t, b, shouldbe)
+	assert.Equal(t, shouldbe, b)
 }
 
 // checkParse makes sure that the result of a parse is a given stream of bytes

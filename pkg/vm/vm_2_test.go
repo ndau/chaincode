@@ -140,9 +140,11 @@ func TestDisableOpcode(t *testing.T) {
 	EnabledOpcodes.Set(int(OpNop))
 }
 
-func TestNegativeIndex(t *testing.T) {
+func TestBadNegativeIndex(t *testing.T) {
 	prog := `Handler 00
-		Neg1 Index
+		Push1 3
+		Neg
+		Index
 		EndDef`
 	vm := buildVM(t, prog)
 	vm.Init(0, NewList().Append(NewNumber(1)).Append(NewNumber(2)))

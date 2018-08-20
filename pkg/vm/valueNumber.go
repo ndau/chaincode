@@ -15,18 +15,16 @@ func NewNumber(n int64) Number {
 	return Number{n}
 }
 
-// Compare implements comparison for Number
-func (vt Number) Compare(rhs Value) (int, error) {
+// Less implements comparison for Number
+func (vt Number) Less(rhs Value) (bool, error) {
 	switch other := rhs.(type) {
 	case Number:
 		if vt.v < other.v {
-			return -1, nil
-		} else if vt.v > other.v {
-			return 1, nil
+			return true, nil
 		}
-		return 0, nil
+		return false, nil
 	default:
-		return 0, ValueError{"comparing incompatible types"}
+		return false, ValueError{"comparing incompatible types"}
 	}
 }
 

@@ -2,7 +2,7 @@ package vm
 
 // Value objects are what is managed by the VM
 type Value interface {
-	Compare(rhs Value) (int, error)
+	Less(rhs Value) (bool, error)
 	IsScalar() bool
 	String() string
 	IsTrue() bool
