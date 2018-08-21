@@ -16,14 +16,14 @@ HandlerDef <- _? "handler" _ ids:HandlerIDList _? '{' s:Line+ _? '}' EOL*  {
 		return newHandlerDef(ids.([]string), s, c.globalStore["constants"].(map[string]string))
     }
 
-FunctionDef <- _? "func" _ n:FunctionName _? '{' s:Line+ _? '}' EOL*  {
+FunctionDef <- _? "func" _ n:FunctionName _? '(' argcount:Value _? ')' _?  '{' s:Line+ _? '}' EOL*  {
         fm := c.globalStore["functions"].(map[string]int)
         name := n.(string)
         ctr := c.globalStore["functionCounter"].(int)
         fm[name] = ctr
         ctr++
         c.globalStore["functionCounter"] = ctr
-        return newFunctionDef(name, s)
+        return newFunctionDef(name, argcount.(string), s)
     }
 
 HandlerIDList <-
@@ -92,6 +92,7 @@ Opcode =
 	/ "max" { return newUnitaryOpcode(vm.OpMax) }
 	/ "lte" { return newUnitaryOpcode(vm.OpLte) }
 	/ "lt" { return newUnitaryOpcode(vm.OpLt) }
+	/ "lookup" _ id:FunctionName { return newCallOpcode(vm.OpLookup, id.(string)) }
 	/ "len" { return newUnitaryOpcode(vm.OpLen) }
 	/ "index" { return newUnitaryOpcode(vm.OpIndex) }
 	/ "inc" { return newUnitaryOpcode(vm.OpInc) }
@@ -113,10 +114,11 @@ Opcode =
 	/ "drop" { return newUnitaryOpcode(vm.OpDrop) }
 	/ "divmod" { return newUnitaryOpcode(vm.OpDivMod) }
 	/ "div" { return newUnitaryOpcode(vm.OpDiv) }
-    / "deco" _ id:FunctionName _ count:Value { return newCallOpcode(vm.OpDeco, id.(string), count.(string)) }
+    / "deco" _ id:FunctionName _ count:Value { return newCallOpcode(vm.OpDeco, id.(string)) }
 	/ "dec" { return newUnitaryOpcode(vm.OpDec) }
 	/ "count1s" { return newUnitaryOpcode(vm.OpCount1s) }
 	/ "choice" { return newUnitaryOpcode(vm.OpChoice) }
+	/ "call" _ id:FunctionName { return newCallOpcode(vm.OpCall, id.(string)) }
 	/ "bnot" { return newUnitaryOpcode(vm.OpBNot) }
 	/ "avg" { return newUnitaryOpcode(vm.OpAvg) }
 	/ "append" { return newUnitaryOpcode(vm.OpAppend) }
@@ -136,7 +138,7 @@ Value =
     / ConstantRef
     )
 
-ConstantRef <- k:Constant                         { cm := c.globalStore["constants"].(map[string]string); return cm[k.(string)], nil }
+ConstantRef <- _? k:Constant                         { cm := c.globalStore["constants"].(map[string]string); return cm[k.(string)], nil }
 Integer <-
     ( _? "0x" [0-9A-Fa-f]+                        { return strings.TrimSpace(string(c.text)), nil }
     / _? "addr(" ([0-9A-Fa-f][0-9A-Fa-f])+ ')'    { return strings.TrimSpace(string(c.text)), nil }
@@ -144,7 +146,7 @@ Integer <-
     )
 Bytes <-
     ( b:Integer+                                  { return b, nil }
-    / _? '"' s:[^"]+ '"'                          { return s, nil } //"
+    / _? '"' s:[^"]+ '"'                          { return s, nil }
     )
 
 Address <- "nd" [2-9a-km-np-zA-KM-NP-Z]+          { return string(c.text), nil }

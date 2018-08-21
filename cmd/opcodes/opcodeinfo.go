@@ -137,7 +137,7 @@ func (p functionIDParm) PeggoParm() string {
 }
 
 func (p functionIDParm) PeggoTmpl() string {
-	return ""
+	return "CallOp"
 }
 
 func (p functionIDParm) Placeholder() string {
