@@ -25,12 +25,8 @@ func buildBinary(code []byte, name, comment string) *vm.ChasmBinary {
 
 // BuildVMForTxValidation accepts a transactable and builds a VM that it sets up to call the appropriate
 // handler for the given transaction type. All that needs to happen after this is to call Run().
-func BuildVMForTxValidation(code []byte,
-	acct backing.AccountData,
-	tx metatx.Transactable,
-	signatureSet *bitset256.Bitset256,
-	ts vm.Timestamp,
-) (*vm.ChaincodeVM, error) {
+func BuildVMForTxValidation(code []byte, acct backing.AccountData, tx metatx.Transactable,
+	signatureSet *bitset256.Bitset256, ts vm.Timestamp) (*vm.ChaincodeVM, error) {
 	acctStruct, err := ToValue(acct)
 	if err != nil {
 		return nil, err
