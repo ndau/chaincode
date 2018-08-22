@@ -10,16 +10,30 @@ import (
 
 func TestDeco1(t *testing.T) {
 	vm := buildVM(t, `
-		handler 0 deco 0 0 fieldl 2 sum enddef
-		def 0 dup field 0 dup mul swap  field 1 dup mul add enddef
+		handler 0
+			deco 0 99
+			fieldl 99
+			sum
+		enddef
+		def 0 0
+			dup
+			field 0
+			dup
+			mul
+			swap
+			field 1
+			dup
+			mul
+			add
+		enddef
 	`)
 	l := NewList()
 	for i := int64(0); i < 5; i++ {
-		st := NewStruct(NewNumber(2*i), NewNumber(3*i+1))
+		st := NewTestStruct(NewNumber(2*i), NewNumber(3*i+1))
 		l = l.Append(st)
 	}
 	vm.Init(0, l)
-	err := vm.Run(false)
+	err := vm.Run(true)
 	assert.Nil(t, err)
 	checkStack(t, vm.Stack(), 455)
 }
@@ -35,8 +49,8 @@ func TestStringers(t *testing.T) {
 	vl := NewList()
 	vl = vl.Append(NewBytes([]byte("July"))).Append(NewNumber(18))
 	assert.Equal(t, "[July, 18]", vl.String())
-	vs := NewStruct(NewBytes([]byte("July")), NewNumber(18))
-	assert.Equal(t, "str(0)[July, 18]", vs.String())
+	vs := NewTestStruct(NewBytes([]byte("July")), NewNumber(18))
+	assert.Equal(t, "struct{0: July, 1: 18}", vs.String())
 }
 
 func TestExerciseStrings(t *testing.T) {
@@ -51,12 +65,12 @@ func TestExerciseStrings(t *testing.T) {
 
 func TestLookup1(t *testing.T) {
 	vm := buildVM(t, `
-		handler 0 lookup 0 0 enddef
-		def 0 field 0 push1 4 gt enddef
+		handler 0 lookup 0 enddef
+		def 0 0 field 0 push1 4 gt enddef
 	`)
 	l := NewList()
 	for i := int64(0); i < 5; i++ {
-		st := NewStruct(NewNumber(2*i), NewNumber(3*i+1))
+		st := NewTestStruct(NewNumber(2*i), NewNumber(3*i+1))
 		l = l.Append(st)
 	}
 	vm.Init(0, l)
@@ -67,12 +81,12 @@ func TestLookup1(t *testing.T) {
 
 func TestLookup2(t *testing.T) {
 	vm := buildVM(t, `
-		handler 0 lookup 0 0 enddef
-		def 0 field 1 push1 4 gt enddef
+		handler 0 lookup 0 enddef
+		def 0 0 field 1 push1 4 gt enddef
 	`)
 	l := NewList()
 	for i := int64(0); i < 5; i++ {
-		st := NewStruct(NewNumber(2*i), NewNumber(3*i+1))
+		st := NewTestStruct(NewNumber(2*i), NewNumber(3*i+1))
 		l = l.Append(st)
 	}
 	vm.Init(0, l)
@@ -83,12 +97,12 @@ func TestLookup2(t *testing.T) {
 
 func TestLookupFail1(t *testing.T) {
 	vm := buildVM(t, `
-		handler 0 lookup 0 0 enddef
-		def 0 field 1 push1 FF gt enddef
+		handler 0 lookup 0 enddef
+		def 0 0 field 1 push1 FF gt enddef
 	`)
 	l := NewList()
 	for i := int64(0); i < 5; i++ {
-		st := NewStruct(NewNumber(2*i), NewNumber(3*i+1))
+		st := NewTestStruct(NewNumber(2*i), NewNumber(3*i+1))
 		l = l.Append(st)
 	}
 	vm.Init(0, l)
@@ -137,7 +151,7 @@ func TestDisableOpcode(t *testing.T) {
 	// now the validation check should fail an invalid opcode
 	buildVMfail(t, "handler 0 NOP enddef")
 	// but we have to re-enable Nop or other tests might fail
-	EnabledOpcodes.Set(int(OpNop))
+	EnabledOpcodes.Set(byte(OpNop))
 }
 
 func TestBadNegativeIndex(t *testing.T) {

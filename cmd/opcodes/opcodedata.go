@@ -579,38 +579,38 @@ var opcodeData = opcodeInfos{
 	opcodeInfo{
 		Value:   0x80,
 		Name:    "Def",
-		Summary: "Defines function block n, where n is a number larger than any previously defined function in this script. Functions can only be called by handlers or other functions. Every function must be terminated by enddef, and function definitions may not be nested.",
+		Summary: "Defines function block n, where n is a number larger than any previously defined function in this script. When the function is called, m values will be copied (not popped) from the caller's stack to a new stack for the use of this function. Functions can only be called by handlers or other functions. Every function must be terminated by enddef, and function definitions may not be nested.",
 		Doc:     "",
 		Example: example{
 			Pre:  "",
-			Inst: "def n",
+			Inst: "def n m",
 			Post: ""},
-		Parms:   []parm{functionIDParm{}},
+		Parms:   []parm{functionIDParm{}, indexParm{"count"}},
 		Enabled: true,
 		NoAsm:   true,
 	},
 	opcodeInfo{
 		Value:   0x81,
 		Name:    "Call",
-		Summary: "Calls the function block, provided that its ID is greater than the index of the function block currently executing (recursion is not permitted). The function runs with a new stack which is initialized with the top n values of the current stack (which are copied, NOT popped). Upon return, the top value on the function's stack is pushed onto the caller's stack.",
+		Summary: "Calls the function block n, provided that its ID is greater than the index of the function block currently executing (recursion is not permitted). The function runs with a new stack which is initialized with the top n values of the current stack (which are copied, NOT popped). Upon return, the top value on the function's stack is pushed onto the caller's stack.",
 		Doc:     "The function's return value is the top entry on its stack upon return.",
 		Example: example{
 			Pre:  "",
-			Inst: "call n m",
+			Inst: "call n",
 			Post: ""},
-		Parms:   []parm{functionIDParm{}, indexParm{"count"}},
+		Parms:   []parm{functionIDParm{}},
 		Enabled: true,
 	},
 	opcodeInfo{
 		Value:   0x82,
 		Name:    "Deco",
-		Summary: "Decorates a list of structs (on top of the stack, which it pops) by applying the function block to each member of the struct, copying n stack entries to the function block's stack, then copying the struct itself; on return, the top value of the function block stack is appended to the list entry. The resulting new list is pushed onto the stack.",
-		Doc:     "TODO: Write a real example here; consider letting deco make a list of structs out of a non-struct list.",
+		Summary: "Decorates a list of structs (on top of the stack, which it pops) by applying the function block n to each member of the struct, copying m stack entries (where m is defined by the function) to the function block's stack, then copying the struct itself; on return, that struct's field f is set to the top value of the function's stack. The resulting new list is pushed onto the stack.",
+		Doc:     "TODO: Write a real example here; consider letting deco make a list of structs out of a non-struct list. Note that the function is called with m+1 values (the m from the function definition plus 1 for the struct itself).",
 		Example: example{
 			Pre:  "",
-			Inst: "deco n m",
+			Inst: "deco n f",
 			Post: ""},
-		Parms:   []parm{functionIDParm{}, indexParm{"count"}},
+		Parms:   []parm{functionIDParm{}, indexParm{"fieldid"}},
 		Enabled: true,
 	},
 	opcodeInfo{
@@ -761,13 +761,13 @@ var opcodeData = opcodeInfos{
 	opcodeInfo{
 		Value:   0x97,
 		Name:    "Lookup",
-		Summary: "Selects an item from a list of structs by applying the function block to each item in order, copying n stack entries to the function block's stack, then copying the struct itself; returns the index of the first item in the list where the result is a nonzero number; throws an error if no item returns a nonzero number.",
-		Doc:     "",
+		Summary: "Selects an item from a list of structs by applying the function block n to each item in order, copying m stack entries to the function block's stack (where m is defined by the function), then copying the struct itself; returns the index of the first item in the list where the result is a nonzero number; throws an error if no item returns a nonzero number.",
+		Doc:     "TODO: consider returning -1 instead, which is the same as returning the last item.",
 		Example: example{
 			Pre:  "[X Y Z]",
-			Inst: "lookup n m",
+			Inst: "lookup n",
 			Post: "i"},
-		Parms:   []parm{functionIDParm{}, indexParm{"count"}},
+		Parms:   []parm{functionIDParm{}},
 		Enabled: true,
 	},
 	opcodeInfo{
@@ -845,7 +845,7 @@ var opcodeData = opcodeInfos{
 	opcodeInfo{
 		Value:   0xC0,
 		Name:    "Lt",
-		Summary: "Compares (and discards) the two top stack elements. If the types are different, fails execution. If the types are the same, compares the values, and leaves TRUE when the second item is strictly less than thetopd item according to the comparison rules.",
+		Summary: "Compares (and discards) the two top stack elements. If the types are different, fails execution. If the types are the same, compares the values, and leaves TRUE when the second item is strictly less than the top item according to the comparison rules.",
 		Doc:     "Numbers, Timestamps: numeric comparison; Lists: length of list; Struct: comparison of fields in order; Bytes: comparison of bytes in order.",
 		Example: example{
 			Pre:  "A B",
@@ -857,7 +857,7 @@ var opcodeData = opcodeInfos{
 	opcodeInfo{
 		Value:   0xC1,
 		Name:    "Lte",
-		Summary: "Compares (and discards) the two top stack elements. If the types are different, fails execution. If the types are the same, compares the values, and leaves TRUE when the second item is less than or equal to thetopd item according to the comparison rules.",
+		Summary: "Compares (and discards) the two top stack elements. If the types are different, fails execution. If the types are the same, compares the values, and leaves TRUE when the second item is less than or equal to the top item according to the comparison rules.",
 		Doc:     "",
 		Example: example{
 			Pre:  "A B",
@@ -893,7 +893,7 @@ var opcodeData = opcodeInfos{
 	opcodeInfo{
 		Value:   0xC4,
 		Name:    "Gt",
-		Summary: "Compares (and discards) the two top stack elements. If the types are different, fails execution. If the types are the same, compares the values, and leaves TRUE when the second item is strictly greater than thetopd item according to the comparison rules.",
+		Summary: "Compares (and discards) the two top stack elements. If the types are different, fails execution. If the types are the same, compares the values, and leaves TRUE when the second item is strictly greater than the top item according to the comparison rules.",
 		Doc:     "",
 		Example: example{
 			Pre:  "A B",

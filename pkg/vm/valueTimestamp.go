@@ -31,6 +31,16 @@ func ParseTimestamp(s string) (Timestamp, error) {
 	return Timestamp{ts}, err
 }
 
+// Equal implements equality testing for Timestamp
+func (vt Timestamp) Equal(rhs Value) bool {
+	switch other := rhs.(type) {
+	case Timestamp:
+		return vt.t.Compare(other.t) == 0
+	default:
+		return false
+	}
+}
+
 // Less implements comparison for Timestamp
 func (vt Timestamp) Less(rhs Value) (bool, error) {
 	switch other := rhs.(type) {

@@ -21,6 +21,30 @@ func NewList(vs ...Value) List {
 	return vs
 }
 
+// Equal implements equality testing for List
+// If the lists are of different lengths, they cannot be equal.
+// If the lengths are the same, they are compared on a per-element basis
+// and the result is the result of the first element
+// that is not equal to its counterpart.
+func (vt List) Equal(rhs Value) bool {
+	switch other := rhs.(type) {
+	case List:
+		if len(vt) != len(other) {
+			return false
+		}
+		for i := 0; i < len(vt); i++ {
+			v1, _ := vt.Index(int64(i))
+			v2, _ := other.Index(int64(i))
+			if !v1.Equal(v2) {
+				return false
+			}
+		}
+		return true
+	default:
+		return false
+	}
+}
+
 // Less implements comparison for List
 // The lists are compared on a per-element basis
 // and the result is the result of the first element
@@ -30,37 +54,28 @@ func NewList(vs ...Value) List {
 func (vt List) Less(rhs Value) (bool, error) {
 	switch other := rhs.(type) {
 	case List:
-		for i := int64(0); true; i++ {
-			// if the lists have compared equal so far (which they have since we got here)
-			// and v2 runs off the end, then the result is definitely false
-			v2, err := other.Index(i)
+		for i := 0; i < len(vt); i++ {
+			v2, err := other.Index(int64(i))
 			if err != nil {
 				return false, nil
 			}
 			// if v1 runs off the end first, then the result is true
-			v1, err := vt.Index(i)
+			v1, err := vt.Index(int64(i))
 			if err != nil {
 				return true, nil
 			}
-			// if v1 < v2 errors return the error
-			r1, err := v1.Less(v2)
-			if err != nil {
-				return false, err
-			}
-			// if v1 < v2 return true
-			if r1 {
-				return true, nil
-			}
-			// if v1 > v2 return false, otherwise go around again
-			if r2, _ := v2.Less(v1); r2 {
-				return false, nil
+			if !v1.Equal(v2) {
+				return vt.Less(v2)
 			}
 		}
+		if len(other) == len(vt) {
+			return false, nil // the two lists were equivalent
+		}
+		// the only remaining option is that other was a longer list, in which case vt is less
+		return true, nil
 	default:
 		return false, ValueError{"comparing incompatible types"}
 	}
-	// this is here because go's escape analysis is failing
-	panic("List: can't happen")
 }
 
 // IsScalar indicates if this Value is a scalar value type

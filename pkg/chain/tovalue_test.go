@@ -1,34 +1,36 @@
-package vm
+package chain
 
 import (
 	"math"
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/oneiro-ndev/chaincode/pkg/vm"
 )
 
 func TestToValueScalar(t *testing.T) {
 	tt, _ := time.Parse("2006-01-02T15:04:05Z", "2018-02-03T12:34:56Z")
-	ts, _ := NewTimestampFromTime(tt)
+	ts, _ := vm.NewTimestampFromTime(tt)
 	tests := []struct {
 		name    string
 		args    interface{}
-		want    Value
+		want    vm.Value
 		wantErr bool
 	}{
-		{"int", int(1), NewNumber(1), false},
-		{"int64", int64(1000), NewNumber(1000), false},
-		{"minus 1", int(-1), NewNumber(-1), false},
-		{"uint64", uint64(1), NewNumber(1), false},
+		{"int", int(1), vm.NewNumber(1), false},
+		{"int64", int64(1000), vm.NewNumber(1000), false},
+		{"minus 1", int(-1), vm.NewNumber(-1), false},
+		{"uint64", uint64(1), vm.NewNumber(1), false},
 		{"illegal uint64", uint64(math.MaxUint64), nil, true},
-		{"string", "hello", NewBytes([]byte("hello")), false},
+		{"string", "hello", vm.NewBytes([]byte("hello")), false},
 		{"time", tt, ts, false},
-		{"true", true, NewNumber(1), false},
-		{"false", false, NewNumber(0), false},
+		{"true", true, vm.NewTrue(), false},
+		{"false", false, vm.NewFalse(), false},
 		{"[]int", []int{1, 23}, nil, true},
 		{"map", map[int]int{1: 2}, nil, true},
 		{"ptr to time", &tt, ts, false},
-		{"illegal struct", struct{ X int }{3}, nil, true},
+		{"undecorated struct", struct{ X int }{3}, vm.NewStruct(), false},
 		{"unexpected type", int32(17), nil, true},
 	}
 	for _, tt := range tests {
@@ -48,7 +50,7 @@ func TestToValueScalar(t *testing.T) {
 func TestToValue(t *testing.T) {
 	// for time tests
 	tt, _ := time.Parse("2006-01-02T15:04:05Z", "2018-02-03T12:34:56Z")
-	ts, _ := NewTimestampFromTime(tt)
+	ts, _ := vm.NewTimestampFromTime(tt)
 
 	// for struct tests
 	type st struct {
@@ -59,20 +61,45 @@ func TestToValue(t *testing.T) {
 		Y string `chain:"0"`
 	}
 
+	type foo int64
+	type bar int64
+	type custom struct {
+		A int64 `chain:"0"`
+		B foo   `chain:"1"`
+		C bar   `chain:"2"`
+	}
+
+	type nest2 struct {
+		P string `chain:"15"`
+		Q string `chain:"16"`
+	}
+
+	type nest1 struct {
+		H string `chain:"1"`
+		J string `chain:"3"`
+		M nest2  `chain:"."`
+	}
+
+	type nonest1 struct {
+		H string `chain:"1"`
+		J string `chain:"3"`
+		M nest2
+	}
+
 	type args struct {
 		x interface{}
 	}
 	tests := []struct {
 		name    string
 		args    args
-		want    Value
+		want    vm.Value
 		wantErr bool
 	}{
 		{"simple", args{
 			struct {
 				X int `chain:"0"`
 			}{3},
-		}, NewStruct(NewNumber(3)), false},
+		}, vm.NewTestStruct(vm.NewNumber(3)), false},
 		{"badtag", args{
 			struct {
 				X int `chain:"x"`
@@ -84,21 +111,24 @@ func TestToValue(t *testing.T) {
 				Y int `chain:"1"`
 				Z int `chain:"2"`
 			}{3, 4, 5},
-		}, NewStruct(NewNumber(3), NewNumber(4), NewNumber(5)), false},
+		}, vm.NewTestStruct(vm.NewNumber(3), vm.NewNumber(4), vm.NewNumber(5)), false},
 		{"out of order", args{
 			struct {
 				X int `chain:"2"`
 				Y int `chain:"0"`
 				Z int `chain:"1"`
 			}{3, 4, 5},
-		}, NewStruct(NewNumber(4), NewNumber(5), NewNumber(3)), false},
-		{"not continuous should error", args{
+		}, vm.NewTestStruct(vm.NewNumber(4), vm.NewNumber(5), vm.NewNumber(3)), false},
+		{"defined types", args{
+			custom{3, 4, 5},
+		}, vm.NewTestStruct(vm.NewNumber(3), vm.NewNumber(4), vm.NewNumber(5)), false},
+		{"not continuous should not error", args{
 			struct {
 				X int `chain:"3"`
 				Y int `chain:"0"`
 				Z int `chain:"1"`
 			}{3, 4, 5},
-		}, nil, true},
+		}, vm.NewStruct().Set(0, vm.NewNumber(4)).Set(1, vm.NewNumber(5)).Set(3, vm.NewNumber(3)), false},
 		{"mixed types", args{
 			struct {
 				X string    `chain:"0"`
@@ -106,7 +136,7 @@ func TestToValue(t *testing.T) {
 				Z byte      `chain:"2"`
 				T time.Time `chain:"3"`
 			}{"hi", math.MaxInt64, 0x2A, tt},
-		}, NewStruct(NewBytes([]byte("hi")), NewNumber(math.MaxInt64), NewNumber(42), ts), false},
+		}, vm.NewTestStruct(vm.NewBytes([]byte("hi")), vm.NewNumber(math.MaxInt64), vm.NewNumber(42), ts), false},
 		{"illegal field type", args{
 			struct {
 				X int32 `chain:"0"`
@@ -114,39 +144,53 @@ func TestToValue(t *testing.T) {
 		}, nil, true},
 		{"simple array", args{
 			[]int{1, 2, 3},
-		}, NewList().Append(NewNumber(1)).Append(NewNumber(2)).Append(NewNumber(3)), false},
+		}, vm.NewList().Append(vm.NewNumber(1)).Append(vm.NewNumber(2)).Append(vm.NewNumber(3)), false},
 		{"struct array", args{
 			[]st{
 				st{"had", "job", 1, "nothing", "you"},
 				st{"for", "phore", 4, "four", "fore"},
 			},
-		}, NewList().Append(NewStruct(
-			NewBytes([]byte("you")),
-			NewBytes([]byte("had")),
-			NewNumber(1),
-			NewBytes([]byte("job")),
-		)).Append(NewStruct(
-			NewBytes([]byte("fore")),
-			NewBytes([]byte("for")),
-			NewNumber(4),
-			NewBytes([]byte("phore")),
+		}, vm.NewList().Append(vm.NewTestStruct(
+			vm.NewBytes([]byte("you")),
+			vm.NewBytes([]byte("had")),
+			vm.NewNumber(1),
+			vm.NewBytes([]byte("job")),
+		)).Append(vm.NewTestStruct(
+			vm.NewBytes([]byte("fore")),
+			vm.NewBytes([]byte("for")),
+			vm.NewNumber(4),
+			vm.NewBytes([]byte("phore")),
 		)), false},
-		{"int", args{int(1)}, NewNumber(1), false},
-		{"int64", args{int64(1000)}, NewNumber(1000), false},
-		{"minus 1", args{int(-1)}, NewNumber(-1), false},
-		{"uint64", args{uint64(1)}, NewNumber(1), false},
+		{"nested struct", args{
+			nest1{"a", "b", nest2{"c", "d"}}},
+			vm.NewStruct().
+				Set(1, vm.NewBytes([]byte("a"))).
+				Set(3, vm.NewBytes([]byte("b"))).
+				Set(15, vm.NewBytes([]byte("c"))).
+				Set(16, vm.NewBytes([]byte("d"))),
+			false},
+		{"nested struct with no . tag", args{
+			nonest1{"a", "b", nest2{"c", "d"}}},
+			vm.NewStruct().
+				Set(1, vm.NewBytes([]byte("a"))).
+				Set(3, vm.NewBytes([]byte("b"))),
+			false},
+		{"int", args{int(1)}, vm.NewNumber(1), false},
+		{"int64", args{int64(1000)}, vm.NewNumber(1000), false},
+		{"minus 1", args{int(-1)}, vm.NewNumber(-1), false},
+		{"uint64", args{uint64(1)}, vm.NewNumber(1), false},
 		{"illegal uint64", args{uint64(math.MaxUint64)}, nil, true},
-		{"string", args{"hello"}, NewBytes([]byte("hello")), false},
-		{"[]byte", args{[]byte("hello")}, NewBytes([]byte("hello")), false},
+		{"string", args{"hello"}, vm.NewBytes([]byte("hello")), false},
+		{"[]byte", args{[]byte("hello")}, vm.NewBytes([]byte("hello")), false},
 		{"time", args{tt}, ts, false},
-		{"true", args{true}, NewNumber(1), false},
-		{"false", args{false}, NewNumber(0), false},
-		{"[]int", args{[]int{1, 23}}, NewList().Append(NewNumber(1)).Append(NewNumber(23)), false},
+		{"true", args{true}, vm.NewTrue(), false},
+		{"false", args{false}, vm.NewFalse(), false},
+		{"[]int", args{[]int{1, 23}}, vm.NewList().Append(vm.NewNumber(1)).Append(vm.NewNumber(23)), false},
 		{"[] illegal values", args{[]int32{1, 23}}, nil, true},
 		{"map", args{map[int]int{1: 2}}, nil, true},
 		{"ptr to time", args{&tt}, ts, false},
 		{"[][]int", args{[][]int{[]int{1}, []int{2, 3}}},
-			NewList().Append(NewList().Append(NewNumber(1))).Append(NewList().Append(NewNumber(2)).Append(NewNumber(3))), false},
+			vm.NewList().Append(vm.NewList().Append(vm.NewNumber(1))).Append(vm.NewList().Append(vm.NewNumber(2)).Append(vm.NewNumber(3))), false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -169,49 +213,49 @@ func TestExtractConstants(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    map[string]int
+		want    map[string]byte
 		wantErr bool
 	}{
 		{"simple", args{
 			struct {
 				X int `chain:"0"`
 			}{3},
-		}, map[string]int{"X": 0}, false},
+		}, map[string]byte{"X": 0}, false},
 		{"in order", args{
 			struct {
 				X int `chain:"0"`
 				Y int `chain:"1"`
 				Z int `chain:"2"`
 			}{3, 4, 5},
-		}, map[string]int{"X": 0, "Y": 1, "Z": 2}, false},
+		}, map[string]byte{"X": 0, "Y": 1, "Z": 2}, false},
 		{"out of order", args{
 			struct {
 				X int `chain:"2"`
 				Y int `chain:"0"`
 				Z int `chain:"1"`
 			}{3, 4, 5},
-		}, map[string]int{"X": 2, "Y": 0, "Z": 1}, false},
-		{"not continuous should error", args{
+		}, map[string]byte{"X": 2, "Y": 0, "Z": 1}, false},
+		{"not continuous should not error", args{
 			struct {
 				X int `chain:"3"`
 				Y int `chain:"0"`
 				Z int `chain:"1"`
 			}{3, 4, 5},
-		}, nil, true},
+		}, map[string]byte{"X": 3, "Y": 0, "Z": 1}, false},
 		{"mixed types", args{
 			struct {
 				X string `chain:"0"`
 				Y int64  `chain:"1"`
 				Z byte   `chain:"2"`
 			}{"hi", math.MaxInt64, 0x2A},
-		}, map[string]int{"X": 0, "Y": 1, "Z": 2}, false},
+		}, map[string]byte{"X": 0, "Y": 1, "Z": 2}, false},
 		{"rename", args{
 			struct {
 				X int `chain:"0,foo"`
 				Y int `chain:"1,Bar"`
 				Z int `chain:"2"`
 			}{3, 4, 5},
-		}, map[string]int{"FOO": 0, "BAR": 1, "Z": 2}, false},
+		}, map[string]byte{"FOO": 0, "BAR": 1, "Z": 2}, false},
 		{"bad number", args{
 			struct {
 				X int `chain:"x"`
@@ -233,7 +277,7 @@ func TestExtractConstants(t *testing.T) {
 				Y int
 				Z int `chain:"1"`
 			}{3, 4, 5},
-		}, map[string]int{"X": 0, "Z": 1}, false},
+		}, map[string]byte{"X": 0, "Z": 1}, false},
 		{"no chain tags", args{
 			struct {
 				X int

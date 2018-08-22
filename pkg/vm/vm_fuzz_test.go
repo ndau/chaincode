@@ -110,7 +110,7 @@ func genRandomHandler(hnum, fmax int) []string {
 // and also accepts a parameter for the maximum function number it can call.
 func genRandomFunc(fnum, fmax int) []string {
 	// here are some weightings for the number of top-level sequences in a function
-	w := weightings{opts: []option{
+	seqw := weightings{opts: []option{
 		option{40, 1},
 		option{20, 2},
 		option{10, 3},
@@ -118,8 +118,17 @@ func genRandomFunc(fnum, fmax int) []string {
 		option{5, 5},
 		option{5, 6},
 	}}
-	s := []string{fmt.Sprintf("%s %02x", OpDef, fnum)}
-	nseqs := choose(w).(int)
+	argw := weightings{opts: []option{
+		option{40, 0},
+		option{30, 1},
+		option{15, 2},
+		option{10, 3},
+		option{5, 4},
+	}}
+	numargs := choose(argw).(int)
+	s := []string{fmt.Sprintf("%s %02x %02x", OpDef, fnum, numargs)}
+
+	nseqs := choose(seqw).(int)
 	for i := 0; i < nseqs; i++ {
 		s = append(s, genRandomSequence(fnum+1, fmax, 0)...)
 	}
@@ -146,13 +155,6 @@ func genRandomSequence(fmin, fmax, depth int) []string {
 			option{10, OpCall},
 			option{10, OpDeco},
 			option{10, OpLookup},
-		}}
-		argw := weightings{opts: []option{
-			option{50, 0},
-			option{30, 1},
-			option{10, 2},
-			option{5, 3},
-			option{5, 4},
 		}}
 		s := []string{}
 		op := choose(seqw).(Opcode)
@@ -183,8 +185,7 @@ func genRandomSequence(fmin, fmax, depth int) []string {
 			} else {
 				fnum = fmin
 			}
-			numargs := choose(argw).(int)
-			s = append(s, fmt.Sprintf("%s %02x %02x", op, fnum, numargs))
+			s = append(s, fmt.Sprintf("%s %02x", op, fnum))
 		}
 	}
 }
@@ -209,7 +210,7 @@ func genLinearSequence() string {
 func genUnorderedInstruction() string {
 	for {
 		op := Opcode(randByte())
-		if !EnabledOpcodes.Get(int(op)) {
+		if !EnabledOpcodes.Get(byte(op)) {
 			continue
 		}
 		s := []string{op.String()}
@@ -292,7 +293,7 @@ func genRandomValue(vt valueType) Value {
 	case vtStruct:
 		// create a struct of 1-5 scalar members
 		vs := genRandomValues(1, 5)
-		return NewStruct(vs...)
+		return NewTestStruct(vs...)
 	case vtListOfStructs:
 		// number of items in the list
 		nitems := rand.Intn(16)
@@ -309,7 +310,7 @@ func genRandomValue(vt valueType) Value {
 		for f := 0; f < nfields; f++ {
 			ft := choose(scalars).(valueType)
 			for i := 0; i < nitems; i++ {
-				l[i] = l[i].(Struct).Append(genRandomValue(ft))
+				l[i] = l[i].(*Struct).Set(byte(f), genRandomValue(ft))
 			}
 		}
 		return NewList(l...)
@@ -373,7 +374,7 @@ func TestFuzzHandlers(t *testing.T) {
 		s := []string{OpHandler.String(), " 00"}
 		for j := 0; j < rand.Intn(20)+5; j++ {
 			op := Opcode(randByte())
-			if !EnabledOpcodes.Get(int(op)) {
+			if !EnabledOpcodes.Get(byte(op)) {
 				continue
 			}
 			s = append(s, op.String())

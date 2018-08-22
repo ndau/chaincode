@@ -49,14 +49,13 @@ func (vm *ChaincodeVM) skipToMatchingBracket() error {
 
 // callFunction calls the function numbered by funcnum, copying nargs to a new stack
 // returns the value left on the stack by the called function
-func (vm *ChaincodeVM) callFunction(funcnum int, nargs int, debug bool, extraArgs ...Value) (Value, error) {
+func (vm *ChaincodeVM) callFunction(funcnum int, debug bool, extraArgs ...Value) (Value, error) {
 	var retval Value
 	if funcnum <= vm.infunc || funcnum >= len(vm.functions) {
 		return retval, vm.runtimeError(newRuntimeError("invalid function number (no recursion allowed)"))
 	}
-	newpc := vm.functions[funcnum]
 
-	childvm, err := vm.CreateForFunc(funcnum, newpc, nargs)
+	childvm, err := vm.CreateForFunc(funcnum)
 	if err != nil {
 		return retval, vm.runtimeError(err)
 	}
@@ -385,9 +384,9 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		if err != nil {
 			return vm.runtimeError(err)
 		}
-		b := NewNumber(-1)
+		b := NewTrue()
 		if v.IsTrue() {
-			b = NewNumber(0)
+			b = NewFalse()
 		}
 		if err := vm.stack.Push(b); err != nil {
 			return vm.runtimeError(err)
@@ -423,27 +422,27 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		if err != nil {
 			return vm.runtimeError(err)
 		}
-		isGreater, _ := v2.Less(v1)
+		isEqual := v1.Equal(v2)
 		result := false
 		switch instr {
 		case OpLt:
 			result = isLess
 		case OpLte:
-			result = isLess || (!isLess && !isGreater)
+			result = isLess || isEqual
 		case OpEq:
-			result = (!isLess && !isGreater)
+			result = isEqual
 		case OpGte:
-			result = isGreater || (!isLess && !isGreater)
+			result = !isLess
 		case OpGt:
-			result = isGreater
+			result = !isLess && !isEqual
 		}
-		var n Value
+		var b Value
 		if result {
-			n = NewNumber(-1)
+			b = NewTrue()
 		} else {
-			n = NewNumber(0)
+			b = NewFalse()
 		}
-		if err := vm.stack.Push(n); err != nil {
+		if err := vm.stack.Push(b); err != nil {
 			return vm.runtimeError(err)
 		}
 
@@ -538,7 +537,7 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		}
 		fix := vm.code[vm.pc]
 		vm.pc++
-		f, err := st.Field(int(fix))
+		f, err := st.Get(byte(fix))
 		if err != nil {
 			return vm.runtimeError(err)
 		}
@@ -554,11 +553,11 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		fix := vm.code[vm.pc]
 		vm.pc++
 		extract := func(v Value) (Value, error) {
-			f, ok := v.(Struct)
+			f, ok := v.(*Struct)
 			if !ok {
 				return v, errors.New("fieldl requires list of non-struct")
 			}
-			return f.Field(int(fix))
+			return f.Get(byte(fix))
 		}
 		result, err := src.Map(extract)
 		if err != nil {
@@ -579,9 +578,8 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		// values from the caller's stack. The function call returns a single Value which is pushed
 		// onto the caller's stack.
 		funcnum := int(vm.code[vm.pc])
-		nargs := int(vm.code[vm.pc+1])
-		vm.pc += 2
-		result, err := vm.callFunction(funcnum, nargs, debug)
+		vm.pc++
+		result, err := vm.callFunction(funcnum, debug)
 		if err != nil {
 			return err
 		}
@@ -591,7 +589,7 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 
 	case OpDeco:
 		funcnum := int(vm.code[vm.pc])
-		nargs := int(vm.code[vm.pc+1])
+		fieldID := byte(vm.code[vm.pc+1])
 		vm.pc += 2
 		// we're going to iterate over a List of structs so validate it
 		l, err := vm.stack.PopAsListOfStructs(-1)
@@ -601,16 +599,16 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		newlist := NewList()
 		for i := range l {
 			// This is safe because we checked above
-			s, _ := l[i].(Struct)
-			retval, err := vm.callFunction(funcnum, nargs, debug, s)
+			s, _ := l[i].(*Struct)
+			retval, err := vm.callFunction(funcnum, debug, s)
 			if err != nil {
 				return err
 			}
-			// in order to prevent memory bombs, deco cannot add non-scalars
+			// in order to limit attempts at memory bombs, deco cannot add non-scalars
 			if !retval.IsScalar() {
 				return vm.runtimeError(newRuntimeError("deco result must be scalar"))
 			}
-			newlist = newlist.Append(s.Append(retval))
+			newlist = newlist.Append(s.Set(fieldID, retval))
 		}
 		if err := vm.stack.Push(newlist); err != nil {
 			return vm.runtimeError(err)
@@ -748,7 +746,7 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		// and pull out our specified field as a Number
 		sum := func(prev, current Value) Value {
 			p := prev.(Number).v
-			fi, _ := current.(Struct).Field(int(fix))
+			fi, _ := current.(*Struct).Get(byte(fix))
 			c := fi.(Number).v
 			return NewNumber(p + c)
 		}
@@ -761,7 +759,7 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 
 		var partialSum int64
 		for i := range src {
-			fi, _ := src[i].(Struct).Field(int(fix))
+			fi, _ := src[i].(*Struct).Get(byte(fix))
 			partialSum += fi.(Number).AsInt64()
 			if FractionLess(rand, math.MaxInt64, partialSum, total) {
 				err := vm.stack.Push(src[i])
@@ -788,14 +786,14 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		// the sort finishes first.
 		hadErr := false
 		less := func(i, j int) bool {
-			si, ok1 := src[i].(Struct)
-			sj, ok2 := src[j].(Struct)
+			si, ok1 := src[i].(*Struct)
+			sj, ok2 := src[j].(*Struct)
 			if !ok1 || !ok2 {
 				hadErr = true
 				return false
 			}
-			fi, e1 := si.Field(int(fix))
-			fj, e2 := sj.Field(int(fix))
+			fi, e1 := si.Get(byte(fix))
+			fj, e2 := sj.Get(byte(fix))
 			isLess, e3 := fi.Less(fj)
 			if e1 != nil || e2 != nil || e3 != nil {
 				hadErr = true
@@ -812,8 +810,7 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 
 	case OpLookup:
 		funcnum := int(vm.code[vm.pc])
-		nargs := int(vm.code[vm.pc+1])
-		vm.pc += 2
+		vm.pc++
 		// we're going to iterate over a List of structs so validate it
 		l, err := vm.stack.PopAsListOfStructs(-1)
 		if err != nil {
@@ -822,8 +819,8 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		foundix := -1
 		for i := range l {
 			// This is safe because we checked above
-			s, _ := l[i].(Struct)
-			result, err := vm.callFunction(funcnum, nargs, debug, s)
+			s, _ := l[i].(*Struct)
+			result, err := vm.callFunction(funcnum, debug, s)
 			if err != nil {
 				return err
 			}

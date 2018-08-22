@@ -112,9 +112,10 @@ func newHandlerDef(sids []string, nodes interface{}, constants map[string]string
 
 // FunctionDef is a node that expresses the information in a function definition
 type FunctionDef struct {
-	name  string
-	index byte
-	nodes []Node
+	name     string
+	index    byte
+	nodes    []Node
+	argcount byte
 }
 
 func (n *FunctionDef) fixup(funcs map[string]int) {
@@ -130,7 +131,7 @@ func (n *FunctionDef) fixup(funcs map[string]int) {
 }
 
 func (n *FunctionDef) bytes() []byte {
-	b := []byte{byte(vm.OpDef), byte(n.index)}
+	b := []byte{byte(vm.OpDef), byte(n.index), byte(n.argcount)}
 	for _, op := range n.nodes {
 		b = append(b, op.bytes()...)
 	}
@@ -138,7 +139,11 @@ func (n *FunctionDef) bytes() []byte {
 	return b
 }
 
-func newFunctionDef(name string, nodes interface{}) (*FunctionDef, error) {
+func newFunctionDef(name string, argcount string, nodes interface{}) (*FunctionDef, error) {
+	argc, err := strconv.ParseInt(argcount, 0, 8)
+	if err != nil {
+		return nil, err
+	}
 	sl := toIfaceSlice(nodes)
 	nl := []Node{}
 	for _, v := range sl {
@@ -146,7 +151,7 @@ func newFunctionDef(name string, nodes interface{}) (*FunctionDef, error) {
 			nl = append(nl, n)
 		}
 	}
-	f := &FunctionDef{name: name, index: 0xff, nodes: nl}
+	f := &FunctionDef{name: name, index: 0xff, nodes: nl, argcount: byte(argc)}
 	return f, nil
 }
 
@@ -186,7 +191,6 @@ type CallOpcode struct {
 	opcode vm.Opcode
 	name   string
 	fix    byte
-	value  byte
 }
 
 func (n *CallOpcode) fixup(funcs map[string]int) {
@@ -197,15 +201,39 @@ func (n *CallOpcode) fixup(funcs map[string]int) {
 }
 
 func (n *CallOpcode) bytes() []byte {
-	return []byte{byte(n.opcode), n.fix, n.value}
+	return []byte{byte(n.opcode), n.fix}
 }
 
-func newCallOpcode(op vm.Opcode, name string, v string) (*CallOpcode, error) {
-	n, err := strconv.ParseUint(v, 0, 8)
-	if err != nil {
-		return &CallOpcode{}, err
+func newCallOpcode(op vm.Opcode, name string) (*CallOpcode, error) {
+	return &CallOpcode{opcode: op, name: name}, nil
+}
+
+// DecoOpcode is for Deco, which calls a function and takes a function name
+// as well as a field index
+type DecoOpcode struct {
+	opcode vm.Opcode
+	name   string
+	field  byte
+	fix    byte
+}
+
+func (n *DecoOpcode) fixup(funcs map[string]int) {
+	me, ok := funcs[n.name]
+	if ok {
+		n.fix = byte(me)
 	}
-	return &CallOpcode{opcode: op, name: name, value: byte(n)}, nil
+}
+
+func (n *DecoOpcode) bytes() []byte {
+	return []byte{byte(n.opcode), n.fix, n.field}
+}
+
+func newDecoOpcode(op vm.Opcode, name string, fieldid string) (*DecoOpcode, error) {
+	fid, err := strconv.ParseInt(fieldid, 0, 8)
+	if err != nil {
+		return nil, err
+	}
+	return &DecoOpcode{opcode: op, name: name, field: byte(fid)}, nil
 }
 
 // PushOpcode constructs push operations with the appropriate number of bytes to express
@@ -232,7 +260,7 @@ func (n *PushOpcode) bytes() []byte {
 		b := vm.ToBytes(n.arg)
 		var suppress byte
 		if n.arg < 0 {
-			suppress = byte(0xFF)
+			suppress = 0xFF
 		}
 		for b[len(b)-1] == suppress {
 			b = b[:len(b)-1]

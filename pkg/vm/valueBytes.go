@@ -8,17 +8,27 @@ type Bytes struct {
 }
 
 // assert that Bytes really is a Value
-var _ = Value(Bytes{})
+var _ = Value(&Bytes{})
 
 // NewBytes creates an Bytes
-func NewBytes(ab []byte) Bytes {
-	return Bytes{b: ab}
+func NewBytes(ab []byte) *Bytes {
+	return &Bytes{b: ab}
+}
+
+// Equal implements equality testing for Bytes
+func (vt *Bytes) Equal(rhs Value) bool {
+	switch other := rhs.(type) {
+	case *Bytes:
+		return bytes.Compare(vt.b, other.b) == 0
+	default:
+		return false
+	}
 }
 
 // Less implements comparison for Bytes
-func (vt Bytes) Less(rhs Value) (bool, error) {
+func (vt *Bytes) Less(rhs Value) (bool, error) {
 	switch other := rhs.(type) {
-	case Bytes:
+	case *Bytes:
 		return bytes.Compare(vt.b, other.b) < 0, nil
 	default:
 		return false, ValueError{"comparing incompatible types"}
@@ -26,15 +36,15 @@ func (vt Bytes) Less(rhs Value) (bool, error) {
 }
 
 // IsScalar indicates if this Value is a scalar value type
-func (vt Bytes) IsScalar() bool {
+func (vt *Bytes) IsScalar() bool {
 	return true
 }
 
-func (vt Bytes) String() string {
+func (vt *Bytes) String() string {
 	return string(vt.b)
 }
 
 // IsTrue indicates if this Value evaluates to true
-func (vt Bytes) IsTrue() bool {
+func (vt *Bytes) IsTrue() bool {
 	return false
 }

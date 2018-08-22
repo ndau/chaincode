@@ -108,7 +108,7 @@ func (st *Stack) PopAsList() (List, error) {
 
 // PopAsListOfStructs retrieves the top entry on the stack as a List,
 // and then checks to make sure that every element in the list is a Struct
-// and that all of the structs in the list have the same number of fields.
+// and that all of the structs in the list are compatible.
 // If ix >= 0, it also verifies that the struct has a numeric field at the
 // given offset.
 // If anything isn't true, it errors.
@@ -117,21 +117,19 @@ func (st *Stack) PopAsListOfStructs(ix int) (List, error) {
 	if err != nil {
 		return l, err
 	}
-	nfields := -1
+
 	for i, v := range l {
-		str, ok := v.(Struct)
+		str, ok := v.(*Struct)
 		if !ok {
 			return l, stackError(fmt.Sprintf("element %d was not a Struct", i))
 		}
-		if nfields == -1 {
-			nfields = len(str.fields)
-		} else {
-			if len(str.fields) != nfields {
-				return l, stackError(fmt.Sprintf("element %d had the wrong number of fields", i))
+		if i > 0 {
+			if !str.IsCompatible(l[0].(*Struct)) {
+				return l, stackError(fmt.Sprintf("element %d was incompatible", i))
 			}
 		}
 		if ix >= 0 {
-			n, err := str.Field(ix)
+			n, err := str.Get(byte(ix))
 			if err != nil {
 				return l, err
 			}
@@ -144,12 +142,12 @@ func (st *Stack) PopAsListOfStructs(ix int) (List, error) {
 }
 
 // PopAsStruct retrieves the top entry on the stack as a Struct or errors
-func (st *Stack) PopAsStruct() (Struct, error) {
+func (st *Stack) PopAsStruct() (*Struct, error) {
 	v, err := st.Pop()
 	if err != nil {
 		return NewStruct(), err
 	}
-	l, ok := v.(Struct)
+	l, ok := v.(*Struct)
 	if !ok {
 		return NewStruct(), stackError("top was not struct")
 	}

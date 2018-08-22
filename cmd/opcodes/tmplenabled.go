@@ -12,7 +12,7 @@ import "github.com/oneiro-ndev/ndaumath/pkg/bitset256"
 // permitted in scripts.
 var EnabledOpcodes = bitset256.New(
 {{- range .Enabled}}
-	int(Op{{.Name}}),
+	byte(Op{{.Name}}),
 {{- end}}
 )
 `

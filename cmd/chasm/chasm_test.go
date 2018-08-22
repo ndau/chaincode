@@ -7,38 +7,38 @@ import (
 func TestSimple1(t *testing.T) {
 	code := `
 		; comment
-		func foo {
+		func foo(1) {
 		nop
 		}
 `
-	checkParse(t, "Simple1", code, "8000 00 88")
+	checkParse(t, "Simple1", code, "800001 00 88")
 }
 
 func TestSimple2(t *testing.T) {
 	code := `
 		; comment
-		func foo {
+		func foo(1) {
 			nop ; nop instruction
 			drop ; drop nothing
 		}
 `
-	checkParse(t, "Simple2", code, "8000 0001 88")
+	checkParse(t, "Simple2", code, "800001 0001 88")
 }
 
 func TestSimplePush(t *testing.T) {
 	code := `
 		; comment
-		func foo {
+		func foo(1) {
 			push 0
 		}
 `
-	checkParse(t, "SimplePush", code, "8000 20 88")
+	checkParse(t, "SimplePush", code, "800001 20 88")
 }
 
 func TestPushB(t *testing.T) {
 	code := `
 		; comment
-		func foo {
+		func foo(1) {
 			pushb 5 1 2 3 4 5 6 7 8 9 10
 			pushb "HI!"
 			pushb 0x01 0x02 0x03
@@ -46,7 +46,7 @@ func TestPushB(t *testing.T) {
 			pushb addr(deadbeeffeed5d00d5)
 		}
 `
-	checkParse(t, "PushB", code, `8000
+	checkParse(t, "PushB", code, `800001
 	2A 0b 050102030405060708090a
 	2A 03 484921
 	2A 03 01 02 03
@@ -58,11 +58,11 @@ func TestPushB(t *testing.T) {
 func TestPushT(t *testing.T) {
 	code := `
 		; comment
-		func foo {
+		func foo(1) {
 			pusht 2018-02-03T01:23:45Z
 		}
 `
-	checkParse(t, "PushT", code, `8000
+	checkParse(t, "PushT", code, `800001
 	2b 40 6a e1 72  43 07 02 00
 	88`)
 }
@@ -70,48 +70,48 @@ func TestPushT(t *testing.T) {
 func TestFunc(t *testing.T) {
 	code := `
 		; comment
-		func foo {
+		func foo(1) {
 			zero
-			call bar 1
+			call bar
 		}
-		func buzz {
+		func buzz(0) {
 		}
-		func bar {
+		func bar(2) {
 			one
 			add
 		}
 `
-	checkParse(t, "Func", code, "8000 20 810201 88 8001 88 8002 1a 40 88")
+	checkParse(t, "Func", code, "800001 20 8102 88 800100 88 800202 1a 40 88")
 }
 
 func TestSeveralPushes(t *testing.T) {
 	code := `
 		; comment
-		func foo {
+		func foo(1) {
 			push -1
 			push 1
 			push 2
 			push 12
 		}
 `
-	checkParse(t, "SeveralPushes", code, "8000 1b1a2102210c 88")
+	checkParse(t, "SeveralPushes", code, "800001 1b1a2102210c 88")
 }
 
 func TestConstants(t *testing.T) {
 	code := `
 		; comment
-		func foo {
+		func foo(1) {
 			K = 65535
 			push K
 		}
 `
-	checkParse(t, "Constants", code, "8000 22FFFF 88")
+	checkParse(t, "Constants", code, "800001 22FFFF 88")
 }
 
 func TestUnitaryOpcodes1(t *testing.T) {
 	code := `
 		; comment
-		func foo {
+		func foo(1) {
 			nop
 			drop
 			drop2
@@ -147,7 +147,7 @@ func TestUnitaryOpcodes1(t *testing.T) {
 		}
 `
 	checkParse(t, "Unitary1", code, `
-		8000
+		800001
 		00 0102 0506 090C
 		1011 2020 1a1b 1b2c
 		2e40 4142 4344 4546
@@ -158,7 +158,7 @@ func TestUnitaryOpcodes1(t *testing.T) {
 func TestUnitaryOpcodes2(t *testing.T) {
 	code := `
 		; comment
-		func foo {
+		func foo(1) {
 			choice
 			ifz
 			ifnz
@@ -177,29 +177,29 @@ func TestUnitaryOpcodes2(t *testing.T) {
 		}
 `
 	checkParse(t, "Unitary2", code,
-		"800094 898a8e8f909192932f c0c1c2c3c4 88")
+		"80000194 898a8e8f909192932f c0c1c2c3c4 88")
 }
 
 func TestBinary(t *testing.T) {
 	code := `
 		; comment
-		func foo {
+		func foo(1) {
 			pick 2
 			pick 12
 			roll 0xA
 			field 3
 			fieldl 0
-			call bar 0
-			lookup bar 1
-			deco bar 2
+			call bar
+			lookup bar
+			deco bar 7
 			sort 3
 			wchoice 1
 		}
-		func bar {
+		func bar(0) {
 			nop
 		}
 `
-	checkParse(t, "Binary", code, "8000 0D020D0C0E0A 6003 7000 810100 970101 820102 9603 9501 88 8001 00 88")
+	checkParse(t, "Binary", code, "800001 0D020D0C0E0A 6003 7000 8101 9701 820107 9603 9501 88 800100 00 88")
 }
 
 func TestRealistic(t *testing.T) {

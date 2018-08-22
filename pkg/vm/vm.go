@@ -64,6 +64,11 @@ type Nower interface {
 	Now() (Timestamp, error)
 }
 
+type funcInfo struct {
+	offset int
+	nargs  int
+}
+
 // ChaincodeVM is the reason we're here
 type ChaincodeVM struct {
 	runstate  RunState
@@ -73,7 +78,7 @@ type ChaincodeVM struct {
 	history   []HistoryState
 	infunc    int          // the number of the func we're currently in
 	handlers  map[byte]int // byte offsets of the handlers by handler ID
-	functions []int        // byte offsets of the functions indexed by function number
+	functions []funcInfo   // info for the functions indexed by function number
 	rand      Randomer
 	now       Nower
 }
@@ -109,11 +114,13 @@ func (vm *ChaincodeVM) SetNow(n Nower) {
 	vm.now = n
 }
 
-// CreateForFunc creates a new VM from this one that is used to run a function
+// CreateForFunc creates a new VM from this one that is used to run a function.
+// We assume the function number has already been validated.
 // and is already in an initialized state to run that function.
-// Just call Run() after this.
-func (vm *ChaincodeVM) CreateForFunc(funcnum int, newpc int, nstack int) (*ChaincodeVM, error) {
-	newstack, err := vm.stack.TopN(nstack)
+// Just call Run() on the new VM after this.
+func (vm *ChaincodeVM) CreateForFunc(funcnum int) (*ChaincodeVM, error) {
+	finfo := vm.functions[funcnum]
+	newstack, err := vm.stack.TopN(finfo.nargs)
 	if err != nil {
 		return nil, err
 	}
@@ -124,7 +131,7 @@ func (vm *ChaincodeVM) CreateForFunc(funcnum int, newpc int, nstack int) (*Chain
 		functions: vm.functions,
 		history:   []HistoryState{},
 		infunc:    funcnum,
-		pc:        newpc,
+		pc:        finfo.offset,
 		stack:     newstack,
 	}
 	return &newvm, nil
