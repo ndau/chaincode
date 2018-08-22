@@ -610,7 +610,7 @@ var opcodeData = opcodeInfos{
 			Pre:  "",
 			Inst: "deco n f",
 			Post: ""},
-		Parms:   []parm{functionIDParm{}, indexParm{"count"}},
+		Parms:   []parm{functionIDParm{}, indexParm{"fieldid"}},
 		Enabled: true,
 	},
 	opcodeInfo{

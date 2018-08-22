@@ -10,8 +10,22 @@ import (
 
 func TestDeco1(t *testing.T) {
 	vm := buildVM(t, `
-		handler 0 deco 0 99 fieldl 99 sum enddef
-		def 0 0 dup field 0 dup mul swap  field 1 dup mul add enddef
+		handler 0
+			deco 0 99
+			fieldl 99
+			sum
+		enddef
+		def 0 0
+			dup
+			field 0
+			dup
+			mul
+			swap
+			field 1
+			dup
+			mul
+			add
+		enddef
 	`)
 	l := NewList()
 	for i := int64(0); i < 5; i++ {
@@ -19,7 +33,7 @@ func TestDeco1(t *testing.T) {
 		l = l.Append(st)
 	}
 	vm.Init(0, l)
-	err := vm.Run(false)
+	err := vm.Run(true)
 	assert.Nil(t, err)
 	checkStack(t, vm.Stack(), 455)
 }

@@ -114,7 +114,7 @@ Opcode =
 	/ "drop" { return newUnitaryOpcode(vm.OpDrop) }
 	/ "divmod" { return newUnitaryOpcode(vm.OpDivMod) }
 	/ "div" { return newUnitaryOpcode(vm.OpDiv) }
-    / "deco" _ id:FunctionName _ count:Value { return newCallOpcode(vm.OpDeco, id.(string)) }
+    / "deco" _ id:FunctionName _ fieldid:Value { return newDecoOpcode(vm.OpDeco, id.(string), fieldid.(string)) }
 	/ "dec" { return newUnitaryOpcode(vm.OpDec) }
 	/ "count1s" { return newUnitaryOpcode(vm.OpCount1s) }
 	/ "choice" { return newUnitaryOpcode(vm.OpChoice) }

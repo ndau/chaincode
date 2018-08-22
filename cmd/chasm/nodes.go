@@ -208,6 +208,34 @@ func newCallOpcode(op vm.Opcode, name string) (*CallOpcode, error) {
 	return &CallOpcode{opcode: op, name: name}, nil
 }
 
+// DecoOpcode is for Deco, which calls a function and takes a function name
+// as well as a field index
+type DecoOpcode struct {
+	opcode vm.Opcode
+	name   string
+	field  byte
+	fix    byte
+}
+
+func (n *DecoOpcode) fixup(funcs map[string]int) {
+	me, ok := funcs[n.name]
+	if ok {
+		n.fix = byte(me)
+	}
+}
+
+func (n *DecoOpcode) bytes() []byte {
+	return []byte{byte(n.opcode), n.fix, n.field}
+}
+
+func newDecoOpcode(op vm.Opcode, name string, fieldid string) (*DecoOpcode, error) {
+	fid, err := strconv.ParseInt(fieldid, 0, 8)
+	if err != nil {
+		return nil, err
+	}
+	return &DecoOpcode{opcode: op, name: name, field: byte(fid)}, nil
+}
+
 // PushOpcode constructs push operations with the appropriate number of bytes to express
 // the specified value. It has special cases for the special opcodes zero, one, and neg1.
 type PushOpcode struct {

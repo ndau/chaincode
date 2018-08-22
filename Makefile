@@ -47,12 +47,12 @@ pkg/vm/opcode_string.go: pkg/vm/opcodes.go
 	go generate ./pkg/vm
 
 chasm: cmd/chasm/chasm.go pkg/vm/opcodes.go cmd/chasm/*.go
-	go build ./cmd/chasm
+	go build -o ./cmd/chasm/chasm ./cmd/chasm
 
 cmd/chasm/chasm.go: cmd/chasm/chasm.peggo
 	pigeon -o ./cmd/chasm/chasm.go ./cmd/chasm/chasm.peggo
 
-test: cmd/chasm/chasm.peggo pkg/vm/*.go pkg/chain/*.go chasm
+test: cmd/chasm/chasm.go pkg/vm/*.go pkg/chain/*.go chasm
 	go test ./pkg/chain -v --race -timeout 10s
 	go test ./cmd/chasm -v --race -timeout 10s
 	go test ./pkg/vm -v --race -timeout 10s

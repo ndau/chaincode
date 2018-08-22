@@ -1,7 +1,7 @@
 package vm
 
 import (
-	"crypto/rand"
+	cryptorand "crypto/rand"
 	"math"
 	"math/big"
 	"time"
@@ -46,7 +46,7 @@ func NewDefaultRand() (*DefaultRand, error) {
 
 // RandInt implements Randomer for DefaultRand
 func (dr *DefaultRand) RandInt() (int64, error) {
-	b, err := rand.Int(rand.Reader, big.NewInt(math.MaxInt64))
+	b, err := cryptorand.Int(cryptorand.Reader, big.NewInt(math.MaxInt64))
 	if err != nil {
 		return -1, err
 	}
@@ -62,7 +62,7 @@ type CachingRand struct {
 
 // NewCachingRand returns an initialized instance of a CachingRand
 func NewCachingRand() (*CachingRand, error) {
-	b, err := rand.Int(rand.Reader, big.NewInt(math.MaxInt64))
+	b, err := cryptorand.Int(cryptorand.Reader, big.NewInt(math.MaxInt64))
 	if err != nil {
 		return nil, err
 	}
