@@ -21,7 +21,7 @@ func checkr(expected int64, b *testing.B) {
 }
 
 func benchmarkVM(s string, b *testing.B) {
-	ops := miniAsm(s)
+	ops := MiniAsm(s)
 	bin := ChasmBinary{"test", "TEST", ops}
 	benchmarkBin(bin, b)
 }

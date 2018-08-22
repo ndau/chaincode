@@ -39,6 +39,17 @@ func parseChainTag(tag string, name string) (byte, string, error) {
 	return byte(ix), strings.ToUpper(name), nil
 }
 
+type errNilPointer struct{}
+
+func (errNilPointer) Error() string {
+	return "this was a nil pointer"
+}
+
+func isNilPtr(e error) bool {
+	_, ok := e.(errNilPointer)
+	return ok
+}
+
 // ToValueScalar converts a scalar value to a VM Value object
 // it handles ints of several types, bool, string, time.Time, and
 // pointers to these.
@@ -63,6 +74,9 @@ func ToValueScalar(x interface{}) (vm.Value, error) {
 		return vm.NewBytes([]byte(x.(string))), nil
 	case reflect.Ptr:
 		// convert pointers to the object they point to and try again recursively
+		if v.IsNil() {
+			return nil, errNilPointer{}
+		}
 		return ToValueScalar(v.Elem().Interface())
 	case reflect.Struct:
 		// if we get a struct at this level, we have to see if it is one of our
@@ -76,8 +90,8 @@ func ToValueScalar(x interface{}) (vm.Value, error) {
 				return nil, err
 			}
 			return vm.NewBytes(data), nil
-		case reflect.ValueOf(signature.Signature{}).Type():
-			data, err := x.(signature.Signature).Marshal()
+		case reflect.ValueOf(signature.PublicKey{}).Type():
+			data, err := x.(signature.PublicKey).Marshal()
 			if err != nil {
 				return nil, err
 			}
@@ -119,6 +133,9 @@ func ToValue(x interface{}) (vm.Value, error) {
 		for i := 0; i < vx.Len(); i++ {
 			item := vx.Index(i).Interface()
 			v, err := ToValue(item)
+			if isNilPtr(err) {
+				continue
+			}
 			if err != nil {
 				return nil, err
 			}
@@ -152,9 +169,11 @@ func ToValue(x interface{}) (vm.Value, error) {
 				return nil, err
 			}
 
-			// we have to traverse into structs even if they don't have a chain tag, in case
-			// their children do.
-			child, err := ToValueScalar(vx.FieldByIndex(fld.Index).Interface())
+			// we have to traverse into structs that contain a chain tag == "."
+			child, err := ToValue(vx.FieldByIndex(fld.Index).Interface())
+			if isNilPtr(err) {
+				continue
+			}
 			if err != nil {
 				return nil, err
 			}
@@ -167,11 +186,11 @@ func ToValue(x interface{}) (vm.Value, error) {
 					}
 				}
 				continue
-			}
-
-			st, err = st.SafeSet(ix, child)
-			if err != nil {
-				return nil, err
+			} else if tag != "." {
+				st, err = st.SafeSet(ix, child)
+				if err != nil {
+					return nil, err
+				}
 			}
 		}
 		return st, nil

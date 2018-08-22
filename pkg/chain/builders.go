@@ -84,6 +84,6 @@ func BuildVMForTxValidation(code []byte, acct backing.AccountData, tx metatx.Tra
 		theVM.SetRand(randomer)
 	}
 
-	theVM.Init(txIndex, acctStruct, txStruct, sigs)
-	return theVM, nil
+	err = theVM.Init(txIndex, acctStruct, txStruct, sigs)
+	return theVM, err
 }

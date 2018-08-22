@@ -381,7 +381,7 @@ func TestFuzzHandlers(t *testing.T) {
 		}
 		s = append(s, OpEndDef.String())
 		prog = strings.Join(s, " ")
-		ops := miniAsm(prog)
+		ops := MiniAsm(prog)
 		bin := ChasmBinary{"test", "TEST", ops}
 		vm, err := New(bin)
 		if err != nil {
@@ -444,7 +444,7 @@ func TestFuzzValid(t *testing.T) {
 	secondaryFailures := 0
 	for attempts < total {
 		prog = strings.Join(genRandomProgram(), "\n")
-		ops := miniAsm(prog)
+		ops := MiniAsm(prog)
 		bin := ChasmBinary{"test", "TEST", ops}
 		vm, err := New(bin)
 		if err != nil {
@@ -525,7 +525,7 @@ func TestFuzzJunk(t *testing.T) {
 		}
 		s = append(s, OpEndDef.String())
 		prog = strings.Join(s, " ")
-		ops := miniAsm(prog)
+		ops := MiniAsm(prog)
 		bin := ChasmBinary{"test", "TEST", ops}
 		vm, err := New(bin)
 		if err != nil {

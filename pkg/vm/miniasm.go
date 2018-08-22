@@ -24,9 +24,9 @@ import (
 // specified (Push1, Push2, etc).
 //
 
-// miniAsm is primarily for testing but we want it available.
+// MiniAsm is a mini-assembler for Chaincode. It is primarily for testing but we want it available.
 // nolint: deadcode
-func miniAsm(s string) []Opcode {
+func MiniAsm(s string) []Opcode {
 	// whitespace
 	wsp := regexp.MustCompile("[ \t\r\n]")
 	// timestamp

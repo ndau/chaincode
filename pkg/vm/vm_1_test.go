@@ -8,7 +8,7 @@ import (
 )
 
 func buildVM(t *testing.T, s string) *ChaincodeVM {
-	ops := miniAsm(s)
+	ops := MiniAsm(s)
 	bin := ChasmBinary{"test", "TEST", ops}
 	vm, err := New(bin)
 	assert.Nil(t, err)
@@ -16,7 +16,7 @@ func buildVM(t *testing.T, s string) *ChaincodeVM {
 }
 
 func buildVMfail(t *testing.T, s string) {
-	ops := miniAsm(s)
+	ops := MiniAsm(s)
 	bin := ChasmBinary{"test", "TEST", ops}
 	_, err := New(bin)
 	assert.NotNil(t, err)
@@ -31,7 +31,7 @@ func checkStack(t *testing.T, st *Stack, values ...int64) {
 }
 
 func TestMiniAsmBasics(t *testing.T) {
-	ops := miniAsm("neg1 zero one push1 45 push2 01 01 2000-01-01T00:00:00Z")
+	ops := MiniAsm("neg1 zero one push1 45 push2 01 01 2000-01-01T00:00:00Z")
 	bytes := []Opcode{OpNeg1, OpZero, OpOne, OpPush1, 69, OpPush2, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0}
 	assert.Equal(t, ops, bytes)
 }
