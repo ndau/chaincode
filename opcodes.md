@@ -76,11 +76,11 @@ Value|Opcode|Meaning|Stack before|Instr.|Stack after
 0xb2|Xor|Does a bitwise exclusive OR (XOR) of the top two values on the stack (which must both be numeric) and puts the result on top of the stack. Attempting to operate on non-numeric values is an error.|0x55 0x0F|xor|0x5A
 0xbc|Count1s|Returns the number of 1 bits in the top value on the stack (which must be numeric) and puts the result on top of the stack. Attempting to operate on a non-numeric value is an error.|0x55|count1s|4
 0xbf|BNot|Does a bitwise NOT (1's complement) of the top value on the stack (which must be numeric) and puts the result on top of the stack. Attempting to operate on a non-numeric value is an error.|5|bnot|-6
-0xc0|Lt|Compares (and discards) the two top stack elements. If the types are different, fails execution. If the types are the same, compares the values, and leaves TRUE when the second item is strictly less than thetopd item according to the comparison rules.|A B|lt|FALSE
-0xc1|Lte|Compares (and discards) the two top stack elements. If the types are different, fails execution. If the types are the same, compares the values, and leaves TRUE when the second item is less than or equal to thetopd item according to the comparison rules.|A B|lte|FALSE
+0xc0|Lt|Compares (and discards) the two top stack elements. If the types are different, fails execution. If the types are the same, compares the values, and leaves TRUE when the second item is strictly less than the top item according to the comparison rules.|A B|lt|FALSE
+0xc1|Lte|Compares (and discards) the two top stack elements. If the types are different, fails execution. If the types are the same, compares the values, and leaves TRUE when the second item is less than or equal to the top item according to the comparison rules.|A B|lte|FALSE
 0xc2|Eq|Compares (and discards) the two top stack elements. If the types are different, fails execution. Otherwise, if they are equal in both type and value, leaves TRUE (1) on top of the stack, otherwise leaves FALSE (0) on top of the stack.|A B|eq|FALSE
 0xc3|Gte|Compares (and discards) the two top stack elements. If the types are different, fails execution. If the types are the same, compares the values, and leaves TRUE when the second item is greater than or equal to the top item according to the comparison rules.|A B|gte|TRUE
-0xc4|Gt|Compares (and discards) the two top stack elements. If the types are different, fails execution. If the types are the same, compares the values, and leaves TRUE when the second item is strictly greater than thetopd item according to the comparison rules.|A B|gt|TRUE
+0xc4|Gt|Compares (and discards) the two top stack elements. If the types are different, fails execution. If the types are the same, compares the values, and leaves TRUE when the second item is strictly greater than the top item according to the comparison rules.|A B|gt|TRUE
 # Disabled Opcodes
 
 Value|Opcode|Meaning|Stack before|Instr.|Stack after

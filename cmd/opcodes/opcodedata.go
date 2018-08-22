@@ -845,7 +845,7 @@ var opcodeData = opcodeInfos{
 	opcodeInfo{
 		Value:   0xC0,
 		Name:    "Lt",
-		Summary: "Compares (and discards) the two top stack elements. If the types are different, fails execution. If the types are the same, compares the values, and leaves TRUE when the second item is strictly less than thetopd item according to the comparison rules.",
+		Summary: "Compares (and discards) the two top stack elements. If the types are different, fails execution. If the types are the same, compares the values, and leaves TRUE when the second item is strictly less than the top item according to the comparison rules.",
 		Doc:     "Numbers, Timestamps: numeric comparison; Lists: length of list; Struct: comparison of fields in order; Bytes: comparison of bytes in order.",
 		Example: example{
 			Pre:  "A B",
@@ -857,7 +857,7 @@ var opcodeData = opcodeInfos{
 	opcodeInfo{
 		Value:   0xC1,
 		Name:    "Lte",
-		Summary: "Compares (and discards) the two top stack elements. If the types are different, fails execution. If the types are the same, compares the values, and leaves TRUE when the second item is less than or equal to thetopd item according to the comparison rules.",
+		Summary: "Compares (and discards) the two top stack elements. If the types are different, fails execution. If the types are the same, compares the values, and leaves TRUE when the second item is less than or equal to the top item according to the comparison rules.",
 		Doc:     "",
 		Example: example{
 			Pre:  "A B",
@@ -893,7 +893,7 @@ var opcodeData = opcodeInfos{
 	opcodeInfo{
 		Value:   0xC4,
 		Name:    "Gt",
-		Summary: "Compares (and discards) the two top stack elements. If the types are different, fails execution. If the types are the same, compares the values, and leaves TRUE when the second item is strictly greater than thetopd item according to the comparison rules.",
+		Summary: "Compares (and discards) the two top stack elements. If the types are different, fails execution. If the types are the same, compares the values, and leaves TRUE when the second item is strictly greater than the top item according to the comparison rules.",
 		Doc:     "",
 		Example: example{
 			Pre:  "A B",
