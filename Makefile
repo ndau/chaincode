@@ -52,7 +52,8 @@ chasm: cmd/chasm/chasm.go pkg/vm/opcodes.go cmd/chasm/*.go
 cmd/chasm/chasm.go: cmd/chasm/chasm.peggo
 	pigeon -o ./cmd/chasm/chasm.go ./cmd/chasm/chasm.peggo
 
-test: cmd/chasm/chasm.go pkg/vm/*.go chasm
+test: cmd/chasm/chasm.go pkg/vm/*.go pkg/chain/*.go chasm
+	go test ./pkg/chain -v --race -timeout 10s
 	go test ./cmd/chasm -v --race -timeout 10s
 	go test ./pkg/vm -v --race -timeout 10s
 
