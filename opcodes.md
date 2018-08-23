@@ -47,12 +47,13 @@ Value|Opcode|Meaning|Stack before|Instr.|Stack after
 0x49|Neg|The sign of the number on top of the stack is negated.|A|neg|-A
 0x4a|Inc|Adds 1 to the number on top of the stack, which must be a Number.|A|inc|A+1
 0x4b|Dec|Subtracts 1 from the number on top of the stack, which must be a Number.|A|dec|A-1
-0x50|Index|Selects a zero-indexed element (the index is the top of the stack) from a list reference which is the second item on the stack (both are discarded) and leaves it on top of the stack. Error if index is out of bounds or a list is not on top of the stack.|[X Y Z] 2|index|Z
+0x50|Index|Selects a zero-indexed element (the index is the top of the stack) from a list reference which is the second item on the stack (both are discarded) and leaves it on top of the stack. Error if index is out of bounds or a list is not the second item.|[X Y Z] 2|index|Z
 0x51|Len|Returns the length of a list.|[X Y Z]|len|3
 0x52|Append|Creates a new list, appending the new value to it.|[X Y] Z|append|[X Y Z]
 0x53|Extend|Generates a new list by concatenating two other lists.|[X Y] [Z]|extend|[X Y Z]
 0x54|Slice|Expects a list and two indices on top of the stack. Creates a new list containing the designated subset of the elements in the original slice.|[X Y Z] 1 3|slice|[Y Z]
-0x60|Field|Retrieves a field at index f from a struct; if the index is out of bounds, fails.|X|field f|X.f
+0x60|Field|Retrieves a field at index f from a struct on top of the stack (which it pops); fails if there is no field at that index or if the top of stack was not a struct.|X|field f|X.f
+0x61|IsField|Checks if a field at index f exists in the struct at the top of the stack (which is popped); leaves True if so, False if not. If top was not a struct, fails.|X|isfield f|True if X.f exists
 0x70|FieldL|Makes a new list by retrieving a given field from all of the structs in a list.|[X Y Z]|fieldl f|[X.f Y.f Z.f]
 0x80|Def|Defines function block n, where n is a number larger than any previously defined function in this script. When the function is called, m values will be copied (not popped) from the caller's stack to a new stack for the use of this function. Functions can only be called by handlers or other functions. Every function must be terminated by enddef, and function definitions may not be nested.||def n m|
 0x81|Call|Calls the function block n, provided that its ID is greater than the index of the function block currently executing (recursion is not permitted). The function runs with a new stack which is initialized with the top n values of the current stack (which are copied, NOT popped). Upon return, the top value on the function's stack is pushed onto the caller's stack.||call n|
