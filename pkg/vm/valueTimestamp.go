@@ -14,9 +14,14 @@ type Timestamp struct {
 // assert that Timestamp really is a Value
 var _ = Value(Timestamp{})
 
-// NewTimestamp creates a timestamp from an int64 representation of one
-func NewTimestamp(n int64) Timestamp {
+// NewTimestampFromInt creates a timestamp from an int64 representation of one
+func NewTimestampFromInt(n int64) Timestamp {
 	return Timestamp{types.Timestamp(n)}
+}
+
+// NewTimestamp returns a timestamp taken from a ndaumath/pkg/types.Timestamp struct
+func NewTimestamp(t types.Timestamp) Timestamp {
+	return Timestamp{t: t}
 }
 
 // NewTimestampFromTime returns a timestamp taken from a time.Time struct in Go.

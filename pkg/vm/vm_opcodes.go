@@ -228,7 +228,7 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 			vm.pc++
 			value |= int64(b) << (i * 8)
 		}
-		ts := NewTimestamp(value)
+		ts := NewTimestampFromInt(value)
 		if err := vm.stack.Push(ts); err != nil {
 			return vm.runtimeError(err)
 		}
