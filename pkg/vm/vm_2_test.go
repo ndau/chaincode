@@ -44,7 +44,7 @@ func TestStringers(t *testing.T) {
 	assert.Equal(t, "hi", vid.String())
 	vn := NewNumber(123)
 	assert.Equal(t, "123", vn.String())
-	vt := NewTimestamp(0)
+	vt := NewTimestampFromInt(0)
 	assert.Equal(t, "2000-01-01T00:00:00Z", vt.String())
 	vl := NewList()
 	vl = vl.Append(NewBytes([]byte("July"))).Append(NewNumber(18))

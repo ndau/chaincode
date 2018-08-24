@@ -289,7 +289,7 @@ func genRandomValue(vt valueType) Value {
 		}
 		return NewList(l...)
 	case vtTimestamp:
-		return NewTimestamp(rand.Int63())
+		return NewTimestampFromInt(rand.Int63())
 	case vtStruct:
 		// create a struct of 1-5 scalar members
 		vs := genRandomValues(1, 5)
