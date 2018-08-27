@@ -545,6 +545,22 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 			return vm.runtimeError(err)
 		}
 
+	case OpIsField:
+		st, err := vm.stack.PopAsStruct()
+		if err != nil {
+			return vm.runtimeError(err)
+		}
+		fix := vm.code[vm.pc]
+		vm.pc++
+
+		f := NewTrue()
+		if _, err = st.Get(byte(fix)); err != nil {
+			f = NewFalse()
+		}
+		if err := vm.stack.Push(f); err != nil {
+			return vm.runtimeError(err)
+		}
+
 	case OpFieldL:
 		src, err := vm.stack.PopAsList()
 		if err != nil {

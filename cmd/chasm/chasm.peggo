@@ -94,6 +94,7 @@ Opcode =
 	/ "lt" { return newUnitaryOpcode(vm.OpLt) }
 	/ "lookup" _ id:FunctionName { return newCallOpcode(vm.OpLookup, id.(string)) }
 	/ "len" { return newUnitaryOpcode(vm.OpLen) }
+	/ "isfield" _ ix:Value { return newBinaryOpcode(vm.OpIsField, ix.(string)) }
 	/ "index" { return newUnitaryOpcode(vm.OpIndex) }
 	/ "inc" { return newUnitaryOpcode(vm.OpInc) }
 	/ "ifz" { return newUnitaryOpcode(vm.OpIfZ) }

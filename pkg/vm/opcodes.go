@@ -57,6 +57,7 @@ const (
 	OpExtend  Opcode = 0x53
 	OpSlice   Opcode = 0x54
 	OpField   Opcode = 0x60
+	OpIsField Opcode = 0x61
 	OpFieldL  Opcode = 0x70
 	OpDef     Opcode = 0x80
 	OpCall    Opcode = 0x81

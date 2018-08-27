@@ -761,11 +761,25 @@ func TestField(t *testing.T) {
 	checkStack(t, vm.Stack(), 27)
 }
 
+func TestIsField(t *testing.T) {
+	vm := buildVM(t, "handler 0 dup isfield 2 swap isfield 3 enddef")
+	st := NewTestStruct(NewNumber(3), NewNumber(9), NewNumber(27))
+	vm.Init(0, st)
+	err := vm.Run(false)
+	assert.Nil(t, err)
+	checkStack(t, vm.Stack(), -1, 0)
+}
+
 func TestFieldFail(t *testing.T) {
 	vm := buildVM(t, "handler 0 field 9 enddef")
 	st := NewTestStruct(NewNumber(3), NewNumber(9), NewNumber(27))
 	vm.Init(0, st)
 	err := vm.Run(false)
+	assert.NotNil(t, err)
+
+	vm = buildVM(t, "handler 0 isfield 9 enddef")
+	vm.Init(0, NewNumber(27))
+	err = vm.Run(false)
 	assert.NotNil(t, err)
 }
 

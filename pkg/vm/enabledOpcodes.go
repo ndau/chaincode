@@ -53,6 +53,7 @@ var EnabledOpcodes = bitset256.New(
 	byte(OpExtend),
 	byte(OpSlice),
 	byte(OpField),
+	byte(OpIsField),
 	byte(OpFieldL),
 	byte(OpDef),
 	byte(OpCall),
