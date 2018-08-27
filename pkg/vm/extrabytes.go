@@ -37,6 +37,8 @@ func extraBytes(code []Opcode, offset int) int {
 		numExtra = int(code[offset+1]) + 1
 	case OpField:
 		numExtra = 1
+	case OpIsField:
+		numExtra = 1
 	case OpFieldL:
 		numExtra = 1
 	case OpDef:

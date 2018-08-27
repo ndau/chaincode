@@ -495,7 +495,7 @@ var opcodeData = opcodeInfos{
 	opcodeInfo{
 		Value:   0x50,
 		Name:    "Index",
-		Summary: "Selects a zero-indexed element (the index is the top of the stack) from a list reference which is the second item on the stack (both are discarded) and leaves it on top of the stack. Error if index is out of bounds or a list is not on top of the stack.",
+		Summary: "Selects a zero-indexed element (the index is the top of the stack) from a list reference which is the second item on the stack (both are discarded) and leaves it on top of the stack. Error if index is out of bounds or a list is not the second item.",
 		Doc:     "",
 		Example: example{
 			Pre:  "[X Y Z] 2",
@@ -555,12 +555,24 @@ var opcodeData = opcodeInfos{
 	opcodeInfo{
 		Value:   0x60,
 		Name:    "Field",
-		Summary: "Retrieves a field at index f from a struct; if the index is out of bounds, fails.",
+		Summary: "Retrieves a field at index f from a struct on top of the stack (which it pops); fails if there is no field at that index or if the top of stack was not a struct.",
 		Doc:     "",
 		Example: example{
 			Pre:  "X",
 			Inst: "field f",
 			Post: "X.f"},
+		Parms:   []parm{indexParm{"ix"}},
+		Enabled: true,
+	},
+	opcodeInfo{
+		Value:   0x61,
+		Name:    "IsField",
+		Summary: "Checks if a field at index f exists in the struct at the top of the stack (which is popped); leaves True if so, False if not. If top was not a struct, fails.",
+		Doc:     "",
+		Example: example{
+			Pre:  "X",
+			Inst: "isfield f",
+			Post: "True if X.f exists"},
 		Parms:   []parm{indexParm{"ix"}},
 		Enabled: true,
 	},
