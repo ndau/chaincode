@@ -18,4 +18,5 @@ handler Event_Default {
     endif                   ;acct tx bm
     one                     ;acct tx bm 1
     and                     ;acct tx (was sig 0 used)
+    not                     ;if the result was true, return 0
 }

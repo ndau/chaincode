@@ -58,7 +58,7 @@ test: cmd/chasm/chasm.go pkg/vm/*.go pkg/chain/*.go chasm
 	go test ./pkg/vm -v --race -timeout 10s
 
 examples: chasm
-	./chasm --output examples/quadratic.chbin --comment "Test of quadratic" examples/quadratic.chasm
-	./chasm --output examples/majority.chbin --comment "Test of majority" examples/majority.chasm
-	./chasm --output examples/onePlus1of3.chbin --comment "1+1of3" examples/onePlus1of3.chasm
+	./cmd/chasm/chasm --output cmd/chasm/examples/quadratic.chbin --comment "Test of quadratic" cmd/chasm/examples/quadratic.chasm
+	./cmd/chasm/chasm --output cmd/chasm/examples/majority.chbin --comment "Test of majority" cmd/chasm/examples/majority.chasm
+	./cmd/chasm/chasm --output cmd/chasm/examples/onePlus1of3.chbin --comment "1+1of3" cmd/chasm/examples/onePlus1of3.chasm
 
