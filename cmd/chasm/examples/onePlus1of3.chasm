@@ -10,7 +10,6 @@ handler Event_Default {
                             ;acct tx bm
     dup                     ;acct tx bm bm
     count1s                 ;acct tx bm nsigs
-    len                     ;acct tx bm nsigs
     one                     ;acct tx bm nsigs 1
     gt                      ;acct tx bm (nsigs > 1)
     ifnz                    ;check if (nsigs>1)
