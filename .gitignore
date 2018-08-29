@@ -1,3 +1,6 @@
 .DS_Store
 vmtest
 cmd/opcodes/opcodes
+cmd/crank/crank
+
+

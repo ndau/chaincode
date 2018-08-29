@@ -1,0 +1,34 @@
+{
+    package main
+}
+
+Script <- Args EOL EOF
+
+Args <-
+    ( a:Arg _? ',' as:Args
+    / a:Arg
+    )
+
+Arg <- _? n:Name _? ':' _? t:TypeConstant
+
+Name <- [A-Za-z] [A-Za-z0-9_]*
+
+TypeConstant <-
+    ( _? "Number"
+    / _? "Bytes"
+    / _? "Signature"
+    / _? "Key"
+    / _? "Address"
+    / _? "List"
+    / _? "Timestamp"
+    / _? StructRef
+    )
+
+_ <- [ \t]+
+
+EOL <- _? Comment? ("\r\n" / "\n\r" / "\r" / "\n" )
+
+Comment <- ';' [^\r\n]*
+
+EOF <- !.
+

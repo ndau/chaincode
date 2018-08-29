@@ -12,7 +12,8 @@ type Stack struct {
 	stack []Value
 }
 
-func newStack() *Stack {
+// NewStack creates a new, empty Stack
+func NewStack() *Stack {
 	return &Stack{stack: []Value{}}
 }
 

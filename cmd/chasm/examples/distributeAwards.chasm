@@ -1,0 +1,111 @@
+; Demonstration code for chasm assembler
+; Calculates node payout awards proportionally by stake, with a fixed
+; percentage to the node operator.
+; This script expects to run with these values on the stack:
+
+;   A list of costakers L, consisting of structs, where each struct has:
+;       address of the staked account
+;       amount staked in napu
+;       timestamp when the stake occurred
+;   The total node payout amount in napu P
+;   The address of the node operator (the self-staked address) OPADDR
+
+; The return value is:
+;   the list, all elements decorated with a node payout amount.
+; The node operator's payout is the amount remaining after summing the new values in the list
+
+; if there is any error, the node operator gets the entire payout
+; thus, an empty script pays the entire payout to the node operator
+
+;
+func payout {
+
+    SHARE_PCTG = 80
+
+    ; entrance stack: L P OPADDR
+
+    ; remove the node operator from the list (since the operator gets the remainder, we just
+    ; want to strip them from the list)
+    roll 2                      ; P OPADDR L
+
+    call remove_node_op 2       ; P OPADDR L L2
+    swap                        ; P O L2 L
+    drop                        ; P O L2
+    swap
+    drop                        ; P L2
+
+
+    ; calculate the total payout to everyone but the operator
+    over                        ; P L2 P
+    push SHARE_PCTG             ; P L2 P PCT
+    push 100                    ; P L2 P PCT 100
+    muldiv                      ; P L2 SHARE_PAYOUT
+
+    ; now run the actual payout calculation
+    swap                        ; P SHARE_PAYOUT L2
+    deco perstaker 3            ; P SHARE_PAYOUT L2
+
+    ; we need to calculate the actual amount paid out because the sum of these
+    ; calculations might be slightly off the expected SHARE_PAYOUT
+    roll 1                      ; P OPADDR L2 SHARE_PAYOUT
+    drop                        ; P OPADDR L2
+    pick 2                      ; P OPADDR L2 P
+    dup                         ; P OPADDR L2 P L2
+    sum 3                       ; P OPADDR L2 P ACTUAL_PAYOUT
+    sub
+
+
+
+
+
+    pick 2                      ; L P OPADDR P
+    push 100                    ; L P OPADDR P 100
+    push SHARE_PCTG             ; L P OPADDR P 100 SHARE_PCTG
+    sub                         ; L P OPADDR P OPERATOR_PCTG
+    push 100                    ; L P OPADDR P OPERATOR_PCTG 100
+    muldiv                      ; L P OPADDR OPERATOR_PAYOUT
+
+    push A
+    push B
+    push C
+    push X	; ABCX
+    roll 3	; BCXA
+    pick 1	; BCXAX
+    dup  	; BCXAXX
+    mul		; BCXAR
+    mul		; BCXR
+    roll 3  ; CXRB
+    roll 2  ; CRBX
+    mul		; CRS
+    add		; CR
+    add		; R
+    ret
+}
+
+func remove_node_op {
+    ; expects stack with L OPADDR
+    ; returns L without the element containing OPADDR
+    over ; L OPADDR L
+    lookup match_opaddr 1   ; L ix
+    dup2            ; L ix L ix
+    one             ; L ix L ix 1
+    sub             ; L ix L ix-1
+    zero            ; L ix L ix-1 0
+    swap            ; L ix L 0 ix-1
+    slice           ; L ix L[0:ix-1]
+    roll 2          ; ix L[0:ix-1] L
+    roll 2          ; L[0:ix-1] L ix
+    one             ; L[0:ix-1] L ix 1
+    add             ; L[0:ix-1] L ix+1
+    over
+    len             ; L[0:ix-1] L ix+1 len(L)
+    slice           ;  L[0:ix-1]  L[ix+1:]
+    extend          ; L2 (L without item ix)
+}
+
+func match_opaddr {
+    ; expects S OPADDR; returns true if S.0 == OPADDR
+    swap
+    field 0
+    eq
+}

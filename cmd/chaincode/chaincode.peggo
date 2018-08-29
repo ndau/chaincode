@@ -1,0 +1,255 @@
+{
+    package main
+
+}
+
+Script <- k:GlobalConstants StructDefs code:Code EOF { return newScriptNode(ctx, k, code) }
+
+GlobalConstants <- EOL* k:ConstDef+ { return k, nil }
+
+StructDefs <- EOL* st:StructDef+ { return st, nil }
+
+Code <- EOL* f:FunctionDef+ { return f, nil }
+
+ConstDef <-
+    ( k:Constant _? '=' _? v:Value {
+            if key, ok := k.(string); ok {
+                cm := c.globalStore["constants"].(map[string]string)
+                cm[key] = v.(string)
+                return v, nil
+            }
+            return nil, errors.New("Bad const def")
+        }
+    )
+
+FunctionDef <- _? "function" _ n:Name _? '(' d:Decls _? ')' _? '{' s:Statement+ _? '}' EOL*  {
+        fm := c.globalStore["functions"].(map[string]int)
+        fname := n.(string)
+        ctr := c.globalStore["functionCounter"].(int)
+        fm[fname] = ctr
+        ctr++
+        c.globalStore["functionCounter"] = ctr
+        return newFunctionDef(fname, d, s)
+    }
+
+StructDef <- _? "struct" _ n:Name _? '{' Decls '}'
+
+Decls <-
+    ( d:Decl _? ',' EOL? dnode:Decls  { return dnode.Insert(d) }
+    / d:Decl { return newDeclsNode(d) }
+    / EOL { return nil, nil }
+    )
+
+Decl <- _? n:Name _? ':' _? t:TypeConstant { return newDeclNode(n, t) }
+
+TypeConstant <-
+    ( _? "Int" { return string(c.text), nil }
+    / _? "Bytes" { return string(c.text), nil }
+    / _? "Signature" { return string(c.text), nil }
+    / _? "Key" { return string(c.text), nil }
+    / _? "Address" { return string(c.text), nil }
+    / _? "List" { return string(c.text), nil }
+    / _? "Timestamp" { return string(c.text), nil }
+    / _? s:StructName { return s, nil }
+    )
+
+StructName <- n:Name {
+    cm := c.globalStore["structs"].(map[string]string)
+    _, ok := cm[n.(string)]
+    if !ok {
+        return nil, errors.New(n + "is not defined")
+    }
+    return n, nil
+}
+
+Statement <-
+    ( _? a:AssignmentStmt EOL
+    / _? i:IfStmt EOL
+    / _? r:ReturnStmt EOL
+    )
+
+AssignmentStmt <- d:Decl _? '=' _? v:ValueExpr ';' { return newAssignmentNode(d, v) }
+
+IfStmt <- "if" _? '(' _? b:BooleanExpr _? ')' EOL? '{' EOL? body:Statement* '}' { return newIfNode(b, body) }
+
+ReturnStmt <- "return" _ v:ValueExpr ';' { return newReturnNode(v) }
+
+Expr <-
+    ( BooleanExpr
+    / NumericExpr
+//    / ListExpr
+//    / BytesExpr
+    )
+
+NumericExpr <- first:Term _? rest:(AddOp _? last:Term)
+
+Term <- first:Factor _? rest:(MulOp _? last:Factor)
+
+Factor <-
+    ( '(' _? Expr _? ')'
+    / n:NumericValue
+    )
+
+AddOp <- ( '+' / '-' )
+MulOp <- ( '*' / '/' / '%' )
+
+BooleanExpr <- first:BTerm _? rest:( _? last:Term)
+
+Term <- first:Factor _? rest:(MulOp _? last:Factor)
+
+Factor <-
+    ( '(' _? Expr _? ')'
+    / n:NumericValue
+    )
+
+AddOp <- ( '+' / '-' )
+MulOp <- ( '*' / '/' / '%' )
+
+EXPRESSION = DISJUNCTION ;
+DISJUNCTION = CONJUNCTION ( '|' CONJUNCTION )*;
+CONJUNCTION = TERM ( '&' TERM );
+TERM = '~' TERM | '(' EXPRESSION ')' | CONDITION ;
+CONDITION = VARIABLE '=' CONSTANT ;
+
+ValueExpr <-
+    ( _? n:NumericName
+    / _? n:Number
+    )
+
+Name <- [A-Za-z] [A-Za-z0-9_]*            { return string(c.text), nil }
+
+_ <- [ \t]+
+
+EOL <- _? Comment? ("\r\n" / "\n\r" / "\r" / "\n" )
+
+Comment <- '/' '/' [^\r\n]*
+
+EOF <- !.
+
+
+
+/*----------- STUFF BELOW HERE IS FROM CHASM -----------------------*/
+
+
+Line <-
+    ( _? op:Operation EOL { return op, nil }
+    / EOL { return nil, nil }
+    )
+
+Operation <-
+    ( ConstDef
+    / Opcode
+    )
+
+ConstDef <-
+    ( k:Constant _? '=' _? v:Value {
+            if key, ok := k.(string); ok {
+                cm := c.globalStore["constants"].(map[string]string)
+                cm[key] = v.(string)
+                return v, nil
+            }
+            return nil, errors.New("Bad const def")
+        }
+    )
+
+// note that opcodes that are spelled as a prefix of some other one
+// like push and push64 need to have the longer one first, as this
+// construct tests matches in order. Easiest way to do this is to
+// sort by name in reverse order.
+Opcode =
+// VVVVV---GENERATED CODE BETWEEN THESE MARKERS, DO NOT EDIT---VVVVV
+    ( "nop" { return newUnitaryOpcode(vm.OpNop) }
+    / "drop2" { return newUnitaryOpcode(vm.OpDrop2) }
+    / "drop" { return newUnitaryOpcode(vm.OpDrop) }
+    / "dup2" { return newUnitaryOpcode(vm.OpDup2) }
+    / "dup" { return newUnitaryOpcode(vm.OpDup) }
+    / "swap" { return newUnitaryOpcode(vm.OpSwap) }
+    / "over" { return newUnitaryOpcode(vm.OpOver) }
+    / "pick" _ b:Byte { return newBinaryOpcode(vm.OpPick, b.(string)) }
+    / "roll" _ b:Byte { return newBinaryOpcode(vm.OpRoll, b.(string)) }
+    / "ret" { return newUnitaryOpcode(vm.OpRet) }
+    / "fail" { return newUnitaryOpcode(vm.OpFail) }
+    / "zero" { return newUnitaryOpcode(vm.OpZero) }
+    / "false" { return newUnitaryOpcode(vm.OpFalse) }
+    / "pushb" _ p:Bytes  { return newPushB(p) }
+    / "one" { return newUnitaryOpcode(vm.OpOne) }
+    / "true" { return newUnitaryOpcode(vm.OpTrue) }
+    / "neg1" { return newUnitaryOpcode(vm.OpNeg1) }
+    / "pusht" _ ts:Timestamp  { return newPushTimestamp(ts.(string)) }
+    / "pushl" { return newUnitaryOpcode(vm.OpPushL) }
+    / "now" { return newUnitaryOpcode(vm.OpNow) }
+    / "pusha" _ a:Address { return newPushAddr(a.(string)) }
+    / "rand" { return newUnitaryOpcode(vm.OpRand) }
+    / "add" { return newUnitaryOpcode(vm.OpAdd) }
+    / "sub" { return newUnitaryOpcode(vm.OpSub) }
+    / "divmod" { return newUnitaryOpcode(vm.OpDivMod) }
+    / "muldiv" { return newUnitaryOpcode(vm.OpMulDiv) }
+    / "mul" { return newUnitaryOpcode(vm.OpMul) }
+    / "div" { return newUnitaryOpcode(vm.OpDiv) }
+    / "mod" { return newUnitaryOpcode(vm.OpMod) }
+    / "not" { return newUnitaryOpcode(vm.OpNot) }
+    / "neg" { return newUnitaryOpcode(vm.OpNeg) }
+    / "inc" { return newUnitaryOpcode(vm.OpInc) }
+    / "dec" { return newUnitaryOpcode(vm.OpDec) }
+    / "eq" { return newUnitaryOpcode(vm.OpEq) }
+    / "gt" { return newUnitaryOpcode(vm.OpGt) }
+    / "lt" { return newUnitaryOpcode(vm.OpLt) }
+    / "index" { return newUnitaryOpcode(vm.OpIndex) }
+    / "len" { return newUnitaryOpcode(vm.OpLen) }
+    / "append" { return newUnitaryOpcode(vm.OpAppend) }
+    / "extend" { return newUnitaryOpcode(vm.OpExtend) }
+    / "slice" { return newUnitaryOpcode(vm.OpSlice) }
+    / "fieldl" { return newUnitaryOpcode(vm.OpFieldL) }
+    / "field" { return newUnitaryOpcode(vm.OpField) }
+    / "choice" { return newUnitaryOpcode(vm.OpChoice) }
+    / "wchoice" { return newUnitaryOpcode(vm.OpWChoice) }
+    / "sort" { return newUnitaryOpcode(vm.OpSort) }
+    / "lookup" { return newUnitaryOpcode(vm.OpLookup) }
+    / "call" _ n:FunctionName _ b:Byte { return newCallOpcode(vm.OpCall, n.(string), b.(string)) }
+    / "enddef" { return newUnitaryOpcode(vm.OpEndDef) }
+    / "ifz" { return newUnitaryOpcode(vm.OpIfZ) }
+    / "ifnz" { return newUnitaryOpcode(vm.OpIfNZ) }
+    / "else" { return newUnitaryOpcode(vm.OpElse) }
+    / "endif" { return newUnitaryOpcode(vm.OpEndIf) }
+    / "sum" { return newUnitaryOpcode(vm.OpSum) }
+    / "avg" { return newUnitaryOpcode(vm.OpAvg) }
+    / "max" { return newUnitaryOpcode(vm.OpMax) }
+    / "min" { return newUnitaryOpcode(vm.OpMin) }
+// ^^^^^---GENERATED CODE BETWEEN THESE MARKERS, DO NOT EDIT---^^^^^
+// The opcode below is particularly special -- it doesn't exist as its own opcode but does some smart manipulation
+    / "push" _ v:Value  { return newPushOpcode(v.(string)) }
+    )
+
+Timestamp <- ts:(Date 'T' Time 'Z') { return ts.(string), nil }
+Date <- [0-9] [0-9] [0-9] [0-9] '-' [0-9] [0-9] '-' [0-9] [0-9]
+Time <-  [0-9] [0-9] ':' [0:9] [0-9] '-' [0-9] [0-9]
+
+Value =
+    ( Integer
+    / ConstantRef
+    )
+
+ConstantRef <- k:Constant                         { cm := c.globalStore["constants"].(map[string]string); return cm[k.(string)], nil }
+Integer <- '-'? [0-9]+                            { return string(c.text), nil }
+Bytes <-
+    ( b:Byte+                                     { return b, nil }
+    / _? '"' s:[^"]+ '"'                          { return s, nil }
+    )
+
+Address <- "nd" [2-9a-km-np-zA-KM-NP-Z]+          { return string(c.text), nil }
+
+Byte <-
+    ( _? "0x" [0-9A-Fa-f] [0-9A-Fa-f]?            { return strings.TrimSpace(string(c.text)), nil }
+    / _? [0-9]+                                   { return strings.TrimSpace(string(c.text)), nil }
+    )
+Constant <- [A-Z] [A-Z0-9_]*                      { return string(c.text), nil }
+FunctionName <- [A-Za-z] [A-Za-z0-9_]+            { return string(c.text), nil }
+
+_ <- [ \t]+
+
+EOL <- _? Comment? ("\r\n" / "\n\r" / "\r" / "\n" )
+
+Comment <- ';' [^\r\n]*
+
+EOF <- !.
+

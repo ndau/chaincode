@@ -8,7 +8,7 @@ import (
 )
 
 func TestSinglePushPop(t *testing.T) {
-	st := newStack()
+	st := NewStack()
 	assert.Equal(t, st.Depth(), 0)
 	err := st.Push(NewNumber(123))
 	assert.Nil(t, err)
@@ -35,7 +35,7 @@ func checkMulti(t *testing.T, st *Stack, values ...int64) {
 }
 
 func TestOverflow(t *testing.T) {
-	st := newStack()
+	st := NewStack()
 	for i := 0; i < maxStackDepth+2; i++ {
 		err := st.Push(NewNumber(int64(i)))
 		if err != nil {
@@ -47,7 +47,7 @@ func TestOverflow(t *testing.T) {
 }
 
 func TestMultiPushPop(t *testing.T) {
-	st := newStack()
+	st := NewStack()
 	pushMulti(t, st, 2, 6, -7, 99)
 	assert.Equal(t, st.Depth(), 4)
 	checkMulti(t, st, 99, -7, 6, 2)
@@ -56,7 +56,7 @@ func TestMultiPushPop(t *testing.T) {
 }
 
 func TestPopAt(t *testing.T) {
-	st := newStack()
+	st := NewStack()
 	pushMulti(t, st, 1, 2, 3, 4, 5)
 	n, err := st.PopAt(3)
 	assert.Equal(t, n.String(), "2")
@@ -71,7 +71,7 @@ func TestPopAt(t *testing.T) {
 }
 
 func TestGet(t *testing.T) {
-	st := newStack()
+	st := NewStack()
 	pushMulti(t, st, 1, 2, 3, 4, 5)
 	n, err := st.Get(3)
 	assert.Nil(t, err)
@@ -81,7 +81,7 @@ func TestGet(t *testing.T) {
 }
 
 func TestString(t *testing.T) {
-	st := newStack()
+	st := NewStack()
 	assert.Equal(t, "|== Empty", st.String())
 	pushMulti(t, st, 1, 2, 3, 4, 5)
 	assert.Equal(t, "|== 5\n|== 4\n|== 3\n|== 2\n|== 1", st.String())
@@ -97,7 +97,7 @@ func listOfStructs() List {
 }
 
 func TestPopAsList1(t *testing.T) {
-	st := newStack()
+	st := NewStack()
 	st.Push(NewList())
 	l1, err := st.PopAsList()
 	assert.Nil(t, err)
@@ -105,7 +105,7 @@ func TestPopAsList1(t *testing.T) {
 }
 
 func TestPopAsList2(t *testing.T) {
-	st := newStack()
+	st := NewStack()
 	st.Push(listOfStructs())
 	l1, err := st.PopAsList()
 	assert.Nil(t, err)
@@ -113,7 +113,7 @@ func TestPopAsList2(t *testing.T) {
 }
 
 func TestPopAsListFail(t *testing.T) {
-	st := newStack()
+	st := NewStack()
 	st.Push(NewNumber(0))
 	_, err := st.PopAsList()
 	assert.NotNil(t, err)
@@ -122,7 +122,7 @@ func TestPopAsListFail(t *testing.T) {
 }
 
 func TestPopAsListOfStructs(t *testing.T) {
-	st := newStack()
+	st := NewStack()
 	ls := listOfStructs()
 	st.Push(ls)
 	l1, err := st.PopAsListOfStructs(0)
@@ -131,7 +131,7 @@ func TestPopAsListOfStructs(t *testing.T) {
 }
 
 func TestPopAsListOfStructsFail(t *testing.T) {
-	st := newStack()
+	st := NewStack()
 	st.Push(NewNumber(0))
 	_, err := st.PopAsListOfStructs(2)
 	assert.NotNil(t, err, "fail because top is not a list")
@@ -178,7 +178,7 @@ func TestPopAsListOfStructsFail(t *testing.T) {
 }
 
 func TestPushAt(t *testing.T) {
-	st := newStack()
+	st := NewStack()
 	pushMulti(t, st, 1, 2, 3)
 	err := st.InsertAt(2, NewNumber(7))
 	assert.Nil(t, err)

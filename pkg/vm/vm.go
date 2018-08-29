@@ -192,7 +192,7 @@ func (vm *ChaincodeVM) PreLoad(cb ChasmBinary) error {
 // in the argument list. If the VM doesn't have a handler for the specified eventID,
 // and it also doesn't have a handler for event 0, then Init will return an error.
 func (vm *ChaincodeVM) Init(eventID byte, values ...Value) error {
-	vm.stack = newStack()
+	vm.stack = NewStack()
 	for _, v := range values {
 		vm.stack.Push(v)
 	}
@@ -208,6 +208,11 @@ func (vm *ChaincodeVM) Init(eventID byte, values ...Value) error {
 	vm.pc = h
 	vm.infunc = -1 // we're not in a function to start
 	return nil
+}
+
+// IP fetches the current instruction pointer (aka program counter)
+func (vm *ChaincodeVM) IP() int {
+	return vm.pc
 }
 
 // Run runs a VM from its current state until it ends

@@ -1,0 +1,101 @@
+; NOTE - THIS CODE IS FLAWED -- the signature here will be a signature block, so we need to evaluate it
+; differently.
+
+;if txType = TRANSFER
+; if txAmount <= 100 return TRUE
+; else
+;    if verify(SIGNATURE, HASH, 12345) or verify(SIGNATURE, HASH, 98765) return TRUE
+; return FALSE
+;if txType = LOCK
+; if verify(SIGNATURE, HASH, 12345) and verify(SIGNATURE, HASH, 98765) return TRUE
+; return FALSE
+;return TRUE
+
+; the context defines the state of the stack on entry to the function
+; in the account context, the stack contains (stack top on right):
+; accountstate transaction
+; we'll abbreviate that as acct tx
+; constants are predefined for the field names and for the transaction types
+context: ACCOUNT
+
+K1 = 12345
+K2 = 98765
+
+func main {                     ; acct tx
+    dup                         ; acct tx tx
+    get TYPE                    ; acct tx tx.type
+    push TX_TRANSFER            ; acct tx tx.type TX_TRANSFER
+    eq                          ; acct tx isTransfer
+    ifnz                        ; acct tx
+        call doTransfer 1       ; acct tx result
+        ret
+    end                         ; acct tx
+    get TYPE                    ; acct tx tx.type
+    push TX_LOCK                ; acct tx tx.type TX_TRANSFER
+    eq                          ; acct tx isTransfer
+    ifnz                        ; acct tx
+        call doLock 1           ; acct tx result
+        ret
+    end                         ; acct tx
+    push TRUE                   ; acct tx True
+    ret
+}
+
+// doTransfer is a subroutine that is called with a new stack containing only one item, the tx itself.
+// When it returns, its top stack element is copied to the caller's stack.
+func doTransfer {
+    dup                     ; tx tx
+    get txAmount            ; tx tx.Amount
+    push 100                ; tx tx.Amount 100
+    lt                      ; tx isLessThan
+    ifnz                    ; tx
+        push TRUE           ; tx True
+        ret
+    else                    ; tx
+        dup                 ; tx tx
+        get SIGNATURE       ; tx tx.Sig
+        swap                ; tx.Sig tx
+        get HASH            ; tx.Sig tx.Hash
+        dup2                ; tx.Sig tx.Hash tx.Sig tx.Hash
+        pushb K1            ; tx.Sig tx.Hash tx.Sig tx.Hash K1
+        verify              ; tx.Sig tx.Hash isVerified
+        ifnz                ; tx.Sig tx.Hash
+            push TRUE       ; tx.Sig tx.Hash True
+            ret
+        end                 ; tx.Sig tx.Hash
+        pushb K2            ; tx.Sig tx.Hash K2
+        verify              ; isVerified
+        ifnz                ;
+            push TRUE       ; True
+            ret
+        end                 ;
+    end
+    push FALSE              ; False
+    ret
+}
+
+// doLock is a subroutine that is called with a new stack containing only one item, the tx itself.
+// When it returns, its top stack element is copied to the caller's stack.
+// This routine returns false if either K1 or K2 is not verified.
+func doLock {
+    dup                 ; tx tx
+    get SIGNATURE       ; tx tx.Sig
+    swap                ; tx.Sig tx
+    get HASH            ; tx.Sig tx.Hash
+    dup2                ; tx.Sig tx.Hash tx.Sig tx.Hash
+    pushb K1            ; tx.Sig tx.Hash tx.Sig tx.Hash K1
+    verify              ; tx.Sig tx.Hash isK1Verified
+    ifz                 ; tx.Sig tx.Hash
+        push FALSE      ; tx.Sig tx.Hash False
+        ret
+    end                 ; tx.Sig tx.Hash
+    pushb K2            ; tx.Sig tx.Hash K2
+    verify              ; isVerified
+    ifz                 ;
+        push FALSE      ; False
+        ret
+    end                 ;
+    push TRUE           ; True
+    ret
+}
+
