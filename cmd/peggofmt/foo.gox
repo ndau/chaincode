@@ -1,9 +1,0 @@
-	{
-	fm := c.globalStore["functions"].(map[string]int)
-		name := n.(string)
-			ctr := c.globalStore["functionCounter"].(int)
-  	fm[name] = ctr
-	ctr   ++
-	c.globalStore [ "functionCounter"] =ctr;
-	return newFunctionDef(name, s)
-	}
