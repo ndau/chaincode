@@ -17,7 +17,7 @@ import (
 
 // crank is a repl for chaincode
 
-// crank -i inputstream -b FILE.chbin
+// crank -i inputstream -f FILE.chbin
 
 // crank starts up and creates a new VM with no contents
 // If -f was specified, crank attempts to load the given file instead of starting with an empty vm
@@ -36,42 +36,148 @@ import (
 // 	N int `chain:"0,name"
 // }
 
-// commands:
-//     Load FILE
-//         loads and validates a file
-//     stacK
-//         prints the current stack
-//     Push value
-//         pushes a new value on top of the current stack
-//     pOp
-//         pops the top of the stack and prints it
-//     Run
-//         runs the VM from current IP
-//     Trace
-//         runs the VM from the current IP with tracing on
-//     Event EVT
-//         sets the VM to run event EVT
-//     Ip offset
-//         sets the VM to start running at IP
-//     input filename
-//         reads filename and treats each line as if it were typed in at the command prompt
-//     Step
-//         single-steps the VM
-//     Asm offset
-//         starts the mini-assembler at the given offset; blank line to terminate
-//         (offset is current IP if not otherwise stated)
-//     Disasm offset
-//         disassembles from the given offset (default current IP)
-// 	   Quit
-//         exits crank
-//
-// Value syntax:
-//     Number (decimal, hex)
-//     Timestamp
-//     Quoted string
-//     B(hex pairs)
-//     [ list of values ] (commas or whitespace)
-//     { list of values }(commas or whitespace)
+type command struct {
+	name    string
+	parms   string
+	aliases []string
+	summary string
+	detail  string
+	handler func(rs *runtimeState, args string) error
+}
+
+func (c command) matches(s string) bool {
+	for _, a := range c.aliases {
+		if s == a {
+			return true
+		}
+	}
+	return s == c.name
+}
+
+var commands = []command{
+	command{
+		name:    "help",
+		aliases: []string{"?"},
+		summary: "prints this help message (help verbose for extended explanation)",
+		detail:  ``,
+		handler: nil, //  we need to fill this in dynamically because it traverses this list
+	},
+	command{
+		name:    "quit",
+		aliases: []string{"q"},
+		summary: "exits the chain program",
+		detail:  `Ctrl-D also works`,
+		handler: func(rs *runtimeState, args string) error {
+			fmt.Println("Goodbye.")
+			os.Exit(0)
+			return nil
+		},
+	},
+	command{
+		name:    "load",
+		aliases: []string{"l"},
+		summary: "loads the file FILE as a chasm binary (.chbin)",
+		detail:  `File must conform to the chasm binary standard.`,
+		handler: (*runtimeState).load,
+	},
+	command{
+		name:    "run",
+		aliases: []string{"r"},
+		summary: "runs the currently loaded VM from the current IP",
+		detail:  ``,
+		handler: func(rs *runtimeState, args string) error {
+			return rs.run(false)
+		},
+	},
+	command{
+		name:    "step",
+		aliases: []string{"s"},
+		summary: "executes one opcode at the current IP and prints the status",
+		detail:  ``,
+		handler: func(rs *runtimeState, args string) error {
+			return rs.step(true)
+		},
+	},
+	command{
+		name:    "trace",
+		aliases: []string{"tr", "t"},
+		summary: "runs the currently loaded VM from the current IP",
+		detail:  ``,
+		handler: func(rs *runtimeState, args string) error {
+			return rs.run(true)
+		},
+	},
+	command{
+		name:    "event",
+		aliases: []string{"ev", "e"},
+		summary: "sets the ID of the event to be executed (may change the current IP)",
+		detail:  ``,
+		handler: (*runtimeState).setevent,
+	},
+	command{
+		name:    "disassemble",
+		aliases: []string{"dis", "disasm", "d"},
+		summary: "disassembles the loaded vm",
+		detail:  ``,
+		handler: func(rs *runtimeState, args string) error {
+			if rs.vm == nil {
+				return errors.New("no VM is loaded")
+			}
+			rs.vm.DisassembleAll()
+			return nil
+		},
+	},
+	command{
+		name:    "stack",
+		aliases: []string{"k"},
+		summary: "prints the contents of the stack",
+		detail:  ``,
+		handler: func(rs *runtimeState, args string) error {
+			fmt.Println(rs.vm.Stack())
+			return nil
+		},
+	},
+	command{
+		name:    "push",
+		aliases: []string{"pu", "p"},
+		summary: "pushes one or more values onto the stack",
+		detail: `
+Value syntax:
+    Number (decimal, hex)
+    Timestamp
+    Quoted string
+    B(hex pairs)
+    [ list of values ] (commas or whitespace, must all be one line)
+    { list of values }(commas or whitespace, must all be one line)
+		`,
+		handler: func(rs *runtimeState, args string) error {
+			topush, err := parseValues(args)
+			if err != nil {
+				return err
+			}
+			fmt.Println(topush)
+			for _, v := range topush {
+				rs.vm.Stack().Push(v)
+			}
+			fmt.Println(rs.vm.Stack())
+			return rs.reinit()
+		},
+	},
+	command{
+		name:    "pop",
+		aliases: []string{"o"},
+		summary: "pops the top stack item and prints it",
+		detail:  ``,
+		handler: func(rs *runtimeState, args string) error {
+			v, err := rs.vm.Stack().Pop()
+			if err != nil {
+				return err
+			}
+			fmt.Println(v)
+			return rs.reinit()
+		},
+	},
+}
 
 type runtimeState struct {
 	vm    *vm.ChaincodeVM
@@ -167,6 +273,16 @@ func parseValues(s string) ([]vm.Value, error) {
 	return retval, nil
 }
 
+func help(rs *runtimeState, args string) error {
+	for _, cmd := range commands {
+		fmt.Printf("%11s: %s %s\n", cmd.name, cmd.summary, cmd.aliases)
+		if strings.HasPrefix(args, "v") {
+			fmt.Println(cmd.detail)
+		}
+	}
+	return nil
+}
+
 // load is a command that loads a file into a VM (or errors trying)
 func (rs *runtimeState) load(filename string) error {
 	f, err := os.Open(filename)
@@ -186,7 +302,9 @@ func (rs *runtimeState) load(filename string) error {
 	return nil
 }
 
-func (rs *runtimeState) run(debug bool) error {
+// reinit calls init again, duplicating the entries that are currently
+// on the stack.
+func (rs *runtimeState) reinit() error {
 	d := rs.vm.Stack().Depth()
 	values := make([]vm.Value, d)
 	for i := 0; i < d; i++ {
@@ -197,65 +315,41 @@ func (rs *runtimeState) run(debug bool) error {
 	if err != nil {
 		return err
 	}
-	err = rs.vm.Run(debug)
-	return err
+	return nil
 }
 
+// setevent sets up the VM to run the given event, which means that it calls
+// reinit to set up the stack as well.
 func (rs *runtimeState) setevent(eventid string) error {
-	ev, err := strconv.ParseInt(eventid, 0, 8)
+	ev, err := strconv.ParseInt(strings.TrimSpace(eventid), 0, 8)
 	if err != nil {
 		return err
 	}
 	rs.event = byte(ev)
-	return nil
+
+	return rs.reinit()
+}
+
+func (rs *runtimeState) run(debug bool) error {
+	err := rs.vm.Run(debug)
+	return err
+}
+
+func (rs *runtimeState) step(debug bool) error {
+	err := rs.vm.Step(debug)
+	fmt.Println(rs.vm)
+	return err
 }
 
 func (rs *runtimeState) dispatch(cmd string) error {
 	p := regexp.MustCompile("[[:space:]]+")
-	args := p.Split(cmd, -1)
-	switch args[0] {
-	case "quit", "q":
-		fmt.Println("Goodbye.")
-		os.Exit(0)
-	case "load", "l":
-		return rs.load(args[1])
-	case "run", "r":
-		return rs.run(false)
-	case "trace", "t":
-		return rs.run(true)
-	// case "step", "s":
-	// 	return rs.step()
-	case "event", "ev", "e":
-		return rs.setevent(args[1])
-	case "dis", "d", "disasm", "disassemble":
-		if rs.vm == nil {
-			return errors.New("no VM is loaded")
+	args := p.Split(cmd, 2)
+	for _, cmd := range commands {
+		if cmd.matches(args[0]) {
+			return cmd.handler(rs, args[1])
 		}
-		rs.vm.DisassembleAll()
-		return nil
-	case "stack", "k":
-		fmt.Println(rs.vm.Stack())
-	case "push", "pu":
-		s := strings.Join(args[1:], " ")
-		topush, err := parseValues(s)
-		if err != nil {
-			return err
-		}
-		fmt.Println(topush)
-		for _, v := range topush {
-			rs.vm.Stack().Push(v)
-		}
-		fmt.Println(rs.vm.Stack())
-	case "pop":
-		v, err := rs.vm.Stack().Pop()
-		if err != nil {
-			return err
-		}
-		fmt.Println(v)
-	default:
-		return errors.New("unknown command " + cmd)
 	}
-	return nil
+	return fmt.Errorf("unknown command %s - type ? for help", cmd)
 }
 
 func (rs *runtimeState) repl(cmdsrc io.Reader) {
@@ -294,9 +388,12 @@ func (rs *runtimeState) repl(cmdsrc io.Reader) {
 }
 
 func main() {
+	// this needs to be filled in dynamically because the help function traverses
+	// the commands list.
+	commands[0].handler = help
 	var args struct {
-		Input  string `arg:"-i" help:"Input command file"`
-		Binary string `arg:"-b" help:"Binary file to load"`
+		Input string `arg:"-i" help:"Input command file"`
+		File  string `arg:"-f" help:"File to load as a chasm binary (*.chbin)."`
 	}
 	arg.MustParse(&args)
 	var inf io.Reader
@@ -309,8 +406,8 @@ func main() {
 	}
 
 	rs := runtimeState{}
-	if args.Binary != "" {
-		err := rs.load(args.Binary)
+	if args.File != "" {
+		err := rs.load(args.File)
 		if err != nil {
 			panic(err)
 		}
