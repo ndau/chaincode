@@ -1,5 +1,5 @@
-; This is an account approval script that validates that at least 2 signatures are on
-; the transaction, and that one of those two sigs is from the first key listed on the account
+; This is an account approval script that validates that the first 
+; account signature is among those signing the transaction.
 ; Expected arguments on the stack in order from bottom to top are:
 ;    account
 ;    transaction

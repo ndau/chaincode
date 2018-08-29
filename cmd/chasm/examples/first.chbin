@@ -1,5 +1,5 @@
 {
-  "name": "cmd/chasm/examples/firstor1+1.chasm",
-  "comment": "",
+  "name": "cmd/chasm/examples/first.chasm",
+  "comment": "the first key must be set",
   "data": "oAAasUiI"
 }
