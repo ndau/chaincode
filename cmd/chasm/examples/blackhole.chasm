@@ -1,8 +1,0 @@
-; This function does nothing but return 0; when used in the context of an account, it can
-; never return True, so any account that given this script is guaranteed to be
-; forever fixed and cannot be changed (except by the BPC).
-
-function main() {
-    push False;
-}
-
