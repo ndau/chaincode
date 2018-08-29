@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -25,19 +26,8 @@ import (
 // commands. When -i terminates, it returns control to the normal input. If you want crank to
 // terminate automatically, make sure your input file ends in a quit command.
 
-// Types:
-//    Number: (int, int64, uint64)
-//    Bytes:   (string, []byte)
-//    Timestamp: (time.Time)
-//    Struct: struct of above (but not list)
-//    List: ([] any of the above)
-
-// type S struct {
-// 	N int `chain:"0,name"
-// }
-
+// command is a type that is used to create a table of commands for the repl
 type command struct {
-	name    string
 	parms   string
 	aliases []string
 	summary string
@@ -45,25 +35,23 @@ type command struct {
 	handler func(rs *runtimeState, args string) error
 }
 
-func (c command) matches(s string) bool {
+func (c command) matchesAlias(s string) bool {
 	for _, a := range c.aliases {
 		if s == a {
 			return true
 		}
 	}
-	return s == c.name
+	return false
 }
 
-var commands = []command{
-	command{
-		name:    "help",
+var commands = map[string]command{
+	"help": command{
 		aliases: []string{"?"},
 		summary: "prints this help message (help verbose for extended explanation)",
 		detail:  ``,
 		handler: nil, //  we need to fill this in dynamically because it traverses this list
 	},
-	command{
-		name:    "quit",
+	"quit": command{
 		aliases: []string{"q"},
 		summary: "exits the chain program",
 		detail:  `Ctrl-D also works`,
@@ -73,15 +61,13 @@ var commands = []command{
 			return nil
 		},
 	},
-	command{
-		name:    "load",
+	"load": command{
 		aliases: []string{"l"},
 		summary: "loads the file FILE as a chasm binary (.chbin)",
 		detail:  `File must conform to the chasm binary standard.`,
 		handler: (*runtimeState).load,
 	},
-	command{
-		name:    "run",
+	"run": command{
 		aliases: []string{"r"},
 		summary: "runs the currently loaded VM from the current IP",
 		detail:  ``,
@@ -89,8 +75,7 @@ var commands = []command{
 			return rs.run(false)
 		},
 	},
-	command{
-		name:    "step",
+	"step": command{
 		aliases: []string{"s"},
 		summary: "executes one opcode at the current IP and prints the status",
 		detail:  ``,
@@ -98,8 +83,7 @@ var commands = []command{
 			return rs.step(true)
 		},
 	},
-	command{
-		name:    "trace",
+	"trace": command{
 		aliases: []string{"tr", "t"},
 		summary: "runs the currently loaded VM from the current IP",
 		detail:  ``,
@@ -107,15 +91,13 @@ var commands = []command{
 			return rs.run(true)
 		},
 	},
-	command{
-		name:    "event",
+	"event": command{
 		aliases: []string{"ev", "e"},
 		summary: "sets the ID of the event to be executed (may change the current IP)",
 		detail:  ``,
 		handler: (*runtimeState).setevent,
 	},
-	command{
-		name:    "disassemble",
+	"disassemble": command{
 		aliases: []string{"dis", "disasm", "d"},
 		summary: "disassembles the loaded vm",
 		detail:  ``,
@@ -127,8 +109,7 @@ var commands = []command{
 			return nil
 		},
 	},
-	command{
-		name:    "stack",
+	"stack": command{
 		aliases: []string{"k"},
 		summary: "prints the contents of the stack",
 		detail:  ``,
@@ -137,8 +118,7 @@ var commands = []command{
 			return nil
 		},
 	},
-	command{
-		name:    "push",
+	"push": command{
 		aliases: []string{"pu", "p"},
 		summary: "pushes one or more values onto the stack",
 		detail: `
@@ -163,8 +143,7 @@ Value syntax:
 			return rs.reinit()
 		},
 	},
-	command{
-		name:    "pop",
+	"pop": command{
 		aliases: []string{"o"},
 		summary: "pops the top stack item and prints it",
 		detail:  ``,
@@ -196,6 +175,9 @@ func parseValues(s string) ([]vm.Value, error) {
 	quotep := regexp.MustCompile(`^'([^']*)'|^"([^"]*)"|^'''(.*)'''|^"""(.*)"""`)
 	// arrays of bytes are B(hex) with individual bytes as hex strings with no 0x; embedded spaces are ignored
 	bytep := regexp.MustCompile(`^B\((([0-9A-Fa-f][0-9A-Fa-f] *)+)\)`)
+	// fields for structs are fieldid:Value; they are returned as a struct with one field that
+	// is consolidated when they are enclosed in {} wrappers
+	strfieldp := regexp.MustCompile("^([0-9]+) *:")
 
 	s = strings.TrimSpace(s)
 	retval := make([]vm.Value, 0)
@@ -210,27 +192,45 @@ func parseValues(s string) ([]vm.Value, error) {
 				return retval, err
 			}
 			retval = append(retval, vm.NewList(contents...))
+			// there can be only one list per line and it must end the line
+			return retval, nil
 
-			// case strings.HasPrefix(s, "{"):
-			// 	if !strings.HasSuffix(s, "}") {
-			// 		return nil, errors.New("struct start with no struct end")
-			// 	}
-			// 	contents, err := parseValues(s[1:len(s)-1])
-			// 	if err != nil {
-			// 		return nil, err
-			// 	}
-			// 	str := vm.NewStruct()
-			// 	for _, v := range contents {
-			// 		str
-			// 	}
-			// 	return str, nil
+		case strings.HasPrefix(s, "{"):
+			if !strings.HasSuffix(s, "}") {
+				return nil, errors.New("struct start with no struct end")
+			}
+			contents, err := parseValues(s[1 : len(s)-1])
+			if err != nil {
+				return nil, err
+			}
+			str := vm.NewStruct()
+			for _, v := range contents {
+				vs, ok := v.(*vm.Struct)
+				if !ok {
+					return retval, errors.New("untagged field in struct definition")
+				}
+				for _, ix := range vs.Indices() {
+					v2, _ := vs.Get(ix)
+					str = str.Set(ix, v2)
+				}
+			}
+			return []vm.Value{str}, nil
 
-		// case hexp.FindString(s) != "":
-		// 	subm := hexp.FindStringSubmatch(s)
-		// 	contents := subm[1]
-		// 	s = s[len(subm[0]):]
-		// 	n, _ := strconv.ParseInt(contents, 16, 64)
-		// 	retval = append(retval, vm.NewNumber(n))
+		case strfieldp.FindString(s) != "":
+			subm := strfieldp.FindStringSubmatch(s)
+			f := subm[1]
+			fieldid, _ := strconv.ParseInt(f, 10, 8)
+			s = s[len(subm[0]):]
+			contents, err := parseValues(s)
+			if err != nil {
+				return retval, err
+			}
+			if len(contents) == 0 {
+				return retval, errors.New("field index without field value")
+			}
+			str := vm.NewStruct().Set(byte(fieldid), contents[0])
+			retval = append(append(retval, str), contents[1:]...)
+			return retval, nil
 
 		case nump.FindString(s) != "":
 			found := nump.FindString(s)
@@ -274,10 +274,15 @@ func parseValues(s string) ([]vm.Value, error) {
 }
 
 func help(rs *runtimeState, args string) error {
-	for _, cmd := range commands {
-		fmt.Printf("%11s: %s %s\n", cmd.name, cmd.summary, cmd.aliases)
+	keys := make([]string, 0, len(commands))
+	for key := range commands {
+		keys = append(keys, key)
+	}
+	sort.Sort(sort.StringSlice(keys))
+	for _, key := range keys {
+		fmt.Printf("%11s: %s %s\n", key, commands[key].summary, commands[key].aliases)
 		if strings.HasPrefix(args, "v") {
-			fmt.Println(cmd.detail)
+			fmt.Println(commands[key].detail)
 		}
 	}
 	return nil
@@ -341,15 +346,15 @@ func (rs *runtimeState) step(debug bool) error {
 	return err
 }
 
-func (rs *runtimeState) dispatch(cmd string) error {
+func (rs *runtimeState) dispatch(s string) error {
 	p := regexp.MustCompile("[[:space:]]+")
-	args := p.Split(cmd, 2)
-	for _, cmd := range commands {
-		if cmd.matches(args[0]) {
+	args := p.Split(s, 2)
+	for key, cmd := range commands {
+		if key == args[0] || cmd.matchesAlias(args[0]) {
 			return cmd.handler(rs, args[1])
 		}
 	}
-	return fmt.Errorf("unknown command %s - type ? for help", cmd)
+	return fmt.Errorf("unknown command %s - type ? for help", s)
 }
 
 func (rs *runtimeState) repl(cmdsrc io.Reader) {
@@ -390,7 +395,10 @@ func (rs *runtimeState) repl(cmdsrc io.Reader) {
 func main() {
 	// this needs to be filled in dynamically because the help function traverses
 	// the commands list.
-	commands[0].handler = help
+	h := commands["help"]
+	h.handler = help
+	commands["help"] = h
+
 	var args struct {
 		Input string `arg:"-i" help:"Input command file"`
 		File  string `arg:"-f" help:"File to load as a chasm binary (*.chbin)."`
