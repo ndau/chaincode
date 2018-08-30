@@ -11,6 +11,7 @@ import (
 
 	"github.com/oneiro-ndev/chaincode/pkg/vm"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
+	"github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/oneiro-ndev/signature/pkg/signature"
 )
 
@@ -62,6 +63,10 @@ func ToValueScalar(x interface{}) (vm.Value, error) {
 		}
 		return vm.NewFalse(), nil
 	case reflect.Int, reflect.Int64:
+		// we have to explicitly handle types.Timestamp objects
+		if v.Type() == reflect.TypeOf(types.Timestamp(0)) {
+			return vm.NewTimestampFromInt(v.Int()), nil
+		}
 		n := v.Int()
 		return vm.NewNumber(n), nil
 	case reflect.Uint64, reflect.Uint8:

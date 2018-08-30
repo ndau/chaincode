@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/oneiro-ndev/chaincode/pkg/vm"
+	"github.com/oneiro-ndev/ndaumath/pkg/types"
 )
 
 func TestToValueScalar(t *testing.T) {
@@ -30,6 +31,7 @@ func TestToValueScalar(t *testing.T) {
 		{"[]int", []int{1, 23}, nil, true},
 		{"map", map[int]int{1: 2}, nil, true},
 		{"ptr to time", &tt, ts, false},
+		{"timestamp", types.Timestamp(ts.T()), ts, false},
 		{"undecorated struct", struct{ X int }{3}, vm.NewStruct(), false},
 		{"unexpected type", int32(17), nil, true},
 	}
