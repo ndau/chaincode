@@ -89,7 +89,6 @@ func New(bin ChasmBinary) (*ChaincodeVM, error) {
 	if err := vm.PreLoad(bin); err != nil {
 		return nil, err
 	}
-	vm.code = bin.Data
 	vm.runstate = RsNotReady // not ready to run until we've called Init
 	r, err := NewDefaultRand()
 	if err != nil {
@@ -161,26 +160,44 @@ func (vm *ChaincodeVM) HandlerIDs() []int {
 // PreLoad is the validation function called before loading a VM to make sure it
 // has a hope of loading properly
 func (vm *ChaincodeVM) PreLoad(cb ChasmBinary) error {
-	if cb.Data == nil {
+	return vm.PreLoadOpcodes(cb.Data)
+}
+
+// PreLoadBytes is a preloader that accepts an array of bytes
+func (vm *ChaincodeVM) PreLoadBytes(b []byte) error {
+	ops := make([]Opcode, len(b))
+	for i := range b {
+		ops[i] = Opcode(b[i])
+	}
+	return vm.PreLoadOpcodes(ops)
+}
+
+// PreLoadOpcodes acepts an array of opcodes and validates it.
+// If it fails to validate, the VM is not modified.
+// However, if it does validate the VM is updated with
+// code and function tables.
+func (vm *ChaincodeVM) PreLoadOpcodes(data []Opcode) error {
+	if data == nil {
 		return ValidationError{"missing code"}
 	}
-	if len(cb.Data) > maxCodeLength {
+	if len(data) > maxCodeLength {
 		return ValidationError{"code is too long"}
 	}
 	// make sure the executable part of the code is valid
-	handlers, functions, err := validateStructure(cb.Data)
+	handlers, functions, err := validateStructure(data)
 	if err != nil {
 		return err
 	}
-	vm.functions = functions
-	vm.handlers = handlers
-
 	// now generate a bitset of used opcodes from the instructions
-	usedOpcodes := getUsedOpcodes(generateInstructions(cb.Data))
+	usedOpcodes := getUsedOpcodes(generateInstructions(data))
 	// if it's not a proper subset of the enabled opcodes, don't let it run
 	if !usedOpcodes.IsSubsetOf(EnabledOpcodes) {
 		return ValidationError{"code contains illegal opcodes"}
 	}
+
+	vm.functions = functions
+	vm.handlers = handlers
+	vm.code = data
 
 	// we seem to be OK
 	return nil
@@ -192,10 +209,17 @@ func (vm *ChaincodeVM) PreLoad(cb ChasmBinary) error {
 // in the argument list. If the VM doesn't have a handler for the specified eventID,
 // and it also doesn't have a handler for event 0, then Init will return an error.
 func (vm *ChaincodeVM) Init(eventID byte, values ...Value) error {
-	vm.stack = NewStack()
+	stk := NewStack()
 	for _, v := range values {
 		vm.stack.Push(v)
 	}
+	return vm.InitFromStack(eventID, stk)
+}
+
+// InitFromStack initializes a vm with a given starting stack, which
+// should be a new stack
+func (vm *ChaincodeVM) InitFromStack(eventID byte, stk *Stack) error {
+	vm.stack = stk
 	vm.history = []HistoryState{}
 	vm.runstate = RsReady
 	h, ok := vm.handlers[eventID]
