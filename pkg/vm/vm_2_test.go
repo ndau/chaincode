@@ -33,7 +33,7 @@ func TestDeco1(t *testing.T) {
 		l = l.Append(st)
 	}
 	vm.Init(0, l)
-	err := vm.Run(true)
+	err := vm.Run(false)
 	assert.Nil(t, err)
 	checkStack(t, vm.Stack(), 455)
 }
