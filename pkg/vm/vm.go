@@ -211,7 +211,7 @@ func (vm *ChaincodeVM) PreLoadOpcodes(data []Opcode) error {
 func (vm *ChaincodeVM) Init(eventID byte, values ...Value) error {
 	stk := NewStack()
 	for _, v := range values {
-		vm.stack.Push(v)
+		stk.Push(v)
 	}
 	return vm.InitFromStack(eventID, stk)
 }
@@ -269,22 +269,33 @@ func (vm *ChaincodeVM) DisassembleAll() {
 	fmt.Println("---------------")
 }
 
-// Disassemble returns a single disassembled instruction, along with how many bytes it consumed
+// Disassemble returns a single disassembled instruction as a text string, possibly with embedded newlines,
+// along with how many bytes it consumed.
 func (vm *ChaincodeVM) Disassemble(pc int) (string, int) {
 	if pc >= len(vm.code) {
 		return "END", 0
 	}
 	op := vm.code[pc]
 	numExtra := extraBytes(vm.code, pc)
-	sa := []string{fmt.Sprintf("%3d  %02x", pc, byte(op))}
+
+	out := fmt.Sprintf("%02x:  ", pc)
+	sa := []string{fmt.Sprintf("%02x", byte(op))}
 	for i := 1; i <= numExtra; i++ {
 		sa = append(sa, fmt.Sprintf("%02x", byte(vm.code[pc+i])))
 	}
 	hex := strings.Join(sa, " ")
-	if len(hex) > 32 {
-		hex = hex[:27] + "..."
+	for i := 1; len(hex) > 3*8; i++ {
+		out += fmt.Sprintf("%-24s\n%02x:  ", hex[:24], pc+8*i)
+		hex = hex[24:]
 	}
-	out := fmt.Sprintf("%-32s  %s", hex, op)
+	args := ""
+	if numExtra > 0 && numExtra < 5 {
+		args = hex[3:]
+	}
+	if numExtra >= 5 {
+		args = "..."
+	}
+	out += fmt.Sprintf("%-24s  %-7s %-12s ", hex, op, args)
 
 	return out, numExtra + 1
 }
