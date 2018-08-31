@@ -5,13 +5,18 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math/rand"
 	"os"
 	"regexp"
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
+	"github.com/oneiro-ndev/chaincode/pkg/chain"
 	"github.com/oneiro-ndev/chaincode/pkg/vm"
+	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
+	"github.com/oneiro-ndev/ndaumath/pkg/types"
 
 	arg "github.com/alexflint/go-arg"
 )
@@ -75,10 +80,10 @@ var commands = map[string]command{
 			return rs.run(false)
 		},
 	},
-	"step": command{
-		aliases: []string{"s"},
+	"next": command{
+		aliases: []string{"n"},
 		summary: "executes one opcode at the current IP and prints the status",
-		detail:  ``,
+		detail:  `If the opcode is a function call, this executes the entire function call before stopping.`,
 		handler: func(rs *runtimeState, args string) error {
 			return rs.step(true)
 		},
@@ -109,6 +114,16 @@ var commands = map[string]command{
 			return nil
 		},
 	},
+	"reset": command{
+		aliases: []string{"k"},
+		summary: "resets the VM to the event and stack that were current at the last Run, Trace, Push, Pop, or Event command",
+		detail:  ``,
+		handler: func(rs *runtimeState, args string) error {
+			rs.reinit(rs.stack)
+			fmt.Println(rs.vm.Stack())
+			return nil
+		},
+	},
 	"stack": command{
 		aliases: []string{"k"},
 		summary: "prints the contents of the stack",
@@ -135,12 +150,11 @@ Value syntax:
 			if err != nil {
 				return err
 			}
-			fmt.Println(topush)
 			for _, v := range topush {
 				rs.vm.Stack().Push(v)
 			}
 			fmt.Println(rs.vm.Stack())
-			return rs.reinit()
+			return rs.reinit(rs.vm.Stack())
 		},
 	},
 	"pop": command{
@@ -153,7 +167,7 @@ Value syntax:
 				return err
 			}
 			fmt.Println(v)
-			return rs.reinit()
+			return rs.reinit(rs.vm.Stack())
 		},
 	},
 }
@@ -161,6 +175,23 @@ Value syntax:
 type runtimeState struct {
 	vm    *vm.ChaincodeVM
 	event byte
+	stack *vm.Stack
+}
+
+// getRandomAccount randomly generates an account object
+// it probably needs to be smarter than this
+func getRandomAccount() backing.AccountData {
+	const ticksPerDay = 24 * 60 * 60 * 1000000
+	t, _ := types.TimestampFrom(time.Now())
+	ad := backing.NewAccountData(t)
+	// give it a balance between .1 and 100 ndau
+	ad.Balance = types.Ndau((rand.Intn(1000) + 1) * 1000000)
+	// set WAA to some time within 45 days
+	ad.WeightedAverageAge = types.Duration(rand.Intn(ticksPerDay * 45))
+
+	ad.LastEAIUpdate = t.Add(types.Duration(-rand.Intn(ticksPerDay * 3)))
+	ad.LastWAAUpdate = t.Add(types.Duration(-rand.Intn(ticksPerDay * 10)))
+	return ad
 }
 
 func parseValues(s string) ([]vm.Value, error) {
@@ -183,6 +214,22 @@ func parseValues(s string) ([]vm.Value, error) {
 	retval := make([]vm.Value, 0)
 	for s != "" {
 		switch {
+		case tsp.FindString(strings.ToUpper(s)) != "":
+			t, err := vm.ParseTimestamp(tsp.FindString(strings.ToUpper(s)))
+			if err != nil {
+				panic(err)
+			}
+			s = s[len(tsp.FindString(strings.ToUpper(s))):]
+			retval = append(retval, t)
+
+		case strings.HasPrefix(s, "account"):
+			str, err := chain.ToValue(getRandomAccount())
+			s = s[len("account"):]
+			if err != nil {
+				return retval, err
+			}
+			retval = append(retval, str)
+
 		case strings.HasPrefix(s, "["):
 			if !strings.HasSuffix(s, "]") {
 				return retval, errors.New("list start with no list end")
@@ -257,14 +304,6 @@ func parseValues(s string) ([]vm.Value, error) {
 			s = s[len(subm[0]):]
 			retval = append(retval, vm.NewBytes(contents))
 
-		case tsp.FindString(strings.ToUpper(s)) != "":
-			s = s[len(tsp.FindString(strings.ToUpper(s))):]
-			t, err := vm.ParseTimestamp(strings.ToUpper(s))
-			if err != nil {
-				panic(err)
-			}
-			retval = append(retval, t)
-
 		default:
 			return nil, errors.New("unparseable " + s)
 		}
@@ -309,18 +348,12 @@ func (rs *runtimeState) load(filename string) error {
 
 // reinit calls init again, duplicating the entries that are currently
 // on the stack.
-func (rs *runtimeState) reinit() error {
-	d := rs.vm.Stack().Depth()
-	values := make([]vm.Value, d)
-	for i := 0; i < d; i++ {
-		v, _ := rs.vm.Stack().Pop()
-		values[d-i-1] = v
-	}
-	err := rs.vm.Init(rs.event, values...)
-	if err != nil {
-		return err
-	}
-	return nil
+func (rs *runtimeState) reinit(stk *vm.Stack) error {
+	// copy the current stack and save it in case we need to reset
+	rs.stack = stk.Clone()
+
+	// now initialize
+	return rs.vm.InitFromStack(rs.event, rs.stack)
 }
 
 // setevent sets up the VM to run the given event, which means that it calls
@@ -332,7 +365,7 @@ func (rs *runtimeState) setevent(eventid string) error {
 	}
 	rs.event = byte(ev)
 
-	return rs.reinit()
+	return rs.reinit(rs.vm.Stack())
 }
 
 func (rs *runtimeState) run(debug bool) error {
