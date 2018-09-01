@@ -159,20 +159,18 @@ func (vm *ChaincodeVM) PreLoad(cb ChasmBinary) error {
 	return vm.PreLoadOpcodes(cb.Data)
 }
 
-// PreLoadBytes is a preloader that accepts an array of bytes
-func (vm *ChaincodeVM) PreLoadBytes(b []byte) error {
+// ConvertToOpcodes accepts an array of bytes and returns a Chaincode (array of opcodes)
+func ConvertToOpcodes(b []byte) Chaincode {
 	ops := make([]Opcode, len(b))
 	for i := range b {
 		ops[i] = Opcode(b[i])
 	}
-	return vm.PreLoadOpcodes(ops)
+	return Chaincode(ops)
 }
 
-// PreLoadOpcodes acepts an array of opcodes and validates it.
-// If it fails to validate, the VM is not modified.
-// However, if it does validate the VM is updated with
-// code and function tables.
-func (vm *ChaincodeVM) PreLoadOpcodes(data []Opcode) error {
+// IsValidChaincode tests if an array of opcodes is a potentially valid
+// Chaincode program.
+func IsValidChaincode(data Chaincode) error {
 	if data == nil {
 		return ValidationError{"missing code"}
 	}
@@ -180,7 +178,7 @@ func (vm *ChaincodeVM) PreLoadOpcodes(data []Opcode) error {
 		return ValidationError{"code is too long"}
 	}
 	// make sure the executable part of the code is valid
-	handlers, functions, err := validateStructure(data)
+	_, _, err := validateStructure(data)
 	if err != nil {
 		return err
 	}
@@ -190,12 +188,23 @@ func (vm *ChaincodeVM) PreLoadOpcodes(data []Opcode) error {
 	if !usedOpcodes.IsSubsetOf(EnabledOpcodes) {
 		return ValidationError{"code contains illegal opcodes"}
 	}
+	return nil
+}
 
+// PreLoadOpcodes acepts an array of opcodes and validates it.
+// If it fails to validate, the VM is not modified.
+// However, if it does validate the VM is updated with
+// code and function tables.
+func (vm *ChaincodeVM) PreLoadOpcodes(data Chaincode) error {
+	if err := IsValidChaincode(data); err != nil {
+		return err
+	}
+
+	// we know this works because it has already been run
+	handlers, functions, _ := validateStructure(data)
 	vm.functions = functions
 	vm.handlers = handlers
 	vm.code = data
-
-	// we seem to be OK
 	return nil
 }
 
