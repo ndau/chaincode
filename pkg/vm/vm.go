@@ -23,12 +23,8 @@ func SetMaxCodeLength(n int) {
 	maxCodeLength = n
 }
 
-// Chaincode defines the contract for the virtual machine
-type Chaincode interface {
-	PreLoad(cb ChasmBinary) error // validates that the code to be loaded is well-formed and plausible
-	Init(values []Value)
-	Run() (Value, error)
-}
+// Chaincode is the type for the VM bytecode program
+type Chaincode []Opcode
 
 // RunState is the current run state of the VM
 type RunState byte
@@ -72,7 +68,7 @@ type funcInfo struct {
 // ChaincodeVM is the reason we're here
 type ChaincodeVM struct {
 	runstate  RunState
-	code      []Opcode
+	code      Chaincode
 	stack     *Stack
 	pc        int // program counter
 	history   []HistoryState

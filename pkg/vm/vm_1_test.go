@@ -32,7 +32,7 @@ func checkStack(t *testing.T, st *Stack, values ...int64) {
 
 func TestMiniAsmBasics(t *testing.T) {
 	ops := MiniAsm("neg1 zero one push1 45 push2 01 01 2000-01-01T00:00:00Z")
-	bytes := []Opcode{OpNeg1, OpZero, OpOne, OpPush1, 69, OpPush2, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0}
+	bytes := Chaincode{OpNeg1, OpZero, OpOne, OpPush1, 69, OpPush2, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0}
 	assert.Equal(t, ops, bytes)
 }
 
