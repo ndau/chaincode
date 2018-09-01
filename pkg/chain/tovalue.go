@@ -229,8 +229,23 @@ func ExtractConstants(x interface{}) (map[string]byte, error) {
 			if err != nil {
 				return nil, err
 			}
+			if name == "." {
+				// we have to traverse into structs that contain a chain tag == "."
+				child, err := ExtractConstants(vx.FieldByIndex(fld.Index).Interface())
+				if isNilPtr(err) {
+					continue
+				}
+				if err != nil {
+					return result, err
+				}
 
-			result[name] = ix
+				// copy all the child names to the parent
+				for k, v := range child {
+					result[k] = v
+				}
+			} else {
+				result[name] = ix
+			}
 		}
 		if len(result) == 0 {
 			return nil, errors.New("no chain tags found in struct")
