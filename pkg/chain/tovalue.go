@@ -252,6 +252,13 @@ func ExtractConstants(x interface{}) (map[string]byte, error) {
 		}
 		return result, nil
 
+	case reflect.Ptr:
+		// convert pointers to the object they point to and try again recursively
+		if vx.IsNil() {
+			return nil, errNilPointer{}
+		}
+		return ExtractConstants(vx.Elem().Interface())
+
 	default:
 		// all other types are an error
 		return nil, errors.New("object was not a tagged struct")
