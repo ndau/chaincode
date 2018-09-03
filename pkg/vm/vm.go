@@ -263,6 +263,13 @@ func (vm *ChaincodeVM) Run(debug bool) error {
 	return nil
 }
 
+// Stringizer is used to override the default behavior of the
+// disassembler for specific opcodes.
+type Stringizer func(op Opcode, extra []Opcode) string
+
+// DisasmHelpers is a map for specific opcodes to override the default renderer.
+var DisasmHelpers = make(map[Opcode]Stringizer)
+
 // DisassembleAll dumps a disassembly of the whole VM
 func (vm *ChaincodeVM) DisassembleAll() {
 	fmt.Println("--DISASSEMBLY--")
@@ -293,14 +300,20 @@ func (vm *ChaincodeVM) Disassemble(pc int) (string, int) {
 		out += fmt.Sprintf("%-24s\n%02x:  ", hex[:24], pc+8*i)
 		hex = hex[24:]
 	}
-	args := ""
-	if numExtra > 0 && numExtra < 5 {
-		args = hex[3:]
+	out += fmt.Sprintf("%-24s  ", hex)
+
+	if helper, ok := DisasmHelpers[op]; !ok {
+		args := ""
+		if numExtra > 0 && numExtra < 5 {
+			args = hex[3:]
+		}
+		if numExtra >= 5 {
+			args = "..."
+		}
+		out += fmt.Sprintf("%-7s %-12s ", op, args)
+	} else {
+		out += helper(op, vm.code[pc+1:pc+1+numExtra])
 	}
-	if numExtra >= 5 {
-		args = "..."
-	}
-	out += fmt.Sprintf("%-24s  %-7s %-12s ", hex, op, args)
 
 	return out, numExtra + 1
 }
