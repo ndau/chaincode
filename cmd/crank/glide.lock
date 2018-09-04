@@ -1,5 +1,5 @@
-hash: b9500cd129cfdadcfc8d614d18f24268b6b215eaeadde95fb308cab3c27f1d85
-updated: 2018-08-30T18:31:43.663342-04:00
+hash: 06166cd7d8d0fa9009223c317fc41851deba21163d8a41c7d19636046578e6f4
+updated: 2018-09-03T15:13:25.827424-04:00
 imports:
 - name: github.com/alexflint/go-arg
   version: f7c0423bd11ee80ab81d25c6d46f492998af8547
@@ -42,7 +42,7 @@ imports:
   - go/util/verbose
   - go/util/writers
 - name: github.com/aws/aws-sdk-go
-  version: 65e0d510c9560c8d59b69ab2e9e1ded1d3c5ccac
+  version: 2a4034064ca5271c3f875d43012285133154d664
   subpackages:
   - aws
   - aws/awserr
@@ -78,6 +78,10 @@ imports:
   - service/dynamodb
   - service/s3
   - service/sts
+- name: github.com/client9/misspell
+  version: c0b55c8239520f6b5aa15a0207ca8b28027ba49e
+  subpackages:
+  - cmd/misspell
 - name: github.com/davecgh/go-spew
   version: 2df174808ee097f90d259e432cc04442cf60be21
   subpackages:
@@ -95,15 +99,13 @@ imports:
 - name: github.com/go-ini/ini
   version: 5cf292cae48347c2490ac1a58fe36735fb78df7e
 - name: github.com/go-kit/kit
-  version: a57ebcea1cdc156e8bb90fbfe7f175c459ab71ed
+  version: af924e0c9d8df636a7e80a664a3d72d898a09e8b
   subpackages:
   - log
   - log/level
   - log/term
 - name: github.com/go-logfmt/logfmt
   version: 390ab7935ee28ec6b286364bba9b4dd6410cb3d5
-- name: github.com/go-stack/stack
-  version: 2fee6af1a9795aafbe0253a0cfbdf668e1fb8a9a
 - name: github.com/gogo/protobuf
   version: 5669497fd64452f28d142899eeb1bfd7e8b26ac8
   subpackages:
@@ -113,10 +115,20 @@ imports:
   - protoc-gen-gogo/descriptor
   - sortkeys
   - types
+- name: github.com/golang/lint
+  version: 06c8688daad7faa9da5a0c2f163a3d14aac986ca
+  subpackages:
+  - golint
 - name: github.com/golang/protobuf
   version: b27b920f9e71b439b873b17bf99f56467623814a
   subpackages:
   - proto
+  - protoc-gen-go
+  - protoc-gen-go/descriptor
+  - protoc-gen-go/generator
+  - protoc-gen-go/generator/internal/remap
+  - protoc-gen-go/grpc
+  - protoc-gen-go/plugin
   - ptypes
   - ptypes/any
   - ptypes/duration
@@ -133,10 +145,14 @@ imports:
   version: 348b672cd90d8190f8240323e372ecd1e66b59dc
 - name: github.com/kch42/buzhash
   version: 9bdec3dec7c611fa97beadc374d75bdf02cd880e
+- name: github.com/kisielk/gotool
+  version: 80517062f582ea3340cd4baf70e86d539ae7d84d
+  subpackages:
+  - internal/load
 - name: github.com/kr/logfmt
   version: b84e30acd515aadc4b783ad4ff83aff3299bdfe0
 - name: github.com/oneiro-ndev/chaincode
-  version: f13b582f77c442ab85db289af3e2286351128477
+  version: d5e50429c4327f0a599acec0258b46d5875e362a
   subpackages:
   - pkg/chain
   - pkg/vm
@@ -148,7 +164,7 @@ imports:
 - name: github.com/oneiro-ndev/mt19937_64
   version: 1d1d0a52998333e7fa73a1f10c93da267bacacac
 - name: github.com/oneiro-ndev/ndau
-  version: 2d2dcee853462d078cb10ddf246a5edbe90b5a73
+  version: 6b2acd7c9cb8cc69296c289135db383a4cd661a2
   subpackages:
   - pkg/ndau/backing
 - name: github.com/oneiro-ndev/ndaumath
@@ -218,6 +234,8 @@ imports:
   subpackages:
   - ed25519
   - ed25519/internal/edwards25519
+- name: golang.org/x/lint
+  version: 06c8688daad7faa9da5a0c2f163a3d14aac986ca
 - name: golang.org/x/net
   version: 8a410e7b638dca158bf9e766925842f6651ff828
   subpackages:
@@ -229,7 +247,7 @@ imports:
   - internal/timeseries
   - trace
 - name: golang.org/x/sys
-  version: 49385e6e15226593f68b26af201feec29d5bba22
+  version: 2b024373dcd9800f0cae693839fac6ede8d64a8c
   subpackages:
   - unix
 - name: golang.org/x/text
@@ -239,12 +257,25 @@ imports:
   - transform
   - unicode/bidi
   - unicode/norm
+- name: golang.org/x/tools
+  version: 7ca132754999accbaa5c1735eda29e7ce0f3bf03
+  subpackages:
+  - cmd/goimports
+  - go/ast/astutil
+  - go/buildutil
+  - go/gcexportdata
+  - go/internal/cgo
+  - go/internal/gcimporter
+  - go/loader
+  - go/types/typeutil
+  - imports
+  - internal/fastwalk
 - name: google.golang.org/genproto
-  version: c66870c02cf823ceb633bcd05be3c7cda29976f4
+  version: 11092d34479b07829b72e10713b159248caf5dad
   subpackages:
   - googleapis/rpc/status
 - name: google.golang.org/grpc
-  version: da7e20b83ed88b8423d1eb0a8ef5d54c4c25eeb0
+  version: ce4f3c8a89229d9db3e0c30d28a9f905435ad365
   subpackages:
   - balancer
   - balancer/base
@@ -271,4 +302,21 @@ imports:
   - stats
   - status
   - tap
+- name: honnef.co/go/tools
+  version: 88497007e8588ea5b6baee991f74a1607e809487
+  subpackages:
+  - callgraph
+  - callgraph/static
+  - cmd/staticcheck
+  - deprecated
+  - functions
+  - internal/sharedcheck
+  - lint
+  - lint/lintdsl
+  - lint/lintutil
+  - ssa
+  - ssa/ssautil
+  - staticcheck
+  - staticcheck/vrp
+  - version
 testImports: []

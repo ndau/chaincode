@@ -6,6 +6,7 @@ import:
   subpackages:
   - pkg/vm
 - package: github.com/oneiro-ndev/ndau
+  version: kjq-settlement
   subpackages:
   - pkg/ndau/backing
 - package: github.com/oneiro-ndev/ndaumath
