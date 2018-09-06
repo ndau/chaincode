@@ -3,7 +3,7 @@ import:
 - package: github.com/alexflint/go-arg
 - package: github.com/oneiro-ndev/chaincode
   repo: git@github.com:oneiro-ndev/chaincode.git
-  version: kjq-crank
+  version: master
   subpackages:
   - pkg/vm
 - package: github.com/oneiro-ndev/ndau

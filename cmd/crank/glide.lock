@@ -1,5 +1,5 @@
-hash: 70518330cc7245428d8a9d0aad33f8b9a433802684213a0189e6467c4f69fbb0
-updated: 2018-09-06T13:37:32.815931+02:00
+hash: de41ff5156ef1f31d19c1afb01bf030a19f8046e8c780ab09d54ad9edd268438
+updated: 2018-09-06T13:47:49.885725+02:00
 imports:
 - name: github.com/alexflint/go-arg
   version: f7c0423bd11ee80ab81d25c6d46f492998af8547
@@ -136,7 +136,7 @@ imports:
 - name: github.com/kr/logfmt
   version: b84e30acd515aadc4b783ad4ff83aff3299bdfe0
 - name: github.com/oneiro-ndev/chaincode
-  version: 9454229ee9bb1bcb79518b5b23418ffb976b6a26
+  version: f4eaba8202e1a9fa7978969fbaa9e99d20399dfd
   repo: git@github.com:oneiro-ndev/chaincode.git
   subpackages:
   - pkg/chain
