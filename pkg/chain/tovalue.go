@@ -11,6 +11,7 @@ import (
 
 	"github.com/oneiro-ndev/chaincode/pkg/vm"
 	"github.com/oneiro-ndev/ndaumath/pkg/address"
+	"github.com/oneiro-ndev/ndaumath/pkg/types"
 	"github.com/oneiro-ndev/signature/pkg/signature"
 )
 
@@ -62,6 +63,10 @@ func ToValueScalar(x interface{}) (vm.Value, error) {
 		}
 		return vm.NewFalse(), nil
 	case reflect.Int, reflect.Int64:
+		// we have to explicitly handle types.Timestamp objects
+		if v.Type() == reflect.TypeOf(types.Timestamp(0)) {
+			return vm.NewTimestampFromInt(v.Int()), nil
+		}
 		n := v.Int()
 		return vm.NewNumber(n), nil
 	case reflect.Uint64, reflect.Uint8:
@@ -224,13 +229,35 @@ func ExtractConstants(x interface{}) (map[string]byte, error) {
 			if err != nil {
 				return nil, err
 			}
+			if name == "." {
+				// we have to traverse into structs that contain a chain tag == "."
+				child, err := ExtractConstants(vx.FieldByIndex(fld.Index).Interface())
+				if isNilPtr(err) {
+					continue
+				}
+				if err != nil {
+					return result, err
+				}
 
-			result[name] = ix
+				// copy all the child names to the parent
+				for k, v := range child {
+					result[k] = v
+				}
+			} else {
+				result[name] = ix
+			}
 		}
 		if len(result) == 0 {
 			return nil, errors.New("no chain tags found in struct")
 		}
 		return result, nil
+
+	case reflect.Ptr:
+		// convert pointers to the object they point to and try again recursively
+		if vx.IsNil() {
+			return nil, errNilPointer{}
+		}
+		return ExtractConstants(vx.Elem().Interface())
 
 	default:
 		// all other types are an error

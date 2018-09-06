@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/oneiro-ndev/chaincode/pkg/vm"
+	"github.com/oneiro-ndev/ndaumath/pkg/types"
 )
 
 func TestToValueScalar(t *testing.T) {
@@ -30,6 +31,7 @@ func TestToValueScalar(t *testing.T) {
 		{"[]int", []int{1, 23}, nil, true},
 		{"map", map[int]int{1: 2}, nil, true},
 		{"ptr to time", &tt, ts, false},
+		{"timestamp", types.Timestamp(ts.T()), ts, false},
 		{"undecorated struct", struct{ X int }{3}, vm.NewStruct(), false},
 		{"unexpected type", int32(17), nil, true},
 	}
@@ -78,6 +80,12 @@ func TestToValue(t *testing.T) {
 		H string `chain:"1"`
 		J string `chain:"3"`
 		M nest2  `chain:"."`
+	}
+
+	type nestp struct {
+		H string `chain:"1"`
+		J string `chain:"3"`
+		M *nest2 `chain:"."`
 	}
 
 	type nonest1 struct {
@@ -169,6 +177,14 @@ func TestToValue(t *testing.T) {
 				Set(15, vm.NewBytes([]byte("c"))).
 				Set(16, vm.NewBytes([]byte("d"))),
 			false},
+		{"nested struct ptr", args{
+			nestp{"a", "b", &nest2{"c", "d"}}},
+			vm.NewStruct().
+				Set(1, vm.NewBytes([]byte("a"))).
+				Set(3, vm.NewBytes([]byte("b"))).
+				Set(15, vm.NewBytes([]byte("c"))).
+				Set(16, vm.NewBytes([]byte("d"))),
+			false},
 		{"nested struct with no . tag", args{
 			nonest1{"a", "b", nest2{"c", "d"}}},
 			vm.NewStruct().
@@ -207,6 +223,29 @@ func TestToValue(t *testing.T) {
 }
 
 func TestExtractConstants(t *testing.T) {
+	type nest2 struct {
+		P string `chain:"15"`
+		Q string `chain:"16"`
+	}
+
+	type nest1 struct {
+		H string `chain:"1"`
+		J string `chain:"3"`
+		M nest2  `chain:"."`
+	}
+
+	type nestp struct {
+		H string `chain:"1"`
+		J string `chain:"3"`
+		M *nest2 `chain:"."`
+	}
+
+	type nonest1 struct {
+		H string `chain:"1"`
+		J string `chain:"3"`
+		M nest2
+	}
+
 	type args struct {
 		x interface{}
 	}
@@ -286,6 +325,15 @@ func TestExtractConstants(t *testing.T) {
 			}{3, 4, 5},
 		}, nil, true},
 		{"not a struct", args{[]int{3}}, nil, true},
+		{"nested struct", args{
+			nest1{"a", "b", nest2{"c", "d"}}},
+			map[string]byte{"H": 1, "J": 3, "P": 15, "Q": 16}, false},
+		{"nested struct with no . tag", args{
+			nonest1{"a", "b", nest2{"c", "d"}}},
+			map[string]byte{"H": 1, "J": 3}, false},
+		{"nested struct with ptr", args{
+			nestp{"a", "b", &nest2{"c", "d"}}},
+			map[string]byte{"H": 1, "J": 3, "P": 15, "Q": 16}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

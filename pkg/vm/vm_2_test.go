@@ -1,6 +1,7 @@
 package vm
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 	"testing"
@@ -33,7 +34,7 @@ func TestDeco1(t *testing.T) {
 		l = l.Append(st)
 	}
 	vm.Init(0, l)
-	err := vm.Run(true)
+	err := vm.Run(false)
 	assert.Nil(t, err)
 	checkStack(t, vm.Stack(), 455)
 }
@@ -54,13 +55,26 @@ func TestStringers(t *testing.T) {
 }
 
 func TestExerciseStrings(t *testing.T) {
-	vm := buildVM(t, "handler 0 sort 6 push1 3 index field 1 enddef")
+	vm := buildVM(t, `handler 0 sort 6 push1 3 index field 1 pushb "thisisalongstring" enddef`)
 	vm.Init(0)
 
 	assert.Contains(t, vm.String(), "Sort")
+
 	da, n := vm.Disassemble(4)
 	assert.Equal(t, 2, n)
 	assert.Contains(t, da, "Push1")
+
+	da, n = vm.Disassemble(9)
+	assert.Equal(t, 19, n)
+	assert.Contains(t, da, "PushB")
+	assert.Contains(t, da, " 61 6c ")
+
+	DisasmHelpers[OpField] = func(op Opcode, extra []Opcode) string {
+		return fmt.Sprintf("%s Ix(%d)", op, extra[0])
+	}
+	da, n = vm.Disassemble(7)
+	assert.Equal(t, 2, n)
+	assert.True(t, strings.HasSuffix(da, "Field Ix(1)"))
 }
 
 func TestLookup1(t *testing.T) {

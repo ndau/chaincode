@@ -1,0 +1,19 @@
+package: github.com/oneiro-ndev/chaincode/cmd/crank
+import:
+- package: github.com/alexflint/go-arg
+- package: github.com/oneiro-ndev/chaincode
+  repo: git@github.com:oneiro-ndev/chaincode.git
+  version: kjq-crank
+  subpackages:
+  - pkg/vm
+- package: github.com/oneiro-ndev/ndau
+  repo: git@github.com:oneiro-ndev/ndau.git
+  version: ~v0.7
+  subpackages:
+  - pkg/ndau/backing
+- package: github.com/oneiro-ndev/ndaumath
+  repo: git@github.com:oneiro-ndev/ndaumath.git
+  subpackages:
+  - pkg/types
+- package: github.com/oneiro-ndev/signature
+  repo: git@github.com:oneiro-ndev/signature.git

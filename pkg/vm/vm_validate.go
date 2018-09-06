@@ -36,7 +36,7 @@ type tr struct {
 
 // validateStructure reads the script and checks to make sure that the nested
 // elements are properly nested and not out of order or missing.
-func validateStructure(code []Opcode) (map[byte]int, []funcInfo, error) {
+func validateStructure(code Chaincode) (map[byte]int, []funcInfo, error) {
 	// This is a table of allowed transitions from a given state, depending on the opcode.
 	// For example, from the StNull state, the only allowed transitions are to definitions.
 	transitions := map[tr]structureState{

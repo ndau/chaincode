@@ -23,12 +23,8 @@ func SetMaxCodeLength(n int) {
 	maxCodeLength = n
 }
 
-// Chaincode defines the contract for the virtual machine
-type Chaincode interface {
-	PreLoad(cb ChasmBinary) error // validates that the code to be loaded is well-formed and plausible
-	Init(values []Value)
-	Run() (Value, error)
-}
+// Chaincode is the type for the VM bytecode program
+type Chaincode []Opcode
 
 // RunState is the current run state of the VM
 type RunState byte
@@ -72,7 +68,7 @@ type funcInfo struct {
 // ChaincodeVM is the reason we're here
 type ChaincodeVM struct {
 	runstate  RunState
-	code      []Opcode
+	code      Chaincode
 	stack     *Stack
 	pc        int // program counter
 	history   []HistoryState
@@ -89,7 +85,6 @@ func New(bin ChasmBinary) (*ChaincodeVM, error) {
 	if err := vm.PreLoad(bin); err != nil {
 		return nil, err
 	}
-	vm.code = bin.Data
 	vm.runstate = RsNotReady // not ready to run until we've called Init
 	r, err := NewDefaultRand()
 	if err != nil {
@@ -161,28 +156,55 @@ func (vm *ChaincodeVM) HandlerIDs() []int {
 // PreLoad is the validation function called before loading a VM to make sure it
 // has a hope of loading properly
 func (vm *ChaincodeVM) PreLoad(cb ChasmBinary) error {
-	if cb.Data == nil {
+	return vm.PreLoadOpcodes(cb.Data)
+}
+
+// ConvertToOpcodes accepts an array of bytes and returns a Chaincode (array of opcodes)
+func ConvertToOpcodes(b []byte) Chaincode {
+	ops := make([]Opcode, len(b))
+	for i := range b {
+		ops[i] = Opcode(b[i])
+	}
+	return Chaincode(ops)
+}
+
+// IsValidChaincode tests if an array of opcodes is a potentially valid
+// Chaincode program.
+func IsValidChaincode(data Chaincode) error {
+	if data == nil {
 		return ValidationError{"missing code"}
 	}
-	if len(cb.Data) > maxCodeLength {
+	if len(data) > maxCodeLength {
 		return ValidationError{"code is too long"}
 	}
 	// make sure the executable part of the code is valid
-	handlers, functions, err := validateStructure(cb.Data)
+	_, _, err := validateStructure(data)
 	if err != nil {
 		return err
 	}
-	vm.functions = functions
-	vm.handlers = handlers
-
 	// now generate a bitset of used opcodes from the instructions
-	usedOpcodes := getUsedOpcodes(generateInstructions(cb.Data))
+	usedOpcodes := getUsedOpcodes(generateInstructions(data))
 	// if it's not a proper subset of the enabled opcodes, don't let it run
 	if !usedOpcodes.IsSubsetOf(EnabledOpcodes) {
 		return ValidationError{"code contains illegal opcodes"}
 	}
+	return nil
+}
 
-	// we seem to be OK
+// PreLoadOpcodes acepts an array of opcodes and validates it.
+// If it fails to validate, the VM is not modified.
+// However, if it does validate the VM is updated with
+// code and function tables.
+func (vm *ChaincodeVM) PreLoadOpcodes(data Chaincode) error {
+	if err := IsValidChaincode(data); err != nil {
+		return err
+	}
+
+	// we know this works because it has already been run
+	handlers, functions, _ := validateStructure(data)
+	vm.functions = functions
+	vm.handlers = handlers
+	vm.code = data
 	return nil
 }
 
@@ -192,10 +214,17 @@ func (vm *ChaincodeVM) PreLoad(cb ChasmBinary) error {
 // in the argument list. If the VM doesn't have a handler for the specified eventID,
 // and it also doesn't have a handler for event 0, then Init will return an error.
 func (vm *ChaincodeVM) Init(eventID byte, values ...Value) error {
-	vm.stack = newStack()
+	stk := NewStack()
 	for _, v := range values {
-		vm.stack.Push(v)
+		stk.Push(v)
 	}
+	return vm.InitFromStack(eventID, stk)
+}
+
+// InitFromStack initializes a vm with a given starting stack, which
+// should be a new stack
+func (vm *ChaincodeVM) InitFromStack(eventID byte, stk *Stack) error {
+	vm.stack = stk
 	vm.history = []HistoryState{}
 	vm.runstate = RsReady
 	h, ok := vm.handlers[eventID]
@@ -208,6 +237,11 @@ func (vm *ChaincodeVM) Init(eventID byte, values ...Value) error {
 	vm.pc = h
 	vm.infunc = -1 // we're not in a function to start
 	return nil
+}
+
+// IP fetches the current instruction pointer (aka program counter)
+func (vm *ChaincodeVM) IP() int {
+	return vm.pc
 }
 
 // Run runs a VM from its current state until it ends
@@ -229,6 +263,13 @@ func (vm *ChaincodeVM) Run(debug bool) error {
 	return nil
 }
 
+// Stringizer is used to override the default behavior of the
+// disassembler for specific opcodes.
+type Stringizer func(op Opcode, extra []Opcode) string
+
+// DisasmHelpers is a map for specific opcodes to override the default renderer.
+var DisasmHelpers = make(map[Opcode]Stringizer)
+
 // DisassembleAll dumps a disassembly of the whole VM
 func (vm *ChaincodeVM) DisassembleAll() {
 	fmt.Println("--DISASSEMBLY--")
@@ -240,22 +281,39 @@ func (vm *ChaincodeVM) DisassembleAll() {
 	fmt.Println("---------------")
 }
 
-// Disassemble returns a single disassembled instruction, along with how many bytes it consumed
+// Disassemble returns a single disassembled instruction as a text string, possibly with embedded newlines,
+// along with how many bytes it consumed.
 func (vm *ChaincodeVM) Disassemble(pc int) (string, int) {
 	if pc >= len(vm.code) {
 		return "END", 0
 	}
 	op := vm.code[pc]
 	numExtra := extraBytes(vm.code, pc)
-	sa := []string{fmt.Sprintf("%3d  %02x", pc, byte(op))}
+
+	out := fmt.Sprintf("%02x:  ", pc)
+	sa := []string{fmt.Sprintf("%02x", byte(op))}
 	for i := 1; i <= numExtra; i++ {
 		sa = append(sa, fmt.Sprintf("%02x", byte(vm.code[pc+i])))
 	}
 	hex := strings.Join(sa, " ")
-	if len(hex) > 32 {
-		hex = hex[:27] + "..."
+	for i := 1; len(hex) > 3*8; i++ {
+		out += fmt.Sprintf("%-24s\n%02x:  ", hex[:24], pc+8*i)
+		hex = hex[24:]
 	}
-	out := fmt.Sprintf("%-32s  %s", hex, op)
+	out += fmt.Sprintf("%-24s  ", hex)
+
+	if helper, ok := DisasmHelpers[op]; !ok {
+		args := ""
+		if numExtra > 0 && numExtra < 5 {
+			args = hex[3:]
+		}
+		if numExtra >= 5 {
+			args = "..."
+		}
+		out += fmt.Sprintf("%-7s %-12s ", op, args)
+	} else {
+		out += helper(op, vm.code[pc+1:pc+1+numExtra])
+	}
 
 	return out, numExtra + 1
 }

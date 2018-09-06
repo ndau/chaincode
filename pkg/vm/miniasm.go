@@ -26,7 +26,7 @@ import (
 
 // MiniAsm is a mini-assembler for Chaincode. It is primarily for testing but we want it available.
 // nolint: deadcode
-func MiniAsm(s string) []Opcode {
+func MiniAsm(s string) Chaincode {
 	// whitespace
 	wsp := regexp.MustCompile("[ \t\r\n]")
 	// timestamp
@@ -88,5 +88,5 @@ func MiniAsm(s string) []Opcode {
 		}
 		opcodes = append(opcodes, Opcode(b))
 	}
-	return opcodes
+	return Chaincode(opcodes)
 }
