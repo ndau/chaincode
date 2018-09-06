@@ -24,6 +24,8 @@ const (
 	OpOne     Opcode = 0x1a
 	OpNeg1    Opcode = 0x1b
 	OpTrue    Opcode = 0x1b
+	OpMaxNum  Opcode = 0x1c
+	OpMinNum  Opcode = 0x1d
 	OpZero    Opcode = 0x20
 	OpFalse   Opcode = 0x20
 	OpPush1   Opcode = 0x21

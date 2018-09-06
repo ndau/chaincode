@@ -21,6 +21,8 @@ Value|Opcode|Meaning|Stack before|Instr.|Stack after
 0x11|Fail|Terminates the function or handler and indicates an error.||fail|
 0x1a|One|Pushes 1 onto the stack.||one, true|1
 0x1b|Neg1 (True)|Pushes -1 onto the stack.||neg1|-1
+0x1c|MaxNum|Pushes the largest possible numeric value onto the stack.||maxnum|9223372036854775807
+0x1d|MinNum|Pushes the most negative possible numeric value onto the stack.||minnum|-9223372036854775808
 0x20|Zero (False)|Pushes 0 onto the stack.||zero|0
 0x21|Push1|Evaluates the next byte as a signed little-endian numeric value and pushes it onto the stack.||push1|A
 0x22|Push2|Evaluates the next 2 bytes as a signed little-endian numeric value and pushes it onto the stack.||push2|A

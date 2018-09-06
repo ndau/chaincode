@@ -45,11 +45,11 @@ func TestNop(t *testing.T) {
 }
 
 func TestPush(t *testing.T) {
-	vm := buildVM(t, "handler 0 neg1 zero one push1 45 push2 01 02 ret enddef")
+	vm := buildVM(t, "handler 0 neg1 zero one maxnum minnum push1 45 push2 01 02 ret enddef")
 	vm.Init(0)
 	err := vm.Run(false)
 	assert.Nil(t, err)
-	checkStack(t, vm.Stack(), -1, 0, 1, 69, 513)
+	checkStack(t, vm.Stack(), -1, 0, 1, math.MaxInt64, math.MinInt64, 69, 513)
 }
 
 func TestBigPush(t *testing.T) {

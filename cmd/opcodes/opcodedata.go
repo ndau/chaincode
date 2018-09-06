@@ -172,6 +172,30 @@ var opcodeData = opcodeInfos{
 		Enabled: true,
 	},
 	opcodeInfo{
+		Value:   0x1C,
+		Name:    "MaxNum",
+		Summary: "Pushes the largest possible numeric value onto the stack.",
+		Doc:     "",
+		Example: example{
+			Pre:  "",
+			Inst: "maxnum",
+			Post: "9223372036854775807"},
+		Parms:   []parm{},
+		Enabled: true,
+	},
+	opcodeInfo{
+		Value:   0x1D,
+		Name:    "MinNum",
+		Summary: "Pushes the most negative possible numeric value onto the stack.",
+		Doc:     "",
+		Example: example{
+			Pre:  "",
+			Inst: "minnum",
+			Post: "-9223372036854775808"},
+		Parms:   []parm{},
+		Enabled: true,
+	},
+	opcodeInfo{
 		Value:   0x20,
 		Name:    "Zero",
 		Synonym: "False",

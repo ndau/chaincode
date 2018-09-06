@@ -126,6 +126,8 @@ func TestUnitaryOpcodes1(t *testing.T) {
 			one
 			true
 			neg1
+			maxnum
+			minnum
 			now
 			rand
 			add
@@ -149,7 +151,7 @@ func TestUnitaryOpcodes1(t *testing.T) {
 	checkParse(t, "Unitary1", code, `
 		800001
 		00 0102 0506 090C
-		1011 2020 1a1b 1b2c
+		1011 2020 1a 1b1b 1c1d 2c
 		2e40 4142 4344 4546
 		4849 4A4B 5051 5253
 		5488`)
