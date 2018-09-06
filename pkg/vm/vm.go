@@ -23,9 +23,6 @@ func SetMaxCodeLength(n int) {
 	maxCodeLength = n
 }
 
-// Chaincode is the type for the VM bytecode program
-type Chaincode []Opcode
-
 // RunState is the current run state of the VM
 type RunState byte
 
@@ -159,44 +156,12 @@ func (vm *ChaincodeVM) PreLoad(cb ChasmBinary) error {
 	return vm.PreLoadOpcodes(cb.Data)
 }
 
-// ConvertToOpcodes accepts an array of bytes and returns a Chaincode (array of opcodes)
-func ConvertToOpcodes(b []byte) Chaincode {
-	ops := make([]Opcode, len(b))
-	for i := range b {
-		ops[i] = Opcode(b[i])
-	}
-	return Chaincode(ops)
-}
-
-// IsValidChaincode tests if an array of opcodes is a potentially valid
-// Chaincode program.
-func IsValidChaincode(data Chaincode) error {
-	if data == nil {
-		return ValidationError{"missing code"}
-	}
-	if len(data) > maxCodeLength {
-		return ValidationError{"code is too long"}
-	}
-	// make sure the executable part of the code is valid
-	_, _, err := validateStructure(data)
-	if err != nil {
-		return err
-	}
-	// now generate a bitset of used opcodes from the instructions
-	usedOpcodes := getUsedOpcodes(generateInstructions(data))
-	// if it's not a proper subset of the enabled opcodes, don't let it run
-	if !usedOpcodes.IsSubsetOf(EnabledOpcodes) {
-		return ValidationError{"code contains illegal opcodes"}
-	}
-	return nil
-}
-
 // PreLoadOpcodes acepts an array of opcodes and validates it.
 // If it fails to validate, the VM is not modified.
 // However, if it does validate the VM is updated with
 // code and function tables.
 func (vm *ChaincodeVM) PreLoadOpcodes(data Chaincode) error {
-	if err := IsValidChaincode(data); err != nil {
+	if err := data.IsValid(); err != nil {
 		return err
 	}
 
