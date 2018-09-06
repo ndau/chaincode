@@ -428,3 +428,19 @@ func TestNumericUnaryOps(t *testing.T) {
 		})
 	}
 }
+
+func TestBytes(t *testing.T) {
+	// this tests that the Bytes function roundtrips properly
+	prog := `handler 3 10 12 14 add enddef
+		handler 2 0 5 mul enddef
+		`
+	vm := buildVM(t, prog)
+	assert.Equal(t, []int{0, 5, 16, 18, 20}, vm.HandlerIDs())
+
+	// copy the code
+	code := vm.code[:]
+	b := vm.Bytes()
+
+	code2 := ConvertToOpcodes(b)
+	assert.Equal(t, code, code2)
+}

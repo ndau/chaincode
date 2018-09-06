@@ -328,3 +328,12 @@ func (vm *ChaincodeVM) String() string {
 	disasm, _ := vm.Disassemble(vm.pc)
 	return fmt.Sprintf("%-40s STK: %s\n", disasm, strings.Join(st1, ", "))
 }
+
+// Bytes returns the []byte corresponding to the chaincode
+func (vm *ChaincodeVM) Bytes() []byte {
+	b := make([]byte, len(vm.code))
+	for i := range vm.code {
+		b[i] = byte(vm.code[i])
+	}
+	return b
+}
