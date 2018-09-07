@@ -260,6 +260,14 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		if err := vm.stack.Push(NewNumber(-1)); err != nil {
 			return vm.runtimeError(err)
 		}
+	case OpMaxNum:
+		if err := vm.stack.Push(NewNumber(math.MaxInt64)); err != nil {
+			return vm.runtimeError(err)
+		}
+	case OpMinNum:
+		if err := vm.stack.Push(NewNumber(math.MinInt64)); err != nil {
+			return vm.runtimeError(err)
+		}
 	case OpRand:
 		r, err := vm.rand.RandInt()
 		if err != nil {

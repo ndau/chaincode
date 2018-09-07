@@ -19,6 +19,8 @@ var opcodeMap = map[string]Opcode{
 	"one":     OpOne,
 	"neg1":    OpNeg1,
 	"true":    OpTrue,
+	"maxnum":  OpMaxNum,
+	"minnum":  OpMinNum,
 	"zero":    OpZero,
 	"false":   OpFalse,
 	"push1":   OpPush1,

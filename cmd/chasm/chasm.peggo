@@ -88,7 +88,9 @@ Opcode =
 	/ "muldiv" { return newUnitaryOpcode(vm.OpMulDiv) }
 	/ "mul" { return newUnitaryOpcode(vm.OpMul) }
 	/ "mod" { return newUnitaryOpcode(vm.OpMod) }
+	/ "minnum" { return newUnitaryOpcode(vm.OpMinNum) }
 	/ "min" { return newUnitaryOpcode(vm.OpMin) }
+	/ "maxnum" { return newUnitaryOpcode(vm.OpMaxNum) }
 	/ "max" { return newUnitaryOpcode(vm.OpMax) }
 	/ "lte" { return newUnitaryOpcode(vm.OpLte) }
 	/ "lt" { return newUnitaryOpcode(vm.OpLt) }
