@@ -238,6 +238,22 @@ func TestDivMod(t *testing.T) {
 	checkStack(t, vm.Stack(), 2, 3)
 }
 
+func TestMulDiv(t *testing.T) {
+	vm := buildVM(t, "handler 0 push1 64 push1 11 push1 19 muldiv enddef")
+	vm.Init(0)
+	err := vm.Run(false)
+	assert.Nil(t, err)
+	checkStack(t, vm.Stack(), 68)
+}
+
+func TestMulDivBig(t *testing.T) {
+	vm := buildVM(t, "handler 0 push8 00 00 b2 d3 59 5b f0 06 push6 00 00 00 00 00 01 push6 00 00 00 00 00 02 muldiv enddef")
+	vm.Init(0)
+	err := vm.Run(false)
+	assert.Nil(t, err)
+	checkStack(t, vm.Stack(), 250000000000000000)
+}
+
 func TestMathErrors(t *testing.T) {
 	vm := buildVM(t, "handler 0 push1 55 zero div enddef")
 	vm.Init(0)

@@ -225,11 +225,13 @@ func TestToValue(t *testing.T) {
 func TestExtractConstants(t *testing.T) {
 	type nest2 struct {
 		P string `chain:"15"`
+		Y int64
 		Q string `chain:"16"`
 	}
 
 	type nest1 struct {
 		H string `chain:"1"`
+		X int64
 		J string `chain:"3"`
 		M nest2  `chain:"."`
 	}
@@ -326,13 +328,13 @@ func TestExtractConstants(t *testing.T) {
 		}, nil, true},
 		{"not a struct", args{[]int{3}}, nil, true},
 		{"nested struct", args{
-			nest1{"a", "b", nest2{"c", "d"}}},
+			nest1{"a", 0, "b", nest2{"c", 0, "d"}}},
 			map[string]byte{"H": 1, "J": 3, "P": 15, "Q": 16}, false},
 		{"nested struct with no . tag", args{
-			nonest1{"a", "b", nest2{"c", "d"}}},
+			nonest1{"a", "b", nest2{"c", 0, "d"}}},
 			map[string]byte{"H": 1, "J": 3}, false},
 		{"nested struct with ptr", args{
-			nestp{"a", "b", &nest2{"c", "d"}}},
+			nestp{"a", "b", &nest2{"c", 0, "d"}}},
 			map[string]byte{"H": 1, "J": 3, "P": 15, "Q": 16}, false},
 	}
 	for _, tt := range tests {
