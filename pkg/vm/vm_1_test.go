@@ -664,6 +664,14 @@ func TestSlice(t *testing.T) {
 	checkStack(t, vm.Stack(), 2)
 }
 
+func TestSlice2(t *testing.T) {
+	vm := buildVM(t, "handler 0 pushl zero append one append push1 2 append dup len one sub zero swap slice len enddef")
+	vm.Init(0)
+	err := vm.Run(false)
+	assert.Nil(t, err)
+	checkStack(t, vm.Stack(), 2)
+}
+
 func TestSum(t *testing.T) {
 	vm := buildVM(t, "handler 0 pushl zero append one append push1 2 append push1 3 append sum enddef")
 	vm.Init(0)
