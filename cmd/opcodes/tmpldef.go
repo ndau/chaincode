@@ -10,6 +10,7 @@ package vm
 type Opcode byte
 
 //go:generate stringer -trimprefix Op -type Opcode opcodes.go
+//go:generate msgp -tests=0
 
 // Opcodes
 const (
