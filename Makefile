@@ -1,16 +1,12 @@
 .PHONY: generate clean fuzz fuzzmillion benchmarks test examples all
 
-all: clean generate test fuzz benchmarks examples
+all: clean generate test fuzz benchmarks examples coverage
 
 fuzz: test
-	FUZZ_RUNS=50000 go test --race -v -timeout 30s ./pkg/vm -run "TestFuzzJunk"
-	FUZZ_RUNS=50000 go test --race -v -timeout 30s ./pkg/vm -run "TestFuzzHandlers"
-	FUZZ_RUNS=5000 go test --race -v -timeout 30s ./pkg/vm -run "TestFuzzValid"
+	FUZZ_RUNS=50000 go test --race -v -timeout 1m ./pkg/vm -run "TestFuzz*" -coverprofile=/tmp/coverfuzz
 
 fuzzmillion: test
-	FUZZ_RUNS=1000000 go test --race -v -timeout 1h ./pkg/vm -run "TestFuzzJunk"
-	FUZZ_RUNS=1000000 go test --race -v -timeout 1h ./pkg/vm -run "TestFuzzHandlers"
-	FUZZ_RUNS=1000000 go test --race -v -timeout 2h ./pkg/vm -run "TestFuzzValid"
+	FUZZ_RUNS=1000000 go test --race -v -timeout 2h ./pkg/vm -run "TestFuzz*" -coverprofile=/tmp/coverfuzz
 
 benchmarks:
 	go test -bench ./pkg/vm -benchmem
@@ -53,9 +49,10 @@ cmd/chasm/chasm.go: cmd/chasm/chasm.peggo
 	pigeon -o ./cmd/chasm/chasm.go ./cmd/chasm/chasm.peggo
 
 test: cmd/chasm/chasm.go pkg/vm/*.go pkg/chain/*.go chasm
-	go test ./pkg/chain -v --race -timeout 10s
-	go test ./cmd/chasm -v --race -timeout 10s
-	go test ./pkg/vm -v --race -timeout 10s
+	rm -f /tmp/cover*
+	go test ./pkg/chain -v --race -timeout 10s -coverprofile=/tmp/coverchain
+	go test ./cmd/chasm -v --race -timeout 10s -coverprofile=/tmp/coverchasm
+	go test ./pkg/vm -v --race -timeout 10s -coverprofile=/tmp/covervm
 
 examples: chasm
 	./cmd/chasm/chasm --output cmd/chasm/examples/quadratic.chbin --comment "Test of quadratic" cmd/chasm/examples/quadratic.chasm
