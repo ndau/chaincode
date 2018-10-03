@@ -107,8 +107,7 @@ func BenchmarkQuad(b *testing.B) {
 	prog := strings.NewReader(`{
 		"name": "examples/quadratic.chasm",
 		"comment": "Test of quadratic",
-		"context": "TEST",
-		"data": "AIAAIQMhBSEHIRUOAw0BBUJCDgMOAkJAQBCI"
+		"data": "oAAhAyEFIQchFQ4DDQEFQkIOAw4CQkBAiA=="
 	} `)
 	bin, err := Deserialize(prog)
 	if err != nil {

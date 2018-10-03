@@ -1,4 +1,4 @@
-// This file is generated automatically; DO NOT EDIT.
+// Code generated automatically by "make generate"; DO NOT EDIT.
 
 package vm
 

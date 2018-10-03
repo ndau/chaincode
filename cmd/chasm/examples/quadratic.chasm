@@ -3,7 +3,7 @@
 ; and x on the stack and calculates
 ; a*x*x + b*x + c
 
-handler Event_Default {
+handler EVENT_DEFAULT {
     A = 3
     B = 5
     C = 7

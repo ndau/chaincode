@@ -40,7 +40,14 @@ func doOpcodesGo(tname string, ts string, w io.Writer) error {
 	return tmpl.Execute(w, opcodeData)
 }
 
-func generateGoFile(name, tmpl string) {
+func doConstantsGo(tname string, ts string, w io.Writer) error {
+	var tmpl = template.Must(template.New(tname).Funcs(funcMap).Parse(ts))
+
+	data := getNdauIndices()
+	return tmpl.Execute(w, data)
+}
+
+func generateGoFile(name, tmpl string, doit func(string, string, io.Writer) error) {
 	f := os.Stdout
 	var err error
 	ondisk := false
@@ -52,7 +59,7 @@ func generateGoFile(name, tmpl string) {
 		}
 	}
 
-	err = doOpcodesGo(name, tmpl, f)
+	err = doit(name, tmpl, f)
 	if err != nil {
 		panic(err)
 	}
@@ -69,6 +76,7 @@ func main() {
 		MiniAsm string `help:"mini-assembler opcodes -- ./pkg/vm/miniasmOpcodes.go"`
 		Extra   string `help:"extrabytes helper for opcodes -- ./pkg/vm/extrabytes.go"`
 		Enabled string `help:"bitset of enabled opcodes -- ./pkg/vm/enabledopcodes.go"`
+		Consts  string `help:"predefined constants for chasm -- ./cmd/chasm/predefined.go"`
 		Pigeon  string `help:"pigeon grammar for opcodes -- ./cmd/chasm/chasm.peggo (modifies this file)"`
 	}
 	arg.MustParse(&args)
@@ -76,19 +84,23 @@ func main() {
 	var err error
 
 	if args.Defs != "" {
-		generateGoFile(args.Defs, tmplOpcodesDef)
+		generateGoFile(args.Defs, tmplOpcodesDef, doOpcodesGo)
 	}
 
 	if args.MiniAsm != "" {
-		generateGoFile(args.MiniAsm, tmplOpcodesMiniAsm)
+		generateGoFile(args.MiniAsm, tmplOpcodesMiniAsm, doOpcodesGo)
 	}
 
 	if args.Extra != "" {
-		generateGoFile(args.Extra, tmplOpcodesExtra)
+		generateGoFile(args.Extra, tmplOpcodesExtra, doOpcodesGo)
 	}
 
 	if args.Enabled != "" {
-		generateGoFile(args.Enabled, tmplOpcodesEnabled)
+		generateGoFile(args.Enabled, tmplOpcodesEnabled, doOpcodesGo)
+	}
+
+	if args.Consts != "" {
+		generateGoFile(args.Consts, tmplConstDef, doConstantsGo)
 	}
 
 	if args.Opcodes != "" {
