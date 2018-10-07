@@ -82,6 +82,6 @@ examples: chasm
 	$(CHASM) --output $(EXAMPLES)/zero.chbin --comment "returns numeric 0 in all cases" $(EXAMPLES)/zero.chasm
 	$(CHASM) --output $(EXAMPLES)/rfe.chbin --comment "standard RFE rules" $(EXAMPLES)/rfe.chasm
 
-$(CRANK): cmd/crank/*.go cmd/crank/glide.* cmd/opcodes/tmplconst.go $(OPCODES)
+$(CRANK): cmd/crank/*.go cmd/crank/glide.* generate
 	go build -o $(CRANK) ./cmd/crank
 
