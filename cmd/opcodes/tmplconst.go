@@ -12,7 +12,7 @@ func predefinedConstants() map[string]string {
 	k := map[string]string{
 		"EVENT_DEFAULT":                "0",
 		"EVENT_TRANSFER":               "1",
-		"EVENT_CHANGETRANSFERKEY":      "2",
+		"EVENT_CHANGEVALIDATION":       "2",
 		"EVENT_RELEASEFROMENDOWMENT":   "3",
 		"EVENT_CHANGESETTLEMENTPERIOD": "4",
 		"EVENT_DELEGATE":               "5",

@@ -1,5 +1,6 @@
 CHASM = cmd/chasm/chasm
 CHAIN = cmd/chain/chain
+CRANK = cmd/crank/crank
 EXAMPLES = cmd/chasm/examples
 OPCODES = cmd/opcodes/opcodes
 
@@ -79,7 +80,8 @@ examples: chasm
 	$(CHASM) --output $(EXAMPLES)/first.chbin --comment "the first key must be set" $(EXAMPLES)/first.chasm
 	$(CHASM) --output $(EXAMPLES)/one.chbin --comment "unconditionally return numeric 1" $(EXAMPLES)/one.chasm
 	$(CHASM) --output $(EXAMPLES)/zero.chbin --comment "returns numeric 0 in all cases" $(EXAMPLES)/zero.chasm
+	$(CHASM) --output $(EXAMPLES)/rfe.chbin --comment "standard RFE rules" $(EXAMPLES)/rfe.chasm
 
-$(CRANK): cmd/crank/*.go cmd/crank/glide.*
+$(CRANK): cmd/crank/*.go cmd/crank/glide.* cmd/opcodes/tmplconst.go $(OPCODES)
 	go build -o $(CRANK) ./cmd/crank
 
