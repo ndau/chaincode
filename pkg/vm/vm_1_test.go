@@ -1,7 +1,10 @@
 package vm
 
 import (
+	"fmt"
 	"math"
+	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -393,6 +396,160 @@ func TestIfNested3(t *testing.T) {
 	err := vm.Run(false)
 	assert.Nil(t, err)
 	checkStack(t, vm.Stack(), 19, 19, 17)
+}
+
+func TestIfNested4(t *testing.T) {
+	vm := buildVM(t, `
+	handler 0 					; X
+		dup						; X X
+		push1 4					; X X 4
+		lt						; X (X < 4)
+		ifnz 					; X
+			dup					; X X
+			push1 2				; X X 2
+			lt					; X (X < 2)
+			ifnz 				; X
+				dup				; X X
+				push1 1			; X X 1
+				lt				; X (X < 1)
+				ifnz 			; X
+					push1 40	; X 40
+				else
+					push1 41	; X 41
+				endif
+			else
+				dup				; X X
+				push1 3			; X X 3
+				lt				; X (X < 3)
+				ifnz 			; X
+					push1 42	; X 42
+				else
+					push1 43	; X 43
+				endif
+			endif
+		else
+			dup					; X X
+			push1 6				; X X 6
+			lt					; X (X < 6)
+			ifnz 				; X
+				dup				; X X
+				push1 5			; X X 5
+				lt				; X (X < 5)
+				ifnz 			; X
+					push1 44	; X 44
+				else
+					push1 45	; X 45
+				endif
+			else
+				dup				; X X
+				push1 7			; X X 7
+				lt				; X (X < 7)
+				ifnz 			; X
+					push1 46	; X 46
+				else
+					push1 47	; X 47
+				endif
+			endif
+		endif
+	enddef
+	`)
+	for i := int64(0); i < 8; i++ {
+		vm.Init(0, NewNumber(i))
+		err := vm.Run(false)
+		assert.Nil(t, err)
+		checkStack(t, vm.Stack(), i, 0x40+i)
+	}
+}
+
+func buildNestedConditional(mask, min, max int) string {
+	code := ""
+	tmplN := `dup						; X X
+		push1 %[1]x					; X X %[1]d
+		and						; X (x & %[1]d)
+		ifz 					; X
+		`
+	tmpl1 := `dup					; X X
+		push1 1					; X X 1
+		and						; X (x & 1)
+		ifz					; X
+			push1 %x
+		else
+			push1 %x
+		endif
+		`
+	if mask == 1 {
+		code = fmt.Sprintf(tmpl1, min, min+1)
+	} else {
+		code = fmt.Sprintf(tmplN, mask)
+		code += buildNestedConditional(mask>>1, min, (min+max)/2)
+		code += "else\n"
+		code += buildNestedConditional(mask>>1, (min+max)/2, max)
+		code += "endif\n"
+	}
+	return code
+}
+
+// formatLine simply formats a single line of asm
+// so that we have a hope of reading/debugging the generated code
+// It's relatively stupid and will definitely fail if your line
+// contains a semicolon that is not the start of a comment
+func formatLine(s string, indent, commentindent int) (string, int) {
+	const indentstep = 2
+	// this doesn't work with quoted strings that contain ;
+	p := regexp.MustCompile("[ \t]*([A-Za-z0-9_]+)?([^;]*)?(;.*)?")
+	parts := p.FindStringSubmatch(s)
+	// fmt.Printf("%#v\n", parts)
+	parts[2] = strings.TrimSpace(parts[2])
+	if parts[0] == "" && parts[2] != "" {
+		return fmt.Sprintf("%*s%s", indent, "", parts[3]), indent
+	}
+	newindent := indent
+	switch strings.ToLower(parts[1]) {
+	case "handler", "ifz", "ifnz", "def":
+		newindent += indentstep
+	case "else":
+		indent -= indentstep
+	case "enddef", "endif":
+		indent -= indentstep
+		newindent -= indentstep
+	}
+	code := fmt.Sprintf("%*s%s %s", indent, "", parts[1], parts[2])
+	return fmt.Sprintf("%-*s%s", commentindent, code, parts[3]), newindent
+}
+
+// formatChaincode formats a block of chaincode
+func formatChaincode(s string) string {
+	lines := strings.Split(s, "\n")
+	newlines := make([]string, len(lines))
+	commentind := 40
+	ind := 0
+	for i := range lines {
+		newlines[i], ind = formatLine(lines[i], ind, commentind)
+	}
+	return strings.Join(newlines, "\n")
+}
+
+// This test generates a deeply nested structure that
+// simply does a binary test of which bits are set in a value;
+// we can run it up to 4 levels deep without running out of
+// bytes in the VM. It evaluates that the if..else...endif structure
+// works properly even with deep nesting.
+func TestIfNestedDeep(t *testing.T) {
+	const depth = 4
+	mask := 1 << depth
+	s := "handler 0\n"
+	s += buildNestedConditional(mask>>1, 0, mask)
+	s += "enddef\n"
+	fmt.Println(formatChaincode(s))
+
+	vm := buildVM(t, s)
+	for i := int64(0); i < int64(mask); i++ {
+		vm.Init(0, NewNumber(i))
+		err := vm.Run(true)
+		assert.Nil(t, err)
+		checkStack(t, vm.Stack(), i, i)
+	}
+
 }
 
 func TestIfNull1(t *testing.T) {
