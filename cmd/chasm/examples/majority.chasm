@@ -18,6 +18,6 @@ handler EVENT_DEFAULT {
     lt                      ;tx (true if nkeys < 2*nsigs)
 }
 
-handler EVENT_CHANGETRANSFERKEY {
+handler EVENT_CHANGEVALIDATION {
     false
 }

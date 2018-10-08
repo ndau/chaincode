@@ -7,7 +7,7 @@ handler EVENT_DEFAULT {
 ;    account
 ;    transaction
 ;    64-bit bitmask of which authorized keys were found in the signature list
-handler EVENT_CHANGETRANSFERKEY {
+handler EVENT_CHANGEVALIDATION {
                             ; acct tx bm
     push 0x1ff              ; acct tx bm 0b_0001_1111_1111 --> lowest 9 bits set
     and                     ; acct tx bm_lowest9
@@ -36,7 +36,7 @@ handler EVENT_RELEASEFROMENDOWMENT {
     dup                     ; rfe_acct tx bm qty_ntrd_sigs dest_ndau dest_ndau
     push 10000              ; rfe_acct tx bm qty_ntrd_sigs dest_ndau dest_ndau 10000
     lt                      ; rfe_acct tx bm qty_ntrd_sigs dest_ndau (dest_ndau < 10000)
-    if                      ; rfe_acct tx bm qty_ntrd_sigs dest_ndau
+    ifnz                    ; rfe_acct tx bm qty_ntrd_sigs dest_ndau
         swap                ; rfe_acct tx bm dest_ndau qty_ntrd_sigs
         one                 ; rfe_acct tx bm dest_ndau qty_ntrd_sigs 1
         lt                  ; rfe_acct tx bm dest_ndau (qty_ntrd_sigs < 1)
@@ -44,14 +44,14 @@ handler EVENT_RELEASEFROMENDOWMENT {
     else                    ; rfe_acct tx bm qty_ntrd_sigs dest_ndau
         push 100000         ; rfe_acct tx bm qty_ntrd_sigs dest_ndau 100000
         lt                  ; rfe_acct tx bm qty_ntrd_sigs (dest_ndau < 100000)
-        if                  ; rfe_acct tx bm qty_ntrd_sigs
+        ifnz                ; rfe_acct tx bm qty_ntrd_sigs
             push 2          ; rfe_acct tx bm qty_ntrd_sigs 2
             lt              ; rfe_acct tx bm (qty_ntrd_sigs < 2)
                             ; false is 0 is success
         else                ; rfe_acct tx bm qty_ntrd_sigs
             push 2          ; rfe_acct tx bm qty_ntrd_sigs 2
             gte             ; rfe_acct tx bm (qty_ntrd_sigs >= 2)
-            if              ; rfe_acct tx bm
+            ifnz            ; rfe_acct tx bm
                 push LOW_9  ; rfe_acct tx bm low_9
                 and         ; rfe_acct tx bpc_sigs
                 count1s     ; rfe_acct tx qty_bpc_sigs
