@@ -16,18 +16,21 @@ func (vm *ChaincodeVM) runtimeError(err error) error {
 	return rte.PC(vm.pc - 1)
 }
 
-// This is only run on VMs that have been validated
-func (vm *ChaincodeVM) skipToMatchingBracket() error {
+// This is only run on VMs that have been validated. It is called when we hit an
+// IF that fails (in which case it skips to the instruction after the ELSE if it
+// exists, or the ENDIF if it doesn't) or we hit an ELSE in execution, which
+// means we should skip to instruction after the corresponding ENDIF.
+func (vm *ChaincodeVM) skipToMatchingBracket(wasIf bool) error {
+	nesting := 0
 	for {
 		instr := vm.code[vm.pc]
 		extra := extraBytes(vm.code, vm.pc)
 		vm.pc += extra + 1
-		nesting := 0
 		switch instr {
 		case OpIfNZ, OpIfZ:
 			nesting++
 		case OpElse:
-			if nesting == 0 {
+			if nesting == 0 && wasIf {
 				// we're at the right level, so we're done
 				return nil
 			}
@@ -654,9 +657,9 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		default:
 			// nothing else can test true for zeroness
 		}
-		// if we did not succeed, we have to skip to the matching end or else opcode
+		// if we did not succeed, we have to skip to the matching END or ELSE opcode
 		if !success {
-			if err := vm.skipToMatchingBracket(); err != nil {
+			if err := vm.skipToMatchingBracket(true); err != nil {
 				return vm.runtimeError(err)
 			}
 		}
@@ -675,14 +678,14 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		}
 		// if we did not succeed, we have to skip to the matching END or ELSE opcode
 		if !success {
-			if err := vm.skipToMatchingBracket(); err != nil {
+			if err := vm.skipToMatchingBracket(true); err != nil {
 				return vm.runtimeError(err)
 			}
 		}
 	case OpElse:
 		// if we hit this in execution, it means we did the first clause of an if statement
 		// and now need to skip to the matching end
-		if err := vm.skipToMatchingBracket(); err != nil {
+		if err := vm.skipToMatchingBracket(false); err != nil {
 			return vm.runtimeError(err)
 		}
 	case OpEndIf:

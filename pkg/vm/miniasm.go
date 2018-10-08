@@ -28,7 +28,7 @@ import (
 // nolint: deadcode
 func MiniAsm(s string) Chaincode {
 	// whitespace
-	wsp := regexp.MustCompile("[ \t\r\n]")
+	wsp := regexp.MustCompile("[ \t\r\n]|;.+\n")
 	// timestamp
 	tsp := regexp.MustCompile("[0-9-]+T[0-9:]+Z")
 	// address is 48 chars starting with nd and not containing io10
