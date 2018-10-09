@@ -15,12 +15,6 @@ import (
 	"github.com/oneiro-ndev/ndaumath/pkg/types"
 )
 
-// func bind(k vm.Value) func() vm.Value {
-// 	return func() vm.Value{
-// 		return k
-// 	}
-// }
-
 var fieldIDs map[string]byte
 
 func setFieldIDs(m map[string]byte) {
@@ -35,7 +29,6 @@ func loadConstants() {
 		panic(err)
 	}
 	setFieldIDs(ks)
-	// json.NewEncoder(os.Stdout).Encode(ad)
 }
 
 // getRandomAccount randomly generates an account object
