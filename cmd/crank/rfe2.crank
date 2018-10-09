@@ -1,0 +1,6 @@
+push { ACCT_BALANCE: 5000000000000 }
+push { }
+push { }
+push 3599
+event 3
+trace

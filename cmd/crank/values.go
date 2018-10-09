@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"math/rand"
 	"regexp"
 	"strconv"
@@ -13,6 +14,22 @@ import (
 	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 	"github.com/oneiro-ndev/ndaumath/pkg/types"
 )
+
+var fieldIDs map[string]byte
+
+func setFieldIDs(m map[string]byte) {
+	fieldIDs = m
+}
+
+func loadConstants() {
+	// we have to create a couple of objects so that we can build a list of helpers for disassembly
+	ad := backing.AccountData{Lock: &backing.Lock{}, Stake: &backing.Stake{}, Settlements: []backing.Settlement{}}
+	ks, err := chain.ExtractConstants(ad)
+	if err != nil {
+		panic(err)
+	}
+	setFieldIDs(ks)
+}
 
 // getRandomAccount randomly generates an account object
 // it probably needs to be smarter than this
@@ -44,7 +61,7 @@ func parseValues(s string) ([]vm.Value, error) {
 	bytep := regexp.MustCompile(`^B\((([0-9A-Fa-f][0-9A-Fa-f] *)+)\)`)
 	// fields for structs are fieldid:Value; they are returned as a struct with one field that
 	// is consolidated when they are enclosed in {} wrappers
-	strfieldp := regexp.MustCompile("^([0-9]+) *:")
+	strfieldp := regexp.MustCompile("^([0-9]+|[A-Z_]+) *:")
 
 	s = strings.TrimSpace(s)
 	retval := make([]vm.Value, 0)
@@ -102,7 +119,19 @@ func parseValues(s string) ([]vm.Value, error) {
 		case strfieldp.FindString(s) != "":
 			subm := strfieldp.FindStringSubmatch(s)
 			f := subm[1]
-			fieldid, _ := strconv.ParseInt(f, 10, 8)
+			// figure out the field id based on whether it's a number or a value
+			var fieldid byte
+			var ok bool
+			fmt.Printf("F0=%#v\n", f[0])
+			if f[0] >= '0' && f[0] <= '9' {
+				i, _ := strconv.ParseInt(f, 10, 8)
+				fieldid = byte(i)
+			} else {
+				fieldid, ok = fieldIDs[f]
+				if !ok {
+					return retval, errors.New("Couldn't find value for " + f)
+				}
+			}
 			s = s[len(subm[0]):]
 			contents, err := parseValues(s)
 			if err != nil {
@@ -111,7 +140,7 @@ func parseValues(s string) ([]vm.Value, error) {
 			if len(contents) == 0 {
 				return retval, errors.New("field index without field value")
 			}
-			str := vm.NewStruct().Set(byte(fieldid), contents[0])
+			str := vm.NewStruct().Set(fieldid, contents[0])
 			retval = append(append(retval, str), contents[1:]...)
 			return retval, nil
 

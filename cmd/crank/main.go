@@ -2,17 +2,17 @@ package main
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"regexp"
 	"sort"
 	"strconv"
 	"strings"
 
-	"github.com/oneiro-ndev/chaincode/pkg/chain"
 	"github.com/oneiro-ndev/chaincode/pkg/vm"
-	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 
 	arg "github.com/alexflint/go-arg"
 )
@@ -50,8 +50,13 @@ func help(rs *runtimeState, args string) error {
 
 // load is a command that loads a file into a VM (or errors trying)
 func (rs *runtimeState) load(filename string) error {
-	f, err := os.Open(filename)
+	p, err := filepath.Abs(filename)
 	if err != nil {
+		return err
+	}
+	f, err := os.Open(p)
+	if err != nil {
+		fmt.Println("Open error: ", err)
 		return err
 	}
 	bin, err := vm.Deserialize(f)
@@ -80,18 +85,37 @@ func (rs *runtimeState) reinit(stk *vm.Stack) error {
 // setevent sets up the VM to run the given event, which means that it calls
 // reinit to set up the stack as well.
 func (rs *runtimeState) setevent(eventid string) error {
-	ev, err := strconv.ParseInt(strings.TrimSpace(eventid), 0, 8)
-	if err != nil {
-		return err
+	eventid = strings.TrimSpace(eventid)
+	var ev byte
+	var ok bool
+	if eventid[0] >= '0' && eventid[0] <= '9' {
+		i, _ := strconv.ParseInt(eventid, 10, 8)
+		ev = byte(i)
+	} else {
+		ev, ok = fieldIDs[eventid]
+		if !ok {
+			fmt.Println(fieldIDs)
+			return errors.New("Couldn't find value for " + eventid)
+		}
 	}
-	rs.event = byte(ev)
+
+	rs.event = ev
 
 	return rs.reinit(rs.vm.Stack())
 }
 
 func (rs *runtimeState) run(debug bool) error {
 	err := rs.vm.Run(debug)
-	return err
+	if err != nil {
+		return err
+	}
+	v, err := rs.vm.Stack().Peek()
+	if err != nil {
+		return err
+	}
+	success := !(v.IsTrue())
+	fmt.Printf("Result: %v (success=%t)", v, success)
+	return nil
 }
 
 func (rs *runtimeState) step(debug bool) error {
@@ -124,6 +148,9 @@ func (rs *runtimeState) repl(cmdsrc io.Reader) {
 		if err != nil && err != io.EOF {
 			panic(err)
 		}
+		if !usingStdin {
+			fmt.Println(s)
+		}
 		if err == io.EOF && usingStdin == true {
 			// we're really done now, shut down normally
 			s = "quit\n"
@@ -152,6 +179,8 @@ func main() {
 	h := commands["help"]
 	h.handler = help
 	commands["help"] = h
+
+	loadConstants()
 
 	var args struct {
 		Input string `arg:"-i" help:"Input command file"`
