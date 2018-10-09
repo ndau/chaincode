@@ -17,6 +17,7 @@ type index struct {
 
 func getNdauIndexMap() map[string]byte {
 	indices := make(map[string]byte)
+	indices["EVENT_DEFAULT"] = 0
 
 	// these are a couple other objects that are not accounted for in the transaction
 	// iteration below

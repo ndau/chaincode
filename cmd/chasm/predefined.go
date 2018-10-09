@@ -16,6 +16,7 @@ func predefinedConstants() map[string]string {
 		"ACCT_WEIGHTEDAVERAGEAGE":      "68",
 		"ACCT_VALIDATIONSCRIPT":        "69",
 		"ACCT_SETTLEMENTS":             "70",
+		"EVENT_DEFAULT":                "0",
 		"EVENT_TRANSFER":               "1",
 		"EVENT_CHANGEVALIDATION":       "2",
 		"EVENT_RELEASEFROMENDOWMENT":   "3",
