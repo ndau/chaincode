@@ -2,7 +2,7 @@ package main
 
 // we expect this to be invoked on OpcodeData
 const tmplOpcodesDef = `
-// This file is generated automatically; DO NOT EDIT.
+// Code generated automatically by "make generate"; DO NOT EDIT.
 
 package vm
 

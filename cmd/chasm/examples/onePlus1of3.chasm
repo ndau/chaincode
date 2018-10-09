@@ -5,7 +5,7 @@
 ;    transaction
 ;    64-bit bitmask of which authorized keys were found in the signature list
 
-handler Event_Default {
+handler EVENT_DEFAULT {
     ; stack top on right -- sig bitmask on top, then tx, then account
                             ;acct tx bm
     dup                     ;acct tx bm bm

@@ -37,6 +37,8 @@ type Script struct {
 	funcs map[string]int
 }
 
+var _ Node = (*Script)(nil)
+
 func (n *Script) fixup() {
 	for _, op := range n.nodes {
 		if f, ok := op.(Fixupper); ok {
@@ -69,6 +71,8 @@ type HandlerDef struct {
 	ids   []byte
 	nodes []Node
 }
+
+var _ Node = (*HandlerDef)(nil)
 
 func (n *HandlerDef) bytes() []byte {
 	if len(n.ids) == 1 && n.ids[0] == 0 {
@@ -118,6 +122,8 @@ type FunctionDef struct {
 	argcount byte
 }
 
+var _ Node = (*FunctionDef)(nil)
+
 func (n *FunctionDef) fixup(funcs map[string]int) {
 	me, ok := funcs[n.name]
 	if ok {
@@ -160,6 +166,8 @@ type UnitaryOpcode struct {
 	opcode vm.Opcode
 }
 
+var _ Node = (*UnitaryOpcode)(nil)
+
 func (n *UnitaryOpcode) bytes() []byte {
 	return []byte{byte(n.opcode)}
 }
@@ -173,6 +181,8 @@ type BinaryOpcode struct {
 	opcode vm.Opcode
 	value  byte
 }
+
+var _ Node = (*BinaryOpcode)(nil)
 
 func (n BinaryOpcode) bytes() []byte {
 	return []byte{byte(n.opcode), n.value}
@@ -192,6 +202,8 @@ type CallOpcode struct {
 	name   string
 	fix    byte
 }
+
+var _ Node = (*CallOpcode)(nil)
 
 func (n *CallOpcode) fixup(funcs map[string]int) {
 	me, ok := funcs[n.name]
@@ -217,6 +229,8 @@ type DecoOpcode struct {
 	fix    byte
 }
 
+var _ Node = (*DecoOpcode)(nil)
+
 func (n *DecoOpcode) fixup(funcs map[string]int) {
 	me, ok := funcs[n.name]
 	if ok {
@@ -241,6 +255,8 @@ func newDecoOpcode(op vm.Opcode, name string, fieldid string) (*DecoOpcode, erro
 type PushOpcode struct {
 	arg int64
 }
+
+var _ Node = (*PushOpcode)(nil)
 
 // This function builds a sequence of bytes consisting of either:
 //   A ZERO, ONE, or NEG1 opcode
@@ -282,6 +298,8 @@ func newPushOpcode(s string) (*PushOpcode, error) {
 type PushB struct {
 	b []byte
 }
+
+var _ Node = (*PushB)(nil)
 
 func newPushB(iface interface{}) (*PushB, error) {
 	ia := toIfaceSlice(iface)
@@ -331,6 +349,8 @@ func (n *PushB) bytes() []byte {
 type PushTimestamp struct {
 	t int64
 }
+
+var _ Node = (*PushTimestamp)(nil)
 
 func newPushTimestamp(s string) (*PushTimestamp, error) {
 	ts, err := vm.ParseTimestamp(s)

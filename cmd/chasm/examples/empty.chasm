@@ -1,4 +1,4 @@
-handler Event_Default {
+handler EVENT_DEFAULT {
     ; nothing: leave the stack as it is
     ; useful when we know the top of the stack is a plausible
     ; return value

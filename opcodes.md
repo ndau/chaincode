@@ -1,7 +1,7 @@
 
 # Opcodes for Chaincode
 
-This file is generated automatically; DO NOT EDIT.
+Generated automatically by "make generate"; DO NOT EDIT.
 
 ## Implemented and Enabled Opcodes
 
