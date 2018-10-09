@@ -1,20 +1,24 @@
 CHASM = cmd/chasm/chasm
 CHAIN = cmd/chain/chain
 CRANK = cmd/crank/crank
+CHFMT = cmd/chfmt/chfmt
 EXAMPLES = cmd/chasm/examples
 OPCODES = cmd/opcodes/opcodes
 
-.PHONY: generate clean fuzz fuzzmillion benchmarks test examples all build chasm crank opcodes
+.PHONY: generate clean fuzz fuzzmillion benchmarks \
+	test examples all build chasm crank chfmt opcodes format
 
-all: clean generate build test fuzz benchmarks examples coverage
+all: clean generate build test fuzz benchmarks format examples coverage
 
-build: generate opcodes chasm crank
+build: generate opcodes chasm crank chfmt
 
 opcodes: $(OPCODES)
 
 crank: $(CRANK)
 
 chasm: $(CHASM)
+
+chfmt: $(CHFMT)
 
 fuzz: test
 	FUZZ_RUNS=10000 go test --race -v -timeout 1m ./pkg/vm -run "TestFuzz*" -coverprofile=/tmp/coverfuzz
@@ -33,6 +37,7 @@ clean:
 	rm -f $(OPCODES)
 	rm -f $(CHASM) cmd/chasm/chasm.go
 	rm -f $(CRANK)
+	rm -f $(CHFMT) cmd/chfmt/chfmt.go
 
 opcodes.md: opcodes
 	$(OPCODES) --opcodes opcodes.md
@@ -82,6 +87,21 @@ examples: chasm
 	$(CHASM) --output $(EXAMPLES)/zero.chbin --comment "returns numeric 0 in all cases" $(EXAMPLES)/zero.chasm
 	$(CHASM) --output $(EXAMPLES)/rfe.chbin --comment "standard RFE rules" $(EXAMPLES)/rfe.chasm
 
+format: chfmt
+	$(CHFMT) -O $(EXAMPLES)/quadratic.chasm
+	$(CHFMT) -O $(EXAMPLES)/majority.chasm
+	$(CHFMT) -O $(EXAMPLES)/onePlus1of3.chasm
+	$(CHFMT) -O $(EXAMPLES)/first.chasm
+	$(CHFMT) -O $(EXAMPLES)/one.chasm
+	$(CHFMT) -O $(EXAMPLES)/zero.chasm
+	$(CHFMT) -O $(EXAMPLES)/rfe.chasm
+
 $(CRANK): cmd/crank/*.go cmd/crank/glide.* generate
 	go build -o $(CRANK) ./cmd/crank
+
+cmd/chfmt/chfmt.go: cmd/chfmt/chfmt.peggo
+	pigeon -o ./cmd/chfmt/chfmt.go ./cmd/chfmt/chfmt.peggo
+
+$(CHFMT): cmd/chfmt/*.go cmd/chfmt/chfmt.go
+	go build -o $(CHFMT) ./cmd/chfmt
 
