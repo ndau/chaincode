@@ -15,5 +15,3 @@ import:
   repo: git@github.com:oneiro-ndev/ndaumath.git
   subpackages:
   - pkg/types
-- package: github.com/oneiro-ndev/signature
-  repo: git@github.com:oneiro-ndev/signature.git
