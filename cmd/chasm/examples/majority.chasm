@@ -6,16 +6,16 @@
 ;    bitmask of which authorized keys were found in the signature list
 
 handler EVENT_DEFAULT {
-    ; stack top on right -- sig bitmask on top, then tx, then account
-                            ;acct tx bm
-    count1s                 ;acct tx nsigs
-    roll 2                  ;tx nsigs acct
-    field ACCT_TRANSFERKEYS ;tx nsigs [keys]
-    len                     ;tx nsigs nkeys
-    swap                    ;tx nkeys nsigs
-    dup                     ;tx nkeys nsigs nsigs
-    add                     ;tx nkeys 2*nsigs
-    lt                      ;tx (true if nkeys < 2*nsigs)
+                                    ; stack top on right -- sig bitmask on top, then tx, then account
+                                    ;acct tx bm
+    count1s                         ;acct tx nsigs
+    roll 2                          ;tx nsigs acct
+    field ACCT_TRANSFERKEYS         ;tx nsigs [keys]
+    len                             ;tx nsigs nkeys
+    swap                            ;tx nkeys nsigs
+    dup                             ;tx nkeys nsigs nsigs
+    add                             ;tx nkeys 2*nsigs
+    lt                              ;tx (true if nkeys < 2*nsigs)
 }
 
 handler EVENT_CHANGEVALIDATION {

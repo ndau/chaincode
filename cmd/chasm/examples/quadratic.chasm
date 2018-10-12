@@ -12,15 +12,15 @@ handler EVENT_DEFAULT {
     push A
     push B
     push C
-    push X	; ABCX
-    roll 3	; BCXA
-    pick 1	; BCXAX
-    dup  	; BCXAXX
-    mul		; BCXAR
-    mul		; BCXR
-    roll 3  ; CXRB
-    roll 2  ; CRBX
-    mul		; CRS
-    add		; CR
-    add		; R
+    push X                          ; ABCX
+    roll 3                          ; BCXA
+    pick 1                          ; BCXAX
+    dup                             ; BCXAXX
+    mul                             ; BCXAR
+    mul                             ; BCXR
+    roll 3                          ; CXRB
+    roll 2                          ; CRBX
+    mul                             ; CRS
+    add                             ; CR
+    add                             ; R
 }
