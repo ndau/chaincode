@@ -12,6 +12,7 @@ import (
 
 func buildVM(t *testing.T, s string) *ChaincodeVM {
 	ops := MiniAsm(s)
+	assert.Nil(t, ops.IsValid())
 	bin := ChasmBinary{"test", "TEST", ops}
 	vm, err := New(bin)
 	assert.Nil(t, err)
@@ -1064,4 +1065,36 @@ func TestCallFail3(t *testing.T) {
 	vm.Init(0)
 	err := vm.Run(false)
 	assert.NotNil(t, err)
+}
+
+func TestSizeFail1(t *testing.T) {
+	s := `handler 0
+		pusha ndadprx764ciigti8d8whtw2kct733r85qvjukhqhke3dka4
+		pusha ndadprx764ciigti8d8whtw2kct733r85qvjukhqhke3dka4
+		pusha ndadprx764ciigti8d8whtw2kct733r85qvjukhqhke3dka4
+		pusha ndadprx764ciigti8d8whtw2kct733r85qvjukhqhke3dka4
+		pusha ndadprx764ciigti8d8whtw2kct733r85qvjukhqhke3dka4
+		pusha ndadprx764ciigti8d8whtw2kct733r85qvjukhqhke3dka4
+		pusha ndadprx764ciigti8d8whtw2kct733r85qvjukhqhke3dka4
+		pusha ndadprx764ciigti8d8whtw2kct733r85qvjukhqhke3dka4
+		pusha ndadprx764ciigti8d8whtw2kct733r85qvjukhqhke3dka4
+		pusha ndadprx764ciigti8d8whtw2kct733r85qvjukhqhke3dka4
+		pusha ndadprx764ciigti8d8whtw2kct733r85qvjukhqhke3dka4
+		pusha ndadprx764ciigti8d8whtw2kct733r85qvjukhqhke3dka4
+		pusha ndadprx764ciigti8d8whtw2kct733r85qvjukhqhke3dka4
+		pusha ndadprx764ciigti8d8whtw2kct733r85qvjukhqhke3dka4
+		pusha ndadprx764ciigti8d8whtw2kct733r85qvjukhqhke3dka4
+		pusha ndadprx764ciigti8d8whtw2kct733r85qvjukhqhke3dka4
+	enddef`
+	// this VM is 803 bytes total and 35 bytes excluding the data
+	// so by default it should load
+	vm := buildVM(t, s)
+	assert.NotNil(t, vm)
+	// but if we put the maximum code size to 30
+	// it should fail with code too long
+	SetMaxLengths(30, 1024)
+	buildVMfail(t, s)
+	// and if we put max data size to 256 it should fail with data too long
+	SetMaxLengths(256, 256)
+	buildVMfail(t, s)
 }
