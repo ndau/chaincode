@@ -23,7 +23,6 @@ var maxTotalLength = 1024
 
 // SetMaxLengths allows globally setting the maximum number of bytes a VM may contain.
 func SetMaxLengths(code, total int) {
-	// TODO: LOG THIS EVENT!
 	maxCodeLength = code
 	maxTotalLength = total
 }
