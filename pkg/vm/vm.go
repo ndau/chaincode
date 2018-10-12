@@ -14,13 +14,17 @@ import (
 
 // The VM package implements a virtual machine for chaincode.
 
-// maxCodeLength is the maximum number of bytes that a VM may contain.
+// maxCodeLength is the maximum number of bytes that a VM may contain, excluding
+// the data bytes for PushA and PushB.
 var maxCodeLength = 256
 
-// SetMaxCodeLength allows globally setting the maximum number of bytes a VM may contain.
-func SetMaxCodeLength(n int) {
-	// TODO: LOG THIS EVENT!
-	maxCodeLength = n
+// maxTotalLength is the maximum number of bytes that a VM may contain in total
+var maxTotalLength = 1024
+
+// SetMaxLengths allows globally setting the maximum number of bytes a VM may contain.
+func SetMaxLengths(code, total int) {
+	maxCodeLength = code
+	maxTotalLength = total
 }
 
 // RunState is the current run state of the VM

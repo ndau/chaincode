@@ -41,14 +41,19 @@ func (c Chaincode) IsValid() error {
 	if c == nil {
 		return ValidationError{"missing code"}
 	}
-	if len(c) > maxCodeLength {
-		return ValidationError{"code is too long"}
+	if len(c) > maxTotalLength {
+		return ValidationError{"code and data combined are too long"}
 	}
 	// make sure the executable part of the code is valid
 	_, _, err := validateStructure(c)
 	if err != nil {
 		return err
 	}
+
+	if c.CodeSize() > maxCodeLength {
+		return ValidationError{"code is too long"}
+	}
+
 	// now generate a bitset of used opcodes from the instructions
 	usedOpcodes := getUsedOpcodes(generateInstructions(c))
 	// if it's not a proper subset of the enabled opcodes, don't let it run
