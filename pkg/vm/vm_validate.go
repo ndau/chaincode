@@ -206,7 +206,7 @@ func DisableOpcode(op Opcode) bool {
 // CodeSize calculates the size of code without counting the size of the
 // data included in PushA and PushB opcodes. It should only be called
 // after validateStructure.
-func CodeSize(code Chaincode) int {
+func (code Chaincode) CodeSize() int {
 	size := 0
 	skipcount := 0
 	for offset := 0; offset < len(code); offset += skipcount + 1 {

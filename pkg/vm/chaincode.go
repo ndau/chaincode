@@ -50,7 +50,7 @@ func (c Chaincode) IsValid() error {
 		return err
 	}
 
-	if CodeSize(c) > maxCodeLength {
+	if c.CodeSize() > maxCodeLength {
 		return ValidationError{"code is too long"}
 	}
 
