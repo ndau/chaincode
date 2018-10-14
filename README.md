@@ -24,15 +24,19 @@ This repository contains several pieces:
     * Table of enabled opcodes (allowing us to disable opcodes on the fly if necessary)
     * Table of bytecounts for multibyte instructions
 
-## Building the code generator
-To build the code generator and get all the files up-to-date:
+## Building things
+
+There's a fairly complete Makefile in the root of this repository.
+
+To get things working, run `make setup`. If it errors on `hash pigeon`, install the pigeon tool with:
 
 ```sh
-cd cmd/opcodes
-go get
-cd ../..
-make generate
+go get -u github.com/mna/pigeon
 ```
+
+Once `make setup` has been run, you can just do `make all` to build everything and run some tests, code coverage, etc.
+
+There are some details below for individual libraries, but most of that has been moved into the makefile.
 
 ## Testing the VM library
 
@@ -49,25 +53,4 @@ It first runs the normal VM tests with the -short flag (which excludes the fuzz 
 If you run tests with `go test` without the -short flag, you'll also get a short run of the fuzz tests that are designed to complete in less than 10 seconds.
 
 If you want to really exercise things, you can run `make fuzzmillion`, which runs each of the fuzz tests one million times.
-
-## Building chasm
-
-You need to have [pigeon](https://github.com/mna/pigeon) installed in order to build the parser.
-
-```sh
-go get -u github.com/mna/pigeon
-```
-
-To build and test:
-```sh
-cd cmd/chasm
-make test
-```
-
-To use the assembler to compile examples:
-```sh
-make examples
-```
-
-Running the assembler with `chasm -h` will print a help message.
 

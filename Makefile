@@ -33,6 +33,11 @@ generate: opcodes.md pkg/vm/opcodes.go pkg/vm/miniasmOpcodes.go pkg/vm/opcode_st
 		pkg/vm/extrabytes.go pkg/vm/enabledopcodes.go \
 		cmd/chasm/chasm.peggo cmd/chasm/predefined.go
 
+setup:
+	hash pigeon
+	go get -u ./...
+	cd cmd/crank && glide install
+
 clean:
 	rm -f $(OPCODES)
 	rm -f $(CHASM) cmd/chasm/chasm.go

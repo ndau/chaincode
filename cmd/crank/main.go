@@ -10,9 +10,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/oneiro-ndev/chaincode/pkg/chain"
 	"github.com/oneiro-ndev/chaincode/pkg/vm"
-	"github.com/oneiro-ndev/ndau/pkg/ndau/backing"
 
 	arg "github.com/alexflint/go-arg"
 )
