@@ -28,11 +28,27 @@ This repository contains several pieces:
 
 There's a fairly complete Makefile in the root of this repository.
 
-To get things working, run `make setup`. If it errors on `hash pigeon`, install the pigeon tool with:
+To get things working, run `make setup`.
+
+
+If it errors on `hash pigeon`, install the pigeon tool with:
 
 ```sh
 go get -u github.com/mna/pigeon
 ```
+
+If it errors on `hash msgp`, install the msgp tool with:
+
+```sh
+go get github.com/tinylib/msgp && go install github.com/tinylib/msgp
+```
+
+If it errors on `hash stringer`, install the stringer tool with:
+
+```sh
+go get  golang.org/x/tools/cmd/stringer
+```
+
 
 Once `make setup` has been run, you can just do `make all` to build everything and run some tests, code coverage, etc.
 

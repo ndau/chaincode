@@ -35,6 +35,8 @@ generate: opcodes.md pkg/vm/opcodes.go pkg/vm/miniasmOpcodes.go pkg/vm/opcode_st
 
 setup:
 	hash pigeon
+	hash msgp
+	hash stringer
 	go get -u ./...
 	cd cmd/opcodes && glide install
 	cd cmd/chasm && glide install

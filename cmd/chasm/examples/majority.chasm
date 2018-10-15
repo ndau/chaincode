@@ -10,7 +10,7 @@ handler EVENT_DEFAULT {
                                     ;acct tx bm
     count1s                         ;acct tx nsigs
     roll 2                          ;tx nsigs acct
-    field ACCT_TRANSFERKEYS         ;tx nsigs [keys]
+    field ACCT_VALIDATIONKEYS       ;tx nsigs [keys]
     len                             ;tx nsigs nkeys
     swap                            ;tx nkeys nsigs
     dup                             ;tx nkeys nsigs nsigs
