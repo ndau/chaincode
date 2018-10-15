@@ -36,13 +36,25 @@ generate: opcodes.md pkg/vm/opcodes.go pkg/vm/miniasmOpcodes.go pkg/vm/opcode_st
 setup:
 	hash pigeon
 	go get -u ./...
+	cd cmd/opcodes && glide install
+	cd cmd/chasm && glide install
 	cd cmd/crank && glide install
+	cd cmd/chfmt && glide install
+
+novendor:
+	rm -rf cmd/opcodes/vendor
+	rm -rf cmd/chasm/vendor
+	rm -rf cmd/crank/vendor
+	rm -rf cmd/chfmt/vendor
+
 
 clean:
 	rm -f $(OPCODES)
-	rm -f $(CHASM) cmd/chasm/chasm.go
+	rm -f $(CHASM)
+	touch cmd/chasm/chasm.peggo
 	rm -f $(CRANK)
-	rm -f $(CHFMT) cmd/chfmt/chfmt.go
+	rm -f $(CHFMT)
+	touch cmd/chfmt/chfmt.peggo
 
 opcodes.md: opcodes
 	$(OPCODES) --opcodes opcodes.md

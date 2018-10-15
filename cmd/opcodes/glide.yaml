@@ -1,0 +1,17 @@
+package: github.com/oneiro-ndev/chaincode/cmd/opcodes
+import:
+- package: github.com/alexflint/go-arg
+- package: github.com/oneiro-ndev/chaincode
+  version: ~0.10.2
+  repo: git@github.com:oneiro-ndev/chaincode.git
+  subpackages:
+  - pkg/chain
+- package: github.com/oneiro-ndev/metanode
+  subpackages:
+  - pkg/meta/transaction
+- package: github.com/oneiro-ndev/ndau
+  version: ~0.7.6
+  repo: git@github.com:oneiro-ndev/ndau.git
+  subpackages:
+  - pkg/ndau
+  - pkg/ndau/backing

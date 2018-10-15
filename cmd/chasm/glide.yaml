@@ -1,0 +1,16 @@
+package: github.com/oneiro-ndev/chaincode/cmd/chasm
+import:
+- package: github.com/alexflint/go-arg
+- package: github.com/oneiro-ndev/chaincode
+  version: ~0.10.2
+  repo: git@github.com:oneiro-ndev/chaincode.git
+  subpackages:
+  - pkg/vm
+- package: github.com/oneiro-ndev/ndaumath
+  version: ~0.5.3
+  repo: git@github.com:oneiro-ndev/ndaumath.git
+  subpackages:
+  - pkg/address
+- package: github.com/stretchr/testify
+  subpackages:
+  - assert
