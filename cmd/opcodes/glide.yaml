@@ -15,3 +15,5 @@ import:
   subpackages:
   - pkg/ndau
   - pkg/ndau/backing
+- package: github.com/tendermint/tendermint
+  version: ~0.22.8

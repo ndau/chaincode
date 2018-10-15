@@ -1,5 +1,5 @@
-hash: 53e5fb11a563fe11bf7a43300e085d8340db0df16a406ca68bbfb9b74e0dba4b
-updated: 2018-10-15T13:51:40.669812-04:00
+hash: 4a20d3cfe167d1d95f7aafd1bb6919f6243e7b7f40253c92e78aecb875faf21c
+updated: 2018-10-15T14:48:41.036107-04:00
 imports:
 - name: github.com/alexflint/go-arg
   version: f7c0423bd11ee80ab81d25c6d46f492998af8547
@@ -222,7 +222,7 @@ imports:
   version: 7711be769e350176643c97a46d4de3a113841fd8
   repo: git@github.com:oneiro-ndev/noms-util.git
 - name: github.com/oneiro-ndev/o11y
-  version: e09dad6f9a0caec0781ce4a86af300452494e928
+  version: 56253f7bc9986c67ffe49c0004ee90520a026917
   repo: git@github.com:oneiro-ndev/o11y.git
   subpackages:
   - pkg/honeycomb

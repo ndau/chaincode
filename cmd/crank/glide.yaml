@@ -17,3 +17,5 @@ import:
   repo: git@github.com:oneiro-ndev/ndaumath.git
   subpackages:
   - pkg/types
+- package: github.com/tendermint/tendermint
+  version: ~0.22.4
