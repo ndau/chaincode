@@ -7,7 +7,7 @@ package main
 func predefinedConstants() map[string]string {
 	k := map[string]string{
 		"ACCT_BALANCE":                 "61",
-		"ACCT_TRANSFERKEYS":            "62",
+		"ACCT_VALIDATIONKEYS":          "62",
 		"ACCT_REWARDSTARGET":           "63",
 		"ACCT_INCOMINGREWARDSFROM":     "64",
 		"ACCT_DELEGATIONNODE":          "65",
@@ -35,6 +35,7 @@ func predefinedConstants() map[string]string {
 		"EVENT_GTVALIDATORCHANGE":      "255",
 		"LOCK_NOTICEPERIOD":            "91",
 		"LOCK_UNLOCKSON":               "92",
+		"LOCK_BONUS":                   "93",
 		"SETTLEMENTSETTINGS_PERIOD":    "111",
 		"SETTLEMENTSETTINGS_CHANGESAT": "112",
 		"SETTLEMENTSETTINGS_NEXT":      "113",
