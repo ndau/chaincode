@@ -56,6 +56,31 @@ func TestPush(t *testing.T) {
 	checkStack(t, vm.Stack(), -1, 0, 1, math.MaxInt64, math.MinInt64, 69, 513)
 }
 
+func TestPush1(t *testing.T) {
+	vm := buildVM(t, `
+	handler 0
+	push1 7F ; should be 127
+	push1 80 ; should be -128
+	push1 FF ; this should be -1
+	push1 F0 ; this should be -16
+	enddef`)
+	vm.Init(0)
+	err := vm.Run(false)
+	assert.Nil(t, err)
+	checkStack(t, vm.Stack(), 127, -128, -1, -16)
+}
+
+func TestPush1All(t *testing.T) {
+	for i := -128; i < 128; i++ {
+		s := fmt.Sprintf("handler 0 push1 %02x enddef", byte(int8(i)))
+		vm := buildVM(t, s)
+		vm.Init(0)
+		err := vm.Run(false)
+		assert.Nil(t, err)
+		checkStack(t, vm.Stack(), int64(i))
+	}
+}
+
 func TestBigPush(t *testing.T) {
 	vm := buildVM(t, `handler 0
 		push3 1 2 3

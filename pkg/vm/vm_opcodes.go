@@ -214,9 +214,11 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 			vm.pc++
 			value |= int64(b) << (i * 8)
 		}
+		// if the high bit was zero, it is a negative number, so
+		// we need to sign-extend it all the way out to the high byte
 		if b&0x80 != 0 {
 			for i := nbytes; i < 8; i++ {
-				value |= 0xFF
+				value |= 0xFF << (8 * i)
 			}
 		}
 		if err := vm.stack.Push(NewNumber(value)); err != nil {
