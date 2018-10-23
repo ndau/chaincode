@@ -110,9 +110,16 @@ func TestLookup2(t *testing.T) {
 }
 
 func TestLookupFail1(t *testing.T) {
+	// no value is > 127 so the lookup fails
 	vm := buildVM(t, `
-		handler 0 lookup 0 enddef
-		def 0 0 field 1 push1 FF gt enddef
+		handler 0
+			lookup 0
+		enddef
+		def 0 0
+			field 1
+			push1 7f
+			gt
+		enddef
 	`)
 	l := NewList()
 	for i := int64(0); i < 5; i++ {
