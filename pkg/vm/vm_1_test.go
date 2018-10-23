@@ -56,6 +56,7 @@ func TestPush(t *testing.T) {
 	checkStack(t, vm.Stack(), -1, 0, 1, math.MaxInt64, math.MinInt64, 69, 513)
 }
 
+// test that simple pushes and sign extension work right
 func TestPush1(t *testing.T) {
 	vm := buildVM(t, `
 	handler 0
@@ -70,6 +71,20 @@ func TestPush1(t *testing.T) {
 	checkStack(t, vm.Stack(), 127, -128, -1, -16)
 }
 
+func TestBadHandler(t *testing.T) {
+	// this test is designed to catch a handler without a parameter
+	buildVMfail(t, `handler`)
+}
+
+func TestBadSize(t *testing.T) {
+	buildVMfail(t, `
+	handler 0
+	2D 10
+	enddef
+	`)
+}
+
+// make sure that we check every possible 1-byte value
 func TestPush1All(t *testing.T) {
 	for i := -128; i < 128; i++ {
 		s := fmt.Sprintf("handler 0 push1 %02x enddef", byte(int8(i)))
@@ -81,6 +96,43 @@ func TestPush1All(t *testing.T) {
 	}
 }
 
+// Push the value 5 onto the stack using every possible push operator
+func TestPush5AllWays(t *testing.T) {
+	vm := buildVM(t, `
+	handler 0
+	push1 5
+	push2 5 0
+	push3 5 0 0
+	push4 5 0 0 0
+	push5 5 0 0 0 0
+	push6 5 0 0 0 0 0
+	push7 5 0 0 0 0 0 0
+	push8 5 0 0 0 0 0 0 0
+	enddef`)
+	vm.Init(0)
+	err := vm.Run(false)
+	assert.Nil(t, err)
+	checkStack(t, vm.Stack(), 5, 5, 5, 5, 5, 5, 5, 5)
+}
+
+// Push the value -5 onto the stack using every possible push operator
+func TestPushMinus5AllWays(t *testing.T) {
+	vm := buildVM(t, `
+	handler 0
+	push1 fb
+	push2 fb ff
+	push3 fb ff ff
+	push4 fb ff ff ff
+	push5 fb ff ff ff ff
+	push6 fb ff ff ff ff ff
+	push7 fb ff ff ff ff ff ff
+	push8 fb ff ff ff ff ff ff ff
+	enddef`)
+	vm.Init(0)
+	err := vm.Run(false)
+	assert.Nil(t, err)
+	checkStack(t, vm.Stack(), -5, -5, -5, -5, -5, -5, -5, -5)
+}
 func TestBigPush(t *testing.T) {
 	vm := buildVM(t, `handler 0
 		push3 1 2 3
@@ -306,7 +358,7 @@ func TestMathErrors(t *testing.T) {
 }
 
 func TestMathOverflows(t *testing.T) {
-	vm := buildVM(t, "handler 0 push8 7a bb cc dd ee ff 99 88 push1 ff mul enddef")
+	vm := buildVM(t, "handler 0 push8 7a bb cc dd ee ff 99 88 push1 7f mul enddef")
 	vm.Init(0)
 	err := vm.Run(false)
 	assert.NotNil(t, err, "mul overflow")
@@ -571,7 +623,7 @@ func TestIfNestedDeep(t *testing.T) {
 	vm := buildVM(t, s)
 	for i := int64(0); i < int64(mask); i++ {
 		vm.Init(0, NewNumber(i))
-		err := vm.Run(true)
+		err := vm.Run(false)
 		assert.Nil(t, err)
 		checkStack(t, vm.Stack(), i, i)
 	}

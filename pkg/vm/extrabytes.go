@@ -4,8 +4,16 @@ package vm
 
 // extraBytes returns the number of extra bytes associated with a given opcode
 func extraBytes(code Chaincode, offset int) int {
+	// helper function for safety
+	getat := func(ix int) Opcode {
+		if ix >= len(code) {
+			return 0
+		}
+		return code[ix]
+	}
+
 	numExtra := 0
-	op := code[offset]
+	op := getat(offset)
 	switch op {
 	case OpPick:
 		numExtra = 1
@@ -30,11 +38,11 @@ func extraBytes(code Chaincode, offset int) int {
 	case OpPush8:
 		numExtra = 8
 	case OpPushB:
-		numExtra = int(code[offset+1]) + 1
+		numExtra = int(getat(offset+1)) + 1
 	case OpPushT:
 		numExtra = 8
 	case OpPushA:
-		numExtra = int(code[offset+1]) + 1
+		numExtra = int(getat(offset+1)) + 1
 	case OpField:
 		numExtra = 1
 	case OpIsField:
@@ -54,7 +62,7 @@ func extraBytes(code Chaincode, offset int) int {
 	case OpLookup:
 		numExtra = 1
 	case OpHandler:
-		numExtra = int(code[offset+1]) + 1
+		numExtra = int(getat(offset+1)) + 1
 	}
 	return numExtra
 }

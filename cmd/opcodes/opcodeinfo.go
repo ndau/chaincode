@@ -73,7 +73,7 @@ type addrParm struct {
 }
 
 func (p addrParm) Nbytes() string {
-	return "int(code[offset+1]) + 1"
+	return "int(getat(offset+1)) + 1"
 }
 
 func (p addrParm) PeggoParm() string {
@@ -92,7 +92,7 @@ type pushbParm struct {
 }
 
 func (p pushbParm) Nbytes() string {
-	return "int(code[offset+1]) + 1"
+	return "int(getat(offset+1)) + 1"
 }
 
 func (p pushbParm) PeggoParm() string {
@@ -111,7 +111,7 @@ type eventListParm struct {
 }
 
 func (p eventListParm) Nbytes() string {
-	return "int(code[offset+1]) + 1"
+	return "int(getat(offset+1)) + 1"
 }
 
 func (p eventListParm) PeggoParm() string {

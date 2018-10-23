@@ -86,7 +86,13 @@ func validateStructure(code Chaincode) (map[byte]int, []funcInfo, error) {
 
 	// for offset, b := range code {
 	for offset := 0; offset < len(code); offset += skipcount + 1 {
+		// calculate how many extra bytes we need for this opcode
 		skipcount = extraBytes(code, offset)
+		// if we don't have that many left in the code block, it's bad
+		if offset+skipcount >= len(code) {
+			return handlers, functions, ValidationError{"missing operands"}
+		}
+
 		newstate, found := transitions[tr{state, code[offset]}]
 		if !found {
 			continue
