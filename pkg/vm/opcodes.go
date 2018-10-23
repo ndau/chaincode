@@ -40,7 +40,6 @@ const (
 	OpPushB   Opcode = 0x2a
 	OpPushT   Opcode = 0x2b
 	OpNow     Opcode = 0x2c
-	OpPushA   Opcode = 0x2d
 	OpRand    Opcode = 0x2e
 	OpPushL   Opcode = 0x2f
 	OpAdd     Opcode = 0x40

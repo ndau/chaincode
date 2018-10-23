@@ -15,7 +15,7 @@ import (
 // The VM package implements a virtual machine for chaincode.
 
 // maxCodeLength is the maximum number of bytes that a VM may contain, excluding
-// the data bytes for PushA and PushB.
+// the data bytes for PushB.
 var maxCodeLength = 256
 
 // maxTotalLength is the maximum number of bytes that a VM may contain in total

@@ -34,7 +34,6 @@ var opcodeMap = map[string]Opcode{
 	"pushb":   OpPushB,
 	"pusht":   OpPushT,
 	"now":     OpNow,
-	"pusha":   OpPushA,
 	"rand":    OpRand,
 	"pushl":   OpPushL,
 	"add":     OpAdd,
