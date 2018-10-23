@@ -35,7 +35,6 @@ var EnabledOpcodes = bitset256.New(
 	byte(OpPushB),
 	byte(OpPushT),
 	byte(OpNow),
-	byte(OpPushA),
 	byte(OpRand),
 	byte(OpPushL),
 	byte(OpAdd),

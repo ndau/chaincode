@@ -218,7 +218,7 @@ func genUnorderedInstruction() string {
 		switch op {
 		case OpDef, OpHandler, OpEndDef, OpCall, OpDeco, OpLookup, OpIfNZ, OpIfZ, OpElse, OpEndIf:
 			continue
-		case OpPushB, OpPushA:
+		case OpPushB:
 			// append up to 16 extra bytes
 			extra := rand.Intn(16)
 			s = append(s, fmt.Sprintf("%02x", extra))

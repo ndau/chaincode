@@ -80,7 +80,6 @@ Opcode =
 	/ "pusht" _ t:Timestamp { return newPushTimestamp(t.(string)) }
 	/ "pushl" { return newUnitaryOpcode(vm.OpPushL) }
 	/ "pushb" _ ba:Bytes { return newPushB(ba) }
-	/ "pusha" _ a:Address { return newPushAddr(a.(string)) }
 	/ "pick" _ offset:Value { return newBinaryOpcode(vm.OpPick, offset.(string)) }
 	/ "over" { return newUnitaryOpcode(vm.OpOver) }
 	/ "or" { return newUnitaryOpcode(vm.OpOr) }

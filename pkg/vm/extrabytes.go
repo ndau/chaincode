@@ -41,8 +41,6 @@ func extraBytes(code Chaincode, offset int) int {
 		numExtra = int(getat(offset+1)) + 1
 	case OpPushT:
 		numExtra = 8
-	case OpPushA:
-		numExtra = int(getat(offset+1)) + 1
 	case OpField:
 		numExtra = 1
 	case OpIsField:

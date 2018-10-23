@@ -19,7 +19,7 @@
 				},
 				{
 					"name": "keyword.control.push.chasm",
-					"match": "\\b(push|push1|push2|push3|push4|push5|push6|push7|push8|pusha|pushb|pusht)\\b",
+					"match": "\\b(push|push1|push2|push3|push4|push5|push6|push7|push8|pushb|pusht)\\b",
 					"comment": "push opcodes"
 				},
 				{

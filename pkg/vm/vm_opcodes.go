@@ -245,7 +245,7 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		if err := vm.stack.Push(ts); err != nil {
 			return vm.runtimeError(err)
 		}
-	case OpPushB, OpPushA:
+	case OpPushB:
 		n := int(vm.code[vm.pc])
 		vm.pc++
 		b := make([]byte, n)

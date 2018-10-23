@@ -169,23 +169,6 @@ func TestPushB2(t *testing.T) {
 	assert.Equal(t, NewBytes([]byte{65, 66, 67, 68, 69, 70, 71, 72, 73}), v)
 }
 
-func TestPushA(t *testing.T) {
-	vm := buildVM(t, `handler 0 pusha ndadprx764ciigti8d8whtw2kct733r85qvjukhqhke3dka4 enddef`)
-	vm.Init(0)
-	err := vm.Run(false)
-	assert.Nil(t, err)
-	v, err := vm.Stack().Pop()
-	assert.Nil(t, err)
-	assert.IsType(t, NewBytes(nil), v)
-	assert.Equal(t, NewBytes([]byte{
-		0x6e, 0x64, 0x61, 0x64, 0x70, 0x72, 0x78, 0x37,
-		0x36, 0x34, 0x63, 0x69, 0x69, 0x67, 0x74, 0x69,
-		0x38, 0x64, 0x38, 0x77, 0x68, 0x74, 0x77, 0x32,
-		0x6b, 0x63, 0x74, 0x37, 0x33, 0x33, 0x72, 0x38,
-		0x35, 0x71, 0x76, 0x6a, 0x75, 0x6b, 0x68, 0x71,
-		0x68, 0x6b, 0x65, 0x33, 0x64, 0x6b, 0x61, 0x34}), v)
-}
-
 func TestDrop(t *testing.T) {
 	vm := buildVM(t, "handler 0 push1 7 nop one zero neg1 drop drop2 enddef")
 	vm.Init(0)
@@ -1146,27 +1129,27 @@ func TestCallFail3(t *testing.T) {
 
 func TestSizeFail1(t *testing.T) {
 	s := `handler 0
-		pusha ndadprx764ciigti8d8whtw2kct733r85qvjukhqhke3dka4
-		pusha ndadprx764ciigti8d8whtw2kct733r85qvjukhqhke3dka4
-		pusha ndadprx764ciigti8d8whtw2kct733r85qvjukhqhke3dka4
-		pusha ndadprx764ciigti8d8whtw2kct733r85qvjukhqhke3dka4
-		pusha ndadprx764ciigti8d8whtw2kct733r85qvjukhqhke3dka4
-		pusha ndadprx764ciigti8d8whtw2kct733r85qvjukhqhke3dka4
-		pusha ndadprx764ciigti8d8whtw2kct733r85qvjukhqhke3dka4
-		pusha ndadprx764ciigti8d8whtw2kct733r85qvjukhqhke3dka4
-		pusha ndadprx764ciigti8d8whtw2kct733r85qvjukhqhke3dka4
-		pusha ndadprx764ciigti8d8whtw2kct733r85qvjukhqhke3dka4
-		pusha ndadprx764ciigti8d8whtw2kct733r85qvjukhqhke3dka4
-		pusha ndadprx764ciigti8d8whtw2kct733r85qvjukhqhke3dka4
-		pusha ndadprx764ciigti8d8whtw2kct733r85qvjukhqhke3dka4
-		pusha ndadprx764ciigti8d8whtw2kct733r85qvjukhqhke3dka4
-		pusha ndadprx764ciigti8d8whtw2kct733r85qvjukhqhke3dka4
-		pusha ndadprx764ciigti8d8whtw2kct733r85qvjukhqhke3dka4
+		pushb 20 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4
+		pushb 20 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4
+		pushb 20 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4
+		pushb 20 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4
+		pushb 20 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4
+		pushb 20 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4
+		pushb 20 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4
+		pushb 20 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4
+		pushb 20 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4
+		pushb 20 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4
+		pushb 20 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4
+		pushb 20 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4
+		pushb 20 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4
+		pushb 20 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4
+		pushb 20 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4
+		pushb 20 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4 1 2 3 4
 	enddef`
-	// this VM is 803 bytes total and 35 bytes excluding the data
+	// this VM has big data but small ish real code
 	// so by default it should load
 	vm := buildVM(t, s)
-	assert.NotNil(t, vm)
+	assert.NotNil(t, vm, "no error")
 	// but if we put the maximum code size to 30
 	// it should fail with code too long
 	SetMaxLengths(30, 1024)
