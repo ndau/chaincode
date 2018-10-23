@@ -8,7 +8,7 @@ OPCODES = cmd/opcodes/opcodes
 .PHONY: generate clean fuzz fuzzmillion benchmarks \
 	test examples all build chasm crank chfmt opcodes format
 
-all: clean generate build test fuzz benchmarks format examples coverage
+all: clean generate build test fuzz benchmarks format examples
 
 build: generate opcodes chasm crank chfmt
 
