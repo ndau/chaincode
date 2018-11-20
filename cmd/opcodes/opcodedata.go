@@ -1,5 +1,15 @@
 package main
 
+// These constants are used for stack coloring during a simulation run
+const (
+	StkNumber    = 0x01
+	StkTimestamp = 0x02
+	StkBytes     = 0x04
+	StkList      = 0x08
+	StkStruct    = 0x10
+	StkAny       = 0x1F
+)
+
 var opcodeData = opcodeInfos{
 	opcodeInfo{
 		Value:   0x00,
@@ -346,18 +356,6 @@ var opcodeData = opcodeInfos{
 			Inst: "now",
 			Post: "(current time as timestamp)"},
 		Parms:   []parm{},
-		Enabled: true,
-	},
-	opcodeInfo{
-		Value:   0x2D,
-		Name:    "PushA",
-		Summary: "Evaluates a to make sure it is formatted as a valid ndau-style address; if so, pushes it onto the stack as a Bytes object. If not, error.",
-		Doc:     "",
-		Example: example{
-			Pre:  "",
-			Inst: "pusha nda234...4b3",
-			Post: "nda234...4b3"},
-		Parms:   []parm{addrParm{}},
 		Enabled: true,
 	},
 	opcodeInfo{

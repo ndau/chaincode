@@ -117,18 +117,6 @@ func TestPush8BytesPositive(t *testing.T) {
 	bcheck(t, b, "28BEBAFECAEA1DAD1B")
 }
 
-func TestPushAddress(t *testing.T) {
-	op, err := newPushAddr("ndadprx764ciigti8d8whtw2kct733r85qvjukhqhke3dka4")
-	assert.Nil(t, err)
-	b := op.bytes()
-	bcheck(t, b, "2a306e64616470727837363463696967746938643877687477326b637437333372383571766a756b6871686b6533646b6134")
-}
-
-func TestPushBadAddress(t *testing.T) {
-	_, err := newPushAddr("ndadprx764ciigti8d8whxw2kct733r85qvjukhqhke3dka4")
-	assert.NotNil(t, err)
-}
-
 func TestPushTimestamp(t *testing.T) {
 	op, err := newPushTimestamp("2018-07-18T20:00:58Z")
 	assert.Nil(t, err)

@@ -6,8 +6,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/oneiro-ndev/ndaumath/pkg/address"
-
 	"github.com/oneiro-ndev/chaincode/pkg/vm"
 )
 
@@ -327,17 +325,6 @@ func newPushB(iface interface{}) (*PushB, error) {
 		}
 	}
 	return &PushB{out}, nil
-}
-
-// this pushes an address onto the stack as an array of bytes corresponding
-// to the string version of the address.
-// TODO: consider doing this in the decoded form
-func newPushAddr(addr string) (*PushB, error) {
-	_, err := address.Validate(addr)
-	if err != nil {
-		return nil, err
-	}
-	return &PushB{[]byte(addr)}, nil
 }
 
 func (n *PushB) bytes() []byte {
