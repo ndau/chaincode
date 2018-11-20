@@ -106,6 +106,8 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 
 	// fetch the instruction
 	instr := vm.code[vm.pc]
+	// we'll add this at the very bottom
+	extra := extraBytes(vm.code, vm.pc)
 	// we always increment the pc immediately; we may also add to it if an instruction has additional data
 	// when we report errors, we subtract 1 to get the correct value
 	vm.pc++
@@ -170,6 +172,7 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		if err = vm.stack.Push(v1); err != nil {
 			return vm.runtimeError(err)
 		}
+
 	case OpPick:
 		n := int(vm.code[vm.pc])
 		v, err := vm.stack.Get(n)
@@ -179,7 +182,6 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		if err = vm.stack.Push(v); err != nil {
 			return vm.runtimeError(err)
 		}
-		vm.pc++
 
 	case OpRoll:
 		n := int(vm.code[vm.pc])
@@ -190,7 +192,6 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		if err = vm.stack.Push(v); err != nil {
 			return vm.runtimeError(err)
 		}
-		vm.pc++
 
 	case OpTuck:
 		n := int(vm.code[vm.pc])
@@ -201,7 +202,6 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		if err = vm.stack.InsertAt(n, v); err != nil {
 			return vm.runtimeError(err)
 		}
-		vm.pc++
 
 	case OpRet:
 		vm.runstate = RsComplete
@@ -235,7 +235,6 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		if err := vm.stack.Push(NewNumber(value)); err != nil {
 			return vm.runtimeError(err)
 		}
-		vm.pc += int(nbytes)
 
 	case OpPushT:
 		var value int64
@@ -252,7 +251,6 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		if err := vm.stack.Push(ts); err != nil {
 			return vm.runtimeError(err)
 		}
-		vm.pc += 8
 
 	case OpNow:
 		ts, err := vm.now.Now()
@@ -273,7 +271,6 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		if err := vm.stack.Push(v); err != nil {
 			return vm.runtimeError(err)
 		}
-		vm.pc += n + 1
 
 	case OpOne:
 		if err := vm.stack.Push(NewNumber(1)); err != nil {
@@ -583,7 +580,6 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		if err := vm.stack.Push(f); err != nil {
 			return vm.runtimeError(err)
 		}
-		vm.pc++
 
 	case OpIsField:
 		st, err := vm.stack.PopAsStruct()
@@ -599,7 +595,6 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		if err := vm.stack.Push(f); err != nil {
 			return vm.runtimeError(err)
 		}
-		vm.pc++
 
 	case OpFieldL:
 		src, err := vm.stack.PopAsList()
@@ -621,7 +616,6 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		if err := vm.stack.Push(result); err != nil {
 			return vm.runtimeError(err)
 		}
-		vm.pc++
 
 	case OpDef:
 		// if we try to execute a def statement there has been an error and we should abort
@@ -641,7 +635,6 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		if err := vm.stack.Push(result); err != nil {
 			return vm.runtimeError(err)
 		}
-		vm.pc++
 
 	case OpDeco:
 		funcnum := int(vm.code[vm.pc])
@@ -668,7 +661,6 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		if err := vm.stack.Push(newlist); err != nil {
 			return vm.runtimeError(err)
 		}
-		vm.pc += 2
 
 	case OpEndDef:
 		// we hit this at the end of a function that hasn't used OpRet or OpFail
@@ -827,7 +819,6 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 				break
 			}
 		}
-		vm.pc++
 
 	case OpSort:
 		src, err := vm.stack.PopAsList()
@@ -862,7 +853,6 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		if err := vm.stack.Push(src); err != nil {
 			return vm.runtimeError(err)
 		}
-		vm.pc++
 
 	case OpLookup:
 		funcnum := int(vm.code[vm.pc])
@@ -892,7 +882,6 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		if err := vm.stack.Push(NewNumber(int64(foundix))); err != nil {
 			return vm.runtimeError(err)
 		}
-		vm.pc++
 
 	case OpOr, OpAnd, OpXor:
 		n1, err := vm.stack.PopAsInt64()
@@ -939,5 +928,6 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		return vm.runtimeError(newRuntimeError(fmt.Sprintf("unimplemented opcode %s at %d", instr, vm.pc)))
 	}
 
+	vm.pc += extra
 	return nil
 }
