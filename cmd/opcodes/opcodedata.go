@@ -893,7 +893,7 @@ var opcodeData = opcodeInfos{
 	opcodeInfo{
 		Value:   0xC2,
 		Name:    "Eq",
-		Summary: "Compares (and discards) the two top stack elements. If the types are different, fails execution. Otherwise, if they are equal in both type and value, leaves TRUE (1) on top of the stack, otherwise leaves FALSE (0) on top of the stack.",
+		Summary: "Compares (and discards) the two top stack elements. If the types are different, fails execution. If the types are the same, compares the values, and leaves TRUE when the second item is equal to the top item according to the comparison rules.",
 		Doc:     "",
 		Example: example{
 			Pre:  "A B",
