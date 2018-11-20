@@ -233,6 +233,9 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 			vm.pc++
 			value |= int64(b) << (i * 8)
 		}
+		if value < 0 {
+			return newRuntimeError("timestamps cannot be negative")
+		}
 		ts := NewTimestampFromInt(value)
 		if err := vm.stack.Push(ts); err != nil {
 			return vm.runtimeError(err)
@@ -635,7 +638,9 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 			}
 			// in order to limit attempts at memory bombs, deco cannot add non-scalars
 			if !retval.IsScalar() {
-				return vm.runtimeError(newRuntimeError("deco result must be scalar"))
+				err := newRuntimeError("deco result must be scalar")
+				err.(RuntimeError).PC(vm.pc - 2)
+				return vm.runtimeError(err)
 			}
 			newlist = newlist.Append(s.Set(fieldID, retval))
 		}
