@@ -601,7 +601,7 @@ func TestIfNestedDeep(t *testing.T) {
 	s := "handler 0\n"
 	s += buildNestedConditional(mask>>1, 0, mask)
 	s += "enddef\n"
-	fmt.Println(formatChaincode(s))
+	// fmt.Println(formatChaincode(s))
 
 	vm := buildVM(t, s)
 	for i := int64(0); i < int64(mask); i++ {
