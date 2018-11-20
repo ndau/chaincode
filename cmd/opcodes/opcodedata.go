@@ -1,15 +1,5 @@
 package main
 
-// These constants are used for stack coloring during a simulation run
-const (
-	StkNumber    = 0x01
-	StkTimestamp = 0x02
-	StkBytes     = 0x04
-	StkList      = 0x08
-	StkStruct    = 0x10
-	StkAny       = 0x1F
-)
-
 var opcodeData = opcodeInfos{
 	opcodeInfo{
 		Value:   0x00,
