@@ -2,6 +2,7 @@ package chain
 
 import (
 	"errors"
+	"fmt"
 	"math"
 	"reflect"
 	"regexp"
@@ -62,14 +63,14 @@ func ToValueScalar(x interface{}) (vm.Value, error) {
 			return vm.NewTrue(), nil
 		}
 		return vm.NewFalse(), nil
-	case reflect.Int, reflect.Int64:
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		// we have to explicitly handle types.Timestamp objects
 		if v.Type() == reflect.TypeOf(types.Timestamp(0)) {
 			return vm.NewTimestampFromInt(v.Int()), nil
 		}
 		n := v.Int()
 		return vm.NewNumber(n), nil
-	case reflect.Uint64, reflect.Uint8:
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		n := v.Uint()
 		if n > math.MaxInt64 {
 			return nil, errors.New("value doesn't fit into a Number")
@@ -116,7 +117,7 @@ func ToValueScalar(x interface{}) (vm.Value, error) {
 		// and arrays and slices happen at a higher level
 		return nil, errors.New("is container, not a scalar")
 	}
-	return nil, errors.New("unknown type")
+	return nil, fmt.Errorf("unknown type: %s", v.Kind())
 }
 
 // ToValue returns a Go value as a VM value, including if the Go value is a struct or array.
