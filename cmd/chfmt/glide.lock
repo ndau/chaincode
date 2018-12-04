@@ -1,8 +1,0 @@
-hash: 1fda4517cf0abbfbc9c1406e0bad7f2aa76af8c3ef6cf3d0af04132d6481423c
-updated: 2018-10-15T13:59:10.732979-04:00
-imports:
-- name: github.com/alexflint/go-arg
-  version: f7c0423bd11ee80ab81d25c6d46f492998af8547
-- name: github.com/alexflint/go-scalar
-  version: 45e5d6cd8605faef82fda2bacc59e734a0b6f1f0
-testImports: []

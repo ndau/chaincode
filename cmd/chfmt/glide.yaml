@@ -1,3 +1,0 @@
-package: github.com/oneiro-ndev/chaincode/cmd/chfmt
-import:
-- package: github.com/alexflint/go-arg
