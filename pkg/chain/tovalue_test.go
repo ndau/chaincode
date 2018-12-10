@@ -33,7 +33,7 @@ func TestToValueScalar(t *testing.T) {
 		{"ptr to time", &tt, ts, false},
 		{"timestamp", types.Timestamp(ts.T()), ts, false},
 		{"undecorated struct", struct{ X int }{3}, vm.NewStruct(), false},
-		{"unexpected type", int32(17), nil, true},
+		{"unexpected type", complex64(0 - 1i), nil, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -147,7 +147,7 @@ func TestToValue(t *testing.T) {
 		}, vm.NewTestStruct(vm.NewBytes([]byte("hi")), vm.NewNumber(math.MaxInt64), vm.NewNumber(42), ts), false},
 		{"illegal field type", args{
 			struct {
-				X int32 `chain:"0"`
+				X complex64 `chain:"0"`
 			}{3},
 		}, nil, true},
 		{"simple array", args{
@@ -202,7 +202,7 @@ func TestToValue(t *testing.T) {
 		{"true", args{true}, vm.NewTrue(), false},
 		{"false", args{false}, vm.NewFalse(), false},
 		{"[]int", args{[]int{1, 23}}, vm.NewList().Append(vm.NewNumber(1)).Append(vm.NewNumber(23)), false},
-		{"[] illegal values", args{[]int32{1, 23}}, nil, true},
+		{"[] illegal values", args{[]complex64{1, 23i}}, nil, true},
 		{"map", args{map[int]int{1: 2}}, nil, true},
 		{"ptr to time", args{&tt}, ts, false},
 		{"[][]int", args{[][]int{[]int{1}, []int{2, 3}}},
