@@ -601,7 +601,7 @@ func TestIfNestedDeep(t *testing.T) {
 	s := "handler 0\n"
 	s += buildNestedConditional(mask>>1, 0, mask)
 	s += "enddef\n"
-	fmt.Println(formatChaincode(s))
+	// fmt.Println(formatChaincode(s))
 
 	vm := buildVM(t, s)
 	for i := int64(0); i < int64(mask); i++ {
@@ -706,6 +706,7 @@ func TestCompare7(t *testing.T) {
 }
 
 func TestCompareTimestampGt(t *testing.T) {
+	// This checks that timestamps are correctly ordered by gt
 	vm := buildVM(t, `
 		handler 0
 		pusht 2018-07-18T00:00:00Z pusht 2018-01-01T00:00:00Z
@@ -722,6 +723,7 @@ func TestCompareTimestampGt(t *testing.T) {
 }
 
 func TestCompareTimestampLt(t *testing.T) {
+	// This checks that timestamps are correctly ordered by lt
 	vm := buildVM(t, `
 		handler 0
 		pusht 2018-07-18T00:00:00Z pusht 2018-01-01T00:00:00Z
@@ -738,6 +740,7 @@ func TestCompareTimestampLt(t *testing.T) {
 }
 
 func TestCompareTimestampEq(t *testing.T) {
+	// This checks that timestamps are correctly ordered by eq
 	vm := buildVM(t, `
 		handler 0
 		pusht 2018-07-18T00:00:00Z pusht 2018-01-01T00:00:00Z
@@ -753,7 +756,21 @@ func TestCompareTimestampEq(t *testing.T) {
 	checkStack(t, vm.Stack(), 0, 0, -1)
 }
 
+func TestTimestampNegativePush(t *testing.T) {
+	// This checks that a timestamp built from bytes cannot be negative
+	vm := buildVM(t, `
+		handler 0
+		pusht 10 20 30 40 50 60 70 80
+		enddef
+		`)
+	vm.Init(0)
+	err := vm.Run(false)
+	assert.NotNil(t, err)
+}
+
 func TestTimestamp1(t *testing.T) {
+	// This checks that subtracting timestamps returns the appropriate
+	// positive value
 	vm := buildVM(t, `
 		handler 0
 		pusht 2018-07-18T00:00:00Z
@@ -775,7 +792,9 @@ func TestTimestamp1(t *testing.T) {
 	checkStack(t, vm.Stack(), 198)
 }
 
-func TestTimestampNegative(t *testing.T) {
+func TestTimestampNegativeSub(t *testing.T) {
+	// This checks that subtracting timestamps can return the appropriate
+	// negative value.
 	vm := buildVM(t, `
 		handler 0
 		pusht 2018-01-01T00:00:00Z
@@ -817,6 +836,9 @@ func TestTimestampInjectedNow(t *testing.T) {
 }
 
 func TestTimestampDefaultNow(t *testing.T) {
+	// This checks that the default now operation returns a date stamp
+	// between 1/1/18 and 2/2/22 (which will fail someday but not for a
+	// few years)
 	vm := buildVM(t, `
 		handler 0
 		now

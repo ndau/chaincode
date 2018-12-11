@@ -106,17 +106,21 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 
 	// fetch the instruction
 	instr := vm.code[vm.pc]
+	// we'll add this at the very bottom
+	extra := extraBytes(vm.code, vm.pc)
 	// we always increment the pc immediately; we may also add to it if an instruction has additional data
 	// when we report errors, we subtract 1 to get the correct value
 	vm.pc++
 	switch instr {
 	case OpNop:
 		// do nothing
+
 	case OpDrop:
 		// discards top element on stack
 		if _, err := vm.stack.Pop(); err != nil {
 			return vm.runtimeError(err)
 		}
+
 	case OpDrop2:
 		// discards top two elements on stack
 		if _, err := vm.stack.Pop(); err != nil {
@@ -125,6 +129,7 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		if _, err := vm.stack.Pop(); err != nil {
 			return vm.runtimeError(err)
 		}
+
 	case OpDup:
 		v, err := vm.stack.Peek()
 		if err != nil {
@@ -133,6 +138,7 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		if err = vm.stack.Push(v); err != nil {
 			return vm.runtimeError(err)
 		}
+
 	case OpDup2:
 		v1, err := vm.stack.Get(1)
 		if err != nil {
@@ -148,6 +154,7 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		if err = vm.stack.Push(v0); err != nil {
 			return vm.runtimeError(err)
 		}
+
 	case OpSwap:
 		v1, err := vm.stack.PopAt(1)
 		if err != nil {
@@ -156,6 +163,7 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		if err = vm.stack.Push(v1); err != nil {
 			return vm.runtimeError(err)
 		}
+
 	case OpOver:
 		v1, err := vm.stack.Get(1)
 		if err != nil {
@@ -164,9 +172,9 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		if err = vm.stack.Push(v1); err != nil {
 			return vm.runtimeError(err)
 		}
+
 	case OpPick:
 		n := int(vm.code[vm.pc])
-		vm.pc++
 		v, err := vm.stack.Get(n)
 		if err != nil {
 			return vm.runtimeError(err)
@@ -174,9 +182,9 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		if err = vm.stack.Push(v); err != nil {
 			return vm.runtimeError(err)
 		}
+
 	case OpRoll:
 		n := int(vm.code[vm.pc])
-		vm.pc++
 		v, err := vm.stack.PopAt(n)
 		if err != nil {
 			return vm.runtimeError(err)
@@ -184,9 +192,9 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		if err = vm.stack.Push(v); err != nil {
 			return vm.runtimeError(err)
 		}
+
 	case OpTuck:
 		n := int(vm.code[vm.pc])
-		vm.pc++
 		v, err := vm.stack.Pop()
 		if err != nil {
 			return vm.runtimeError(err)
@@ -194,15 +202,19 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		if err = vm.stack.InsertAt(n, v); err != nil {
 			return vm.runtimeError(err)
 		}
+
 	case OpRet:
 		vm.runstate = RsComplete
+
 	case OpFail:
 		vm.runstate = RsError
-		return vm.runtimeError(newRuntimeError("fail opcode invoked"))
+		return vm.runtimeError(errors.New("fail opcode invoked"))
+
 	case OpZero:
 		if err := vm.stack.Push(NewNumber(0)); err != nil {
 			return vm.runtimeError(err)
 		}
+
 	case OpPush1, OpPush2, OpPush3, OpPush4, OpPush5, OpPush6, OpPush7, OpPush8:
 		// use a mask to retrieve the actual count of bytes to fetch
 		nbytes := byte(instr) & 0xF
@@ -210,8 +222,7 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		var i byte
 		var b Opcode
 		for i = 0; i < nbytes; i++ {
-			b = vm.code[vm.pc]
-			vm.pc++
+			b = vm.code[vm.pc+int(i)]
 			value |= int64(b) << (i * 8)
 		}
 		// if the high bit was zero, it is a negative number, so
@@ -224,19 +235,23 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		if err := vm.stack.Push(NewNumber(value)); err != nil {
 			return vm.runtimeError(err)
 		}
+
 	case OpPushT:
 		var value int64
 		var i byte
 		var b Opcode
 		for i = 0; i < 8; i++ {
-			b = vm.code[vm.pc]
-			vm.pc++
+			b = vm.code[vm.pc+int(i)]
 			value |= int64(b) << (i * 8)
+		}
+		if value < 0 {
+			return vm.runtimeError(errors.New("timestamps cannot be negative"))
 		}
 		ts := NewTimestampFromInt(value)
 		if err := vm.stack.Push(ts); err != nil {
 			return vm.runtimeError(err)
 		}
+
 	case OpNow:
 		ts, err := vm.now.Now()
 		if err != nil {
@@ -245,34 +260,38 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		if err := vm.stack.Push(ts); err != nil {
 			return vm.runtimeError(err)
 		}
+
 	case OpPushB:
 		n := int(vm.code[vm.pc])
-		vm.pc++
 		b := make([]byte, n)
 		for i := 0; i < n; i++ {
-			b[i] = byte(vm.code[vm.pc])
-			vm.pc++
+			b[i] = byte(vm.code[vm.pc+int(i+1)])
 		}
 		v := NewBytes(b)
 		if err := vm.stack.Push(v); err != nil {
 			return vm.runtimeError(err)
 		}
+
 	case OpOne:
 		if err := vm.stack.Push(NewNumber(1)); err != nil {
 			return vm.runtimeError(err)
 		}
+
 	case OpNeg1:
 		if err := vm.stack.Push(NewNumber(-1)); err != nil {
 			return vm.runtimeError(err)
 		}
+
 	case OpMaxNum:
 		if err := vm.stack.Push(NewNumber(math.MaxInt64)); err != nil {
 			return vm.runtimeError(err)
 		}
+
 	case OpMinNum:
 		if err := vm.stack.Push(NewNumber(math.MinInt64)); err != nil {
 			return vm.runtimeError(err)
 		}
+
 	case OpRand:
 		r, err := vm.rand.RandInt()
 		if err != nil {
@@ -286,6 +305,7 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		if err := vm.stack.Push(NewList()); err != nil {
 			return vm.runtimeError(err)
 		}
+
 	case OpAdd, OpMul, OpDiv, OpMod:
 		n1, err := vm.stack.PopAsInt64()
 		if err != nil {
@@ -321,6 +341,7 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		if err := vm.stack.Push(NewNumber(t)); err != nil {
 			return vm.runtimeError(err)
 		}
+
 	case OpDivMod:
 		d, err := vm.stack.PopAsInt64()
 		if err != nil {
@@ -340,6 +361,7 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		if err := vm.stack.Push(NewNumber(q)); err != nil {
 			return vm.runtimeError(err)
 		}
+
 	case OpMulDiv:
 		d, err := vm.stack.PopAsInt64()
 		if err != nil {
@@ -360,6 +382,7 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		if err := vm.stack.Push(NewNumber(v2)); err != nil {
 			return vm.runtimeError(err)
 		}
+
 	case OpSub:
 		// Subtraction is special because you can also subtract timestamps
 		v1, err := vm.stack.Pop()
@@ -375,7 +398,7 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		case Number:
 			n2, ok := v2.(Number)
 			if !ok {
-				return vm.runtimeError(newRuntimeError("incompatible types"))
+				return vm.runtimeError(errors.New("incompatible types"))
 			}
 			t, err = signed.Sub(n2.v, n1.v)
 		case Timestamp:
@@ -422,6 +445,7 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		if err := vm.stack.Push(NewNumber(t)); err != nil {
 			return vm.runtimeError(err)
 		}
+
 	case OpEq, OpGt, OpLt, OpLte, OpGte:
 		v2, err := vm.stack.Pop()
 		if err != nil {
@@ -549,7 +573,6 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 			return vm.runtimeError(err)
 		}
 		fix := vm.code[vm.pc]
-		vm.pc++
 		f, err := st.Get(byte(fix))
 		if err != nil {
 			return vm.runtimeError(err)
@@ -564,7 +587,6 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 			return vm.runtimeError(err)
 		}
 		fix := vm.code[vm.pc]
-		vm.pc++
 
 		f := NewTrue()
 		if _, err = st.Get(byte(fix)); err != nil {
@@ -580,7 +602,6 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 			return vm.runtimeError(err)
 		}
 		fix := vm.code[vm.pc]
-		vm.pc++
 		extract := func(v Value) (Value, error) {
 			f, ok := v.(*Struct)
 			if !ok {
@@ -607,7 +628,6 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		// values from the caller's stack. The function call returns a single Value which is pushed
 		// onto the caller's stack.
 		funcnum := int(vm.code[vm.pc])
-		vm.pc++
 		result, err := vm.callFunction(funcnum, debug)
 		if err != nil {
 			return err
@@ -619,7 +639,6 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 	case OpDeco:
 		funcnum := int(vm.code[vm.pc])
 		fieldID := byte(vm.code[vm.pc+1])
-		vm.pc += 2
 		// we're going to iterate over a List of structs so validate it
 		l, err := vm.stack.PopAsListOfStructs(-1)
 		if err != nil {
@@ -635,7 +654,7 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 			}
 			// in order to limit attempts at memory bombs, deco cannot add non-scalars
 			if !retval.IsScalar() {
-				return vm.runtimeError(newRuntimeError("deco result must be scalar"))
+				return vm.runtimeError(errors.New("deco result must be scalar"))
 			}
 			newlist = newlist.Append(s.Set(fieldID, retval))
 		}
@@ -665,6 +684,7 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 				return vm.runtimeError(err)
 			}
 		}
+
 	case OpIfNZ:
 		t, err := vm.stack.Pop()
 		if err != nil {
@@ -684,12 +704,14 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 				return vm.runtimeError(err)
 			}
 		}
+
 	case OpElse:
 		// if we hit this in execution, it means we did the first clause of an if statement
 		// and now need to skip to the matching end
 		if err := vm.skipToMatchingBracket(false); err != nil {
 			return vm.runtimeError(err)
 		}
+
 	case OpEndIf:
 		// OpEndIf is a no-op (it is only hit when it ends an if block that evaluated to true
 		// and there was no Else clause
@@ -761,7 +783,6 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 
 	case OpWChoice:
 		fix := vm.code[vm.pc]
-		vm.pc++
 		src, err := vm.stack.PopAsListOfStructs(int(fix))
 		if err != nil {
 			return vm.runtimeError(err)
@@ -795,12 +816,9 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 				if err != nil {
 					return vm.runtimeError(err)
 				}
-				return nil
+				break
 			}
 		}
-
-		// if we get here, something is very wrong
-		panic(fmt.Sprintf("wchoice can't happen: %d %d %d", rand, partialSum, total))
 
 	case OpSort:
 		src, err := vm.stack.PopAsList()
@@ -808,7 +826,6 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 			return vm.runtimeError(err)
 		}
 		fix := vm.code[vm.pc]
-		vm.pc++
 		// note - error handling is weak because the less function that sort.Slice()
 		// uses cannot fail, so we can only figure it out after the sort completes.
 		// This means if you try to sort bad data, you still get an error but
@@ -839,7 +856,6 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 
 	case OpLookup:
 		funcnum := int(vm.code[vm.pc])
-		vm.pc++
 		// we're going to iterate over a List of structs so validate it
 		l, err := vm.stack.PopAsListOfStructs(-1)
 		if err != nil {
@@ -912,5 +928,6 @@ func (vm *ChaincodeVM) Step(debug bool) error {
 		return vm.runtimeError(newRuntimeError(fmt.Sprintf("unimplemented opcode %s at %d", instr, vm.pc)))
 	}
 
+	vm.pc += extra
 	return nil
 }
