@@ -192,7 +192,7 @@ func TestPushAt(t *testing.T) {
 
 func TestTopN(t *testing.T) {
 	// validates that a duplicated stack with TopN creates a true
-	// new stack (deep copy)
+	// new stack (a copy)
 	st := NewStack()
 	pushMulti(t, st, 1, 2, 3, 4, 5, 6)
 	st2, err := st.TopN(3)
@@ -203,8 +203,10 @@ func TestTopN(t *testing.T) {
 }
 
 func TestTopNWithList(t *testing.T) {
-	// validates that a duplicated stack with TopN creates a true
-	// new stack (deep copy)
+	// validates that a duplicated stack with TopN that has
+	// a list in it creates lists that won't step on each other.
+	// It doesn't do a deep copy but the permitted operations
+	// have the right effect.
 	st := NewStack()
 	pushMulti(t, st, 4, 5, 6)
 	st.Push(NewList(NewNumber(1), NewNumber(2)))
