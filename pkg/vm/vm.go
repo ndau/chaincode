@@ -215,9 +215,6 @@ func (vm *ChaincodeVM) IP() int {
 
 // Run runs a VM from its current state until it ends
 func (vm *ChaincodeVM) Run(debug bool) error {
-	if debug {
-		vm.DisassembleAll()
-	}
 	if vm.runstate == RsReady {
 		vm.runstate = RsRunning
 	}
