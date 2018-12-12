@@ -189,3 +189,15 @@ func TestPushAt(t *testing.T) {
 	assert.Equal(t, st.Depth(), 6)
 	checkMulti(t, st, 9, 3, 2, 7, 1, 5)
 }
+
+func TestTopN(t *testing.T) {
+	// validates that a duplicated stack with TopN creates a true
+	// new stack (deep copy)
+	st := NewStack()
+	pushMulti(t, st, 1, 2, 3, 4, 5, 6)
+	st2, err := st.TopN(3)
+	assert.Nil(t, err)
+	st2.InsertAt(2, NewNumber(17))
+	checkMulti(t, st2, 6, 5, 17, 4)
+	checkMulti(t, st, 6, 5, 4, 3, 2, 1)
+}
