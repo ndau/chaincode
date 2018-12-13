@@ -62,7 +62,11 @@ func (st *Stack) TopN(n int) (*Stack, error) {
 	if len(st.stack) < n {
 		return nil, stackError("index error")
 	}
-	return &Stack{st.stack[len(st.stack)-n:]}, nil
+	newstack := make([]Value, n)
+	for i := 0; i < n; i++ {
+		newstack[i] = st.stack[len(st.stack)-n+i]
+	}
+	return &Stack{stack: newstack}, nil
 }
 
 // Peek retrieves the top value and returns it

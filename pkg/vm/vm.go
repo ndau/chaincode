@@ -215,9 +215,6 @@ func (vm *ChaincodeVM) IP() int {
 
 // Run runs a VM from its current state until it ends
 func (vm *ChaincodeVM) Run(debug bool) error {
-	if debug {
-		vm.DisassembleAll()
-	}
 	if vm.runstate == RsReady {
 		vm.runstate = RsRunning
 	}
@@ -305,4 +302,45 @@ func (vm *ChaincodeVM) Bytes() []byte {
 		b[i] = byte(vm.code[i])
 	}
 	return b
+}
+
+// DisassembledLine is the data structure intended to be leveraged by a
+// debugging API.
+type DisassembledLine struct {
+	PC       int
+	Opcode   Opcode
+	NumExtra int
+	ArgBytes []byte
+}
+
+// DisassembleLines returns a structured disassembly of the whole VM
+// Do not call this on a vm that has not been validated!
+func (vm *ChaincodeVM) DisassembleLines() []*DisassembledLine {
+	var r []*DisassembledLine
+	for pc := 0; pc < len(vm.code); {
+		l := vm.DisassembleLine(pc)
+		r = append(r, l)
+		pc += l.NumExtra + 1
+	}
+	return r
+}
+
+// DisassembleLine returns a single disassembled instruction as an object
+func (vm *ChaincodeVM) DisassembleLine(pc int) *DisassembledLine {
+	if pc >= len(vm.code) {
+		return nil
+	}
+	r := &DisassembledLine{
+		PC:       pc,
+		Opcode:   vm.code[pc],
+		NumExtra: extraBytes(vm.code, pc),
+	}
+	if r.NumExtra > 0 {
+		r.ArgBytes = make([]byte, r.NumExtra)
+		for i := 1; i <= r.NumExtra; i++ {
+			r.ArgBytes[i] = byte(vm.code[pc+i])
+		}
+	}
+
+	return r
 }

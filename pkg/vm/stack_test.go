@@ -189,3 +189,44 @@ func TestPushAt(t *testing.T) {
 	assert.Equal(t, st.Depth(), 6)
 	checkMulti(t, st, 9, 3, 2, 7, 1, 5)
 }
+
+func TestTopN(t *testing.T) {
+	// validates that a duplicated stack with TopN creates a true
+	// new stack (a copy)
+	st := NewStack()
+	pushMulti(t, st, 1, 2, 3, 4, 5, 6)
+	st2, err := st.TopN(3)
+	assert.Nil(t, err)
+	st2.InsertAt(2, NewNumber(17))
+	checkMulti(t, st2, 6, 5, 17, 4)
+	checkMulti(t, st, 6, 5, 4, 3, 2, 1)
+}
+
+func TestTopNWithList(t *testing.T) {
+	// validates that a duplicated stack with TopN that has
+	// a list in it creates lists that won't step on each other.
+	// It doesn't do a deep copy but the permitted operations
+	// have the right effect.
+	st := NewStack()
+	pushMulti(t, st, 4, 5, 6)
+	st.Push(NewList(NewNumber(1), NewNumber(2)))
+	st2, err := st.TopN(2)
+	assert.Nil(t, err)
+	l, err := st2.PopAsList()
+	assert.Nil(t, err)
+	newlist := l.Append(NewNumber(17))
+	st2.Push(newlist)
+	l2, err := st.PopAsList()
+	assert.Nil(t, err)
+	assert.Equal(t, int64(2), l2.Len())
+	v2, err := l2.Index(1)
+	assert.Nil(t, err)
+	assert.Equal(t, NewNumber(2), v2)
+
+	l3, err := st2.PopAsList()
+	assert.Nil(t, err)
+	assert.Equal(t, int64(3), l3.Len())
+	v3, err := l3.Index(2)
+	assert.Nil(t, err)
+	assert.Equal(t, NewNumber(17), v3)
+}
