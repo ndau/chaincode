@@ -2,6 +2,7 @@ package vm
 
 import (
 	"fmt"
+	"io"
 	"sort"
 	"strings"
 )
@@ -60,6 +61,11 @@ type Randomer interface {
 type Nower interface {
 	Now() (Timestamp, error)
 }
+
+// Dumper is a pointer to a function that may be passed to Run or Step, which
+// if it is not nil, is called before each instruction. It can be used to dump
+// the vm, record state, etc.
+type Dumper func(*ChaincodeVM)
 
 type funcInfo struct {
 	offset int
@@ -214,13 +220,13 @@ func (vm *ChaincodeVM) IP() int {
 }
 
 // Run runs a VM from its current state until it ends
-func (vm *ChaincodeVM) Run(debug bool) error {
+func (vm *ChaincodeVM) Run(debug Dumper) error {
 	if vm.runstate == RsReady {
 		vm.runstate = RsRunning
 	}
 	for vm.runstate == RsRunning {
-		if debug {
-			fmt.Println(vm)
+		if debug != nil {
+			debug(vm)
 		}
 		if err := vm.Step(debug); err != nil {
 			return err
@@ -236,15 +242,15 @@ type Stringizer func(op Opcode, extra []Opcode) string
 // DisasmHelpers is a map for specific opcodes to override the default renderer.
 var DisasmHelpers = make(map[Opcode]Stringizer)
 
-// DisassembleAll dumps a disassembly of the whole VM
-func (vm *ChaincodeVM) DisassembleAll() {
-	fmt.Println("--DISASSEMBLY--")
+// DisassembleAll dumps a disassembly of the whole VM to the Writer
+func (vm *ChaincodeVM) DisassembleAll(w io.Writer) {
+	fmt.Fprintln(w, "--DISASSEMBLY--")
 	for pc := 0; pc < len(vm.code); {
 		s, delta := vm.Disassemble(pc)
 		pc += delta
-		fmt.Println(s)
+		fmt.Fprintln(w, s)
 	}
-	fmt.Println("---------------")
+	fmt.Fprintln(w, "---------------")
 }
 
 // Disassemble returns a single disassembled instruction as a text string, possibly with embedded newlines,

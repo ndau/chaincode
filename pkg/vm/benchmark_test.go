@@ -36,7 +36,7 @@ func benchmarkBin(bin ChasmBinary, b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		vm.Init(0)
-		err := vm.Run(false)
+		err := vm.Run(nil)
 		if err != nil {
 			b.Errorf("Run() had an error:%s", err)
 			return

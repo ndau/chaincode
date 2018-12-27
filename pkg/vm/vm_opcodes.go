@@ -52,7 +52,7 @@ func (vm *ChaincodeVM) skipToMatchingBracket(wasIf bool) error {
 
 // callFunction calls the function numbered by funcnum, copying nargs to a new stack
 // returns the value left on the stack by the called function
-func (vm *ChaincodeVM) callFunction(funcnum int, debug bool, extraArgs ...Value) (Value, error) {
+func (vm *ChaincodeVM) callFunction(funcnum int, debug Dumper, extraArgs ...Value) (Value, error) {
 	var retval Value
 	if funcnum <= vm.infunc || funcnum >= len(vm.functions) {
 		return retval, vm.runtimeError(newRuntimeError("invalid function number (no recursion allowed)"))
@@ -83,7 +83,7 @@ func (vm *ChaincodeVM) callFunction(funcnum int, debug bool, extraArgs ...Value)
 }
 
 // Step executes a single instruction
-func (vm *ChaincodeVM) Step(debug bool) error {
+func (vm *ChaincodeVM) Step(debug Dumper) error {
 	switch vm.runstate {
 	default:
 		return newRuntimeError("vm is not in runnable state")

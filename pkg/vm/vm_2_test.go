@@ -34,7 +34,7 @@ func TestDeco1(t *testing.T) {
 		l = l.Append(st)
 	}
 	vm.Init(0, l)
-	err := vm.Run(false)
+	err := vm.Run(nil)
 	assert.Nil(t, err)
 	checkStack(t, vm.Stack(), 455)
 }
@@ -88,7 +88,7 @@ func TestLookup1(t *testing.T) {
 		l = l.Append(st)
 	}
 	vm.Init(0, l)
-	err := vm.Run(false)
+	err := vm.Run(nil)
 	assert.Nil(t, err)
 	checkStack(t, vm.Stack(), 3)
 }
@@ -104,7 +104,7 @@ func TestLookup2(t *testing.T) {
 		l = l.Append(st)
 	}
 	vm.Init(0, l)
-	err := vm.Run(false)
+	err := vm.Run(nil)
 	assert.Nil(t, err)
 	checkStack(t, vm.Stack(), 2)
 }
@@ -127,7 +127,7 @@ func TestLookupFail1(t *testing.T) {
 		l = l.Append(st)
 	}
 	vm.Init(0, l)
-	err := vm.Run(false)
+	err := vm.Run(nil)
 	assert.NotNil(t, err)
 }
 
@@ -140,7 +140,7 @@ func TestUnimplemented(t *testing.T) {
 	// replace the nop with FF and try to run it; should still fail
 	vm.code[3] = Opcode(0xFF)
 	vm.Init(0)
-	err := vm.Run(false)
+	err := vm.Run(nil)
 	assert.NotNil(t, err)
 }
 
@@ -153,7 +153,7 @@ func TestUnderflows(t *testing.T) {
 		prog := "handler 0 " + k + " enddef"
 		vm := buildVM(t, prog)
 		vm.Init(0)
-		err := vm.Run(false)
+		err := vm.Run(nil)
 		assert.NotNil(t, err)
 		correct := strings.HasPrefix(err.Error(), "stack underflow") ||
 			strings.HasPrefix(err.Error(), "stack index error")
@@ -165,7 +165,7 @@ func TestDisableOpcode(t *testing.T) {
 	// now let's hack a VM after it passes validation to contain illegal data
 	vm := buildVM(t, "handler 0 NOP enddef")
 	vm.Init(0)
-	err := vm.Run(false)
+	err := vm.Run(nil)
 	assert.Nil(t, err)
 
 	DisableOpcode(OpNop)
@@ -183,7 +183,7 @@ func TestBadNegativeIndex(t *testing.T) {
 		EndDef`
 	vm := buildVM(t, prog)
 	vm.Init(0, NewList().Append(NewNumber(1)).Append(NewNumber(2)))
-	err := vm.Run(false)
+	err := vm.Run(nil)
 	assert.NotNil(t, err)
 }
 
@@ -197,7 +197,7 @@ func TestIndex2(t *testing.T) {
 		EndDef`
 	vm := buildVM(t, prog)
 	vm.Init(0, NewList().Append(NewNumber(1)).Append(NewNumber(2)))
-	err := vm.Run(false)
+	err := vm.Run(nil)
 	assert.Nil(t, err)
 }
 
@@ -216,22 +216,22 @@ func TestMultipleHandlers(t *testing.T) {
 	vm := buildVM(t, prog)
 
 	vm.Init(16, NewNumber(12), NewNumber(4))
-	err := vm.Run(false)
+	err := vm.Run(nil)
 	assert.Nil(t, err)
 	checkStack(t, vm.Stack(), 16)
 
 	vm.Init(8, NewNumber(12), NewNumber(4))
-	err = vm.Run(false)
+	err = vm.Run(nil)
 	assert.Nil(t, err)
 	checkStack(t, vm.Stack(), 8)
 
 	vm.Init(48, NewNumber(12), NewNumber(4))
-	err = vm.Run(false)
+	err = vm.Run(nil)
 	assert.Nil(t, err)
 	checkStack(t, vm.Stack(), 48)
 
 	vm.Init(3, NewNumber(12), NewNumber(4))
-	err = vm.Run(false)
+	err = vm.Run(nil)
 	assert.Nil(t, err)
 	checkStack(t, vm.Stack(), 3)
 }
@@ -248,17 +248,17 @@ func TestDefaultHandler(t *testing.T) {
 	vm := buildVM(t, prog)
 
 	vm.Init(0, NewNumber(12), NewNumber(4))
-	err := vm.Run(false)
+	err := vm.Run(nil)
 	assert.Nil(t, err)
 	checkStack(t, vm.Stack(), 0)
 
 	vm.Init(8, NewNumber(12), NewNumber(4))
-	err = vm.Run(false)
+	err = vm.Run(nil)
 	assert.Nil(t, err)
 	checkStack(t, vm.Stack(), 8)
 
 	vm.Init(77, NewNumber(12), NewNumber(4))
-	err = vm.Run(false)
+	err = vm.Run(nil)
 	assert.Nil(t, err)
 	checkStack(t, vm.Stack(), 0)
 }
@@ -272,32 +272,32 @@ func TestMultipleEvents(t *testing.T) {
 	vm := buildVM(t, prog)
 
 	vm.Init(18, NewNumber(12), NewNumber(4))
-	err := vm.Run(false)
+	err := vm.Run(nil)
 	assert.Nil(t, err)
 	checkStack(t, vm.Stack(), 16)
 
 	vm.Init(18, NewNumber(12), NewNumber(4))
-	err = vm.Run(false)
+	err = vm.Run(nil)
 	assert.Nil(t, err)
 	checkStack(t, vm.Stack(), 16)
 
 	vm.Init(20, NewNumber(12), NewNumber(4))
-	err = vm.Run(false)
+	err = vm.Run(nil)
 	assert.Nil(t, err)
 	checkStack(t, vm.Stack(), 16)
 
 	vm.Init(0, NewNumber(12), NewNumber(4))
-	err = vm.Run(false)
+	err = vm.Run(nil)
 	assert.Nil(t, err)
 	checkStack(t, vm.Stack(), 48)
 
 	vm.Init(5, NewNumber(12), NewNumber(4))
-	err = vm.Run(false)
+	err = vm.Run(nil)
 	assert.Nil(t, err)
 	checkStack(t, vm.Stack(), 48)
 
 	vm.Init(77, NewNumber(12), NewNumber(4))
-	err = vm.Run(false)
+	err = vm.Run(nil)
 	assert.Nil(t, err)
 	checkStack(t, vm.Stack(), 48)
 }
@@ -325,7 +325,7 @@ func TestNumericBinops(t *testing.T) {
 		prog := "handler 0 " + op.String() + " enddef"
 		vm := buildVM(t, prog)
 		vm.Init(0, NewNumber(a), NewNumber(b))
-		err := vm.Run(false)
+		err := vm.Run(nil)
 		if err != nil {
 			return 0, err
 		}
@@ -393,7 +393,7 @@ func TestNumericUnaryOps(t *testing.T) {
 		prog := "handler 0 " + op.String() + " enddef"
 		vm := buildVM(t, prog)
 		vm.Init(0, NewNumber(a))
-		err := vm.Run(false)
+		err := vm.Run(nil)
 		if err != nil {
 			return 0, err
 		}
