@@ -394,7 +394,7 @@ func TestFuzzHandlers(t *testing.T) {
 		// Put a couple of items on the stack
 		startingStack = genRandomValues(1, 3)
 		vm.Init(0, startingStack...)
-		err = vm.Run(false)
+		err = vm.Run(nil)
 		if err == nil {
 			// fmt.Printf("Successfully ran:\n")
 			// vm.DisassembleAll()
@@ -467,7 +467,7 @@ func TestFuzzValid(t *testing.T) {
 			// Put a couple of items on the stack
 			startingStack = genRandomValues(1, 3)
 			vm.Init(h, startingStack...)
-			err = vm.Run(false)
+			err = vm.Run(nil)
 			if err != nil {
 				results[key(err)]++
 				if runcount > 1 {
@@ -538,7 +538,7 @@ func TestFuzzJunk(t *testing.T) {
 		// Put a couple of items on the stack
 		startingStack = genRandomValues(1, 3)
 		vm.Init(0, startingStack...)
-		err = vm.Run(false)
+		err = vm.Run(nil)
 		if err == nil {
 			// fmt.Printf("Successfully ran:\n")
 			// vm.DisassembleAll()
