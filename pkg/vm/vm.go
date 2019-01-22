@@ -319,6 +319,14 @@ type DisassembledLine struct {
 	ArgBytes []byte
 }
 
+func (l DisassembledLine) String() string {
+	out := fmt.Sprintf("%04x: %s", l.PC, l.Opcode)
+	for _, b := range l.ArgBytes {
+		out += fmt.Sprintf(" %02x", b)
+	}
+	return out
+}
+
 // DisassembleLines returns a structured disassembly of the whole VM
 // Do not call this on a vm that has not been validated!
 func (vm *ChaincodeVM) DisassembleLines() []*DisassembledLine {
