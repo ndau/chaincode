@@ -344,7 +344,7 @@ func (vm *ChaincodeVM) DisassembleLine(pc int) *DisassembledLine {
 	if r.NumExtra > 0 {
 		r.ArgBytes = make([]byte, r.NumExtra)
 		for i := 1; i <= r.NumExtra; i++ {
-			r.ArgBytes[i] = byte(vm.code[pc+i])
+			r.ArgBytes[i-1] = byte(vm.code[pc+i])
 		}
 	}
 
