@@ -67,6 +67,15 @@ type Nower interface {
 // the vm, record state, etc.
 type Dumper func(*ChaincodeVM)
 
+// Trace is a Dumper which emits the state of the stack before each instruction
+func Trace(vm *ChaincodeVM) {
+	fmt.Printf(
+		"------\n%s\n%s\n",
+		vm.Stack(),
+		vm.DisassembleLine(vm.IP()),
+	)
+}
+
 type funcInfo struct {
 	offset int
 	nargs  int
