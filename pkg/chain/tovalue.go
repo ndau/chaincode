@@ -178,7 +178,12 @@ func ToValue(x interface{}) (vm.Value, error) {
 			// we have to traverse into structs that contain a chain tag == "."
 			child, err := ToValue(vx.FieldByIndex(fld.Index).Interface())
 			if isNilPtr(err) {
-				continue
+				// get the existing type
+				fieldType := vx.FieldByIndex(fld.Index).Type()
+				// remove the pointer
+				fieldType = fieldType.Elem()
+				// inject the appropriate zero value
+				child, err = ToValue(reflect.Zero(fieldType).Interface())
 			}
 			if err != nil {
 				return nil, err

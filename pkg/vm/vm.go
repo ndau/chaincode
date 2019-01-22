@@ -67,6 +67,15 @@ type Nower interface {
 // the vm, record state, etc.
 type Dumper func(*ChaincodeVM)
 
+// Trace is a Dumper which emits the state of the stack before each instruction
+func Trace(vm *ChaincodeVM) {
+	fmt.Printf(
+		"------\n%s\n%s\n",
+		vm.Stack(),
+		vm.DisassembleLine(vm.IP()),
+	)
+}
+
 type funcInfo struct {
 	offset int
 	nargs  int
@@ -319,6 +328,14 @@ type DisassembledLine struct {
 	ArgBytes []byte
 }
 
+func (l DisassembledLine) String() string {
+	out := fmt.Sprintf("%04x: %s", l.PC, l.Opcode)
+	for _, b := range l.ArgBytes {
+		out += fmt.Sprintf(" %02x", b)
+	}
+	return out
+}
+
 // DisassembleLines returns a structured disassembly of the whole VM
 // Do not call this on a vm that has not been validated!
 func (vm *ChaincodeVM) DisassembleLines() []*DisassembledLine {
@@ -344,7 +361,7 @@ func (vm *ChaincodeVM) DisassembleLine(pc int) *DisassembledLine {
 	if r.NumExtra > 0 {
 		r.ArgBytes = make([]byte, r.NumExtra)
 		for i := 1; i <= r.NumExtra; i++ {
-			r.ArgBytes[i] = byte(vm.code[pc+i])
+			r.ArgBytes[i-1] = byte(vm.code[pc+i])
 		}
 	}
 
