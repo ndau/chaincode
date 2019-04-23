@@ -21,11 +21,8 @@ import (
 // field name is used). Names are converted to uppercase for use in the assembler. Names, when
 // converted to uppercase, must be valid CHASM constant names ([A-Z][A-Z0-9_]*)
 
-// parseChainTag interprets a tag string. The tag string "." is treated specially.
+// parseChainTag interprets a tag string.
 func parseChainTag(tag string, name string) (byte, string, error) {
-	if tag == "." {
-		return 0, tag, nil
-	}
 	sp := strings.Split(tag, ",")
 	ix, err := strconv.ParseInt(sp[0], 10, 8)
 	if err != nil {
@@ -91,11 +88,7 @@ func ToValueScalar(x interface{}) (vm.Value, error) {
 		case reflect.ValueOf(time.Time{}).Type():
 			return vm.NewTimestampFromTime(x.(time.Time))
 		case reflect.ValueOf(address.Address{}).Type():
-			data, err := x.(address.Address).MarshalText()
-			if err != nil {
-				return nil, err
-			}
-			return vm.NewBytes(data), nil
+			return vm.NewBytes([]byte(x.(address.Address).String())), nil
 		case reflect.ValueOf(signature.PublicKey{}).Type():
 			data, err := x.(signature.PublicKey).Marshal()
 			if err != nil {
@@ -121,8 +114,7 @@ func ToValueScalar(x interface{}) (vm.Value, error) {
 }
 
 // ToValue returns a Go value as a VM value, including if the Go value is a struct or array.
-// Structs are treated recursively; all field IDs must be distinct at all levels, because
-// the generated struct is flat.
+// Structs may be nested. Struct fields with missing or empty `chain:` tags are skipped.
 // Arrays create a list of values in the array
 func ToValue(x interface{}) (vm.Value, error) {
 	vx := reflect.ValueOf(x)
@@ -158,8 +150,7 @@ func ToValue(x interface{}) (vm.Value, error) {
 
 		// if it's a struct, iterate the members and look to see if they have "chain:" tags;
 		// if so, assemble a struct from all the members that do. If no chain tags exist, then
-		// error. This works recursively provided that the parent struct also has a chain
-		// tag -- but the parent-level tag is ignored. Set these tags explicitly to ".".
+		// error.
 		st := vm.NewStruct()
 		for i := 0; i < tx.NumField(); i++ {
 			fld := tx.Field(i)
@@ -188,21 +179,11 @@ func ToValue(x interface{}) (vm.Value, error) {
 			if err != nil {
 				return nil, err
 			}
-			if chstr, ok := child.(*vm.Struct); ok {
-				for _, ind := range chstr.Indices() {
-					v, _ := chstr.Get(ind)
-					st, err = st.SafeSet(ind, v)
-					if err != nil {
-						return nil, err
-					}
-				}
-				continue
-			} else if tag != "." {
-				st, err = st.SafeSet(ix, child)
-				if err != nil {
-					return nil, err
-				}
+			st, err = st.SafeSet(ix, child)
+			if err != nil {
+				return nil, err
 			}
+
 		}
 		return st, nil
 

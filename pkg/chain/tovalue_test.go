@@ -79,19 +79,29 @@ func TestToValue(t *testing.T) {
 	type nest1 struct {
 		H string `chain:"1"`
 		J string `chain:"3"`
-		M nest2  `chain:"."`
+		M nest2  `chain:"4"`
 	}
 
 	type nestp struct {
 		H string `chain:"1"`
 		J string `chain:"3"`
-		M *nest2 `chain:"."`
+		M *nest2 `chain:"4"`
 	}
 
 	type nonest1 struct {
 		H string `chain:"1"`
 		J string `chain:"3"`
 		M nest2
+	}
+
+	type pair struct {
+		X int `chain:"0"`
+		Y int `chain:"1"`
+	}
+
+	type twopair struct {
+		Zero pair `chain:"0"`
+		One  pair `chain:"1"`
 	}
 
 	type args struct {
@@ -174,16 +184,18 @@ func TestToValue(t *testing.T) {
 			vm.NewStruct().
 				Set(1, vm.NewBytes([]byte("a"))).
 				Set(3, vm.NewBytes([]byte("b"))).
-				Set(15, vm.NewBytes([]byte("c"))).
-				Set(16, vm.NewBytes([]byte("d"))),
+				Set(4, vm.NewStruct().
+					Set(15, vm.NewBytes([]byte("c"))).
+					Set(16, vm.NewBytes([]byte("d")))),
 			false},
 		{"nested struct ptr", args{
 			nestp{"a", "b", &nest2{"c", "d"}}},
 			vm.NewStruct().
 				Set(1, vm.NewBytes([]byte("a"))).
 				Set(3, vm.NewBytes([]byte("b"))).
-				Set(15, vm.NewBytes([]byte("c"))).
-				Set(16, vm.NewBytes([]byte("d"))),
+				Set(4, vm.NewStruct().
+					Set(15, vm.NewBytes([]byte("c"))).
+					Set(16, vm.NewBytes([]byte("d")))),
 			false},
 		{"nested struct with no . tag", args{
 			nonest1{"a", "b", nest2{"c", "d"}}},
@@ -207,6 +219,15 @@ func TestToValue(t *testing.T) {
 		{"ptr to time", args{&tt}, ts, false},
 		{"[][]int", args{[][]int{[]int{1}, []int{2, 3}}},
 			vm.NewList().Append(vm.NewList().Append(vm.NewNumber(1))).Append(vm.NewList().Append(vm.NewNumber(2)).Append(vm.NewNumber(3))), false},
+		{"simple nested structs", args{
+			twopair{
+				pair{1, 2},
+				pair{3, 4},
+			},
+		}, vm.NewTestStruct(
+			vm.NewTestStruct(vm.NewNumber(1), vm.NewNumber(2)),
+			vm.NewTestStruct(vm.NewNumber(3), vm.NewNumber(4)),
+		), false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -233,13 +254,13 @@ func TestExtractConstants(t *testing.T) {
 		H string `chain:"1"`
 		X int64
 		J string `chain:"3"`
-		M nest2  `chain:"."`
+		M nest2  `chain:"4"`
 	}
 
 	type nestp struct {
 		H string `chain:"1"`
 		J string `chain:"3"`
-		M *nest2 `chain:"."`
+		M *nest2 `chain:"4"`
 	}
 
 	type nonest1 struct {
@@ -329,13 +350,13 @@ func TestExtractConstants(t *testing.T) {
 		{"not a struct", args{[]int{3}}, nil, true},
 		{"nested struct", args{
 			nest1{"a", 0, "b", nest2{"c", 0, "d"}}},
-			map[string]byte{"H": 1, "J": 3, "P": 15, "Q": 16}, false},
+			map[string]byte{"H": 1, "J": 3, "M": 4}, false},
 		{"nested struct with no . tag", args{
 			nonest1{"a", "b", nest2{"c", 0, "d"}}},
 			map[string]byte{"H": 1, "J": 3}, false},
 		{"nested struct with ptr", args{
 			nestp{"a", "b", &nest2{"c", 0, "d"}}},
-			map[string]byte{"H": 1, "J": 3, "P": 15, "Q": 16}, false},
+			map[string]byte{"H": 1, "J": 3, "M": 4}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
