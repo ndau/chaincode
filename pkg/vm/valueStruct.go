@@ -36,6 +36,13 @@ func NewTestStruct(vs ...Value) *Struct {
 	return st
 }
 
+// NewTupleStruct creates a new struct with an arbitrary list of fields.
+// The fields will  be created with an index in order beginning at 0.
+func NewTupleStruct(vs ...Value) *Struct {
+	// why mess with what works?
+	return NewTestStruct(vs...)
+}
+
 // Set assigns a value to a field at index ix and returns it.
 func (vt *Struct) Set(ix byte, v Value) *Struct {
 	vt.validFields.Set(ix)

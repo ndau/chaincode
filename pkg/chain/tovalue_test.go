@@ -215,7 +215,7 @@ func TestToValue(t *testing.T) {
 		{"false", args{false}, vm.NewFalse(), false},
 		{"[]int", args{[]int{1, 23}}, vm.NewList().Append(vm.NewNumber(1)).Append(vm.NewNumber(23)), false},
 		{"[] illegal values", args{[]complex64{1, 23i}}, nil, true},
-		{"map", args{map[int]int{1: 2}}, nil, true},
+		{"map", args{map[int]int{1: 2}}, vm.NewList().Append(vm.NewTestStruct(vm.NewNumber(1), vm.NewNumber(2))), false},
 		{"ptr to time", args{&tt}, ts, false},
 		{"[][]int", args{[][]int{[]int{1}, []int{2, 3}}},
 			vm.NewList().Append(vm.NewList().Append(vm.NewNumber(1))).Append(vm.NewList().Append(vm.NewNumber(2)).Append(vm.NewNumber(3))), false},
