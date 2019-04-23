@@ -166,7 +166,6 @@ func ToValue(x interface{}) (vm.Value, error) {
 				return nil, err
 			}
 
-			// we have to traverse into structs that contain a chain tag == "."
 			child, err := ToValue(vx.FieldByIndex(fld.Index).Interface())
 			if isNilPtr(err) {
 				// get the existing type
@@ -190,13 +189,14 @@ func ToValue(x interface{}) (vm.Value, error) {
 	case reflect.Ptr:
 		// convert pointers to the object they point to and try again recursively
 		if vx.IsNil() {
-			return nil, errNilPointer{}
+			// chaincode doesn't like nil values, so use a zero value instead
+			return ToValue(reflect.Zero(tx.Elem()).Interface())
 		}
 		return ToValue(vx.Elem().Interface())
 
 	case reflect.Map:
 		if vx.IsNil() {
-			return nil, errNilPointer{}
+			return ToValue(reflect.Zero(tx.Elem()).Interface())
 		}
 
 		// maps get converted into a list of structs:
