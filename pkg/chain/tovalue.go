@@ -220,7 +220,7 @@ func ToValue(x interface{}) (vm.Value, error) {
 
 	default:
 		// for all other types assume it's a scalar
-		fmt.Printf("scalar? %T (%v)\n", x, x)
+		// fmt.Printf("scalar? %T (%v)\n", x, x)
 		return ToValueScalar(x)
 	}
 }
