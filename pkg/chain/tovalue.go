@@ -21,11 +21,8 @@ import (
 // field name is used). Names are converted to uppercase for use in the assembler. Names, when
 // converted to uppercase, must be valid CHASM constant names ([A-Z][A-Z0-9_]*)
 
-// parseChainTag interprets a tag string. The tag string "." is treated specially.
+// parseChainTag interprets a tag string.
 func parseChainTag(tag string, name string) (byte, string, error) {
-	if tag == "." {
-		return 0, tag, nil
-	}
 	sp := strings.Split(tag, ",")
 	ix, err := strconv.ParseInt(sp[0], 10, 8)
 	if err != nil {
@@ -91,11 +88,7 @@ func ToValueScalar(x interface{}) (vm.Value, error) {
 		case reflect.ValueOf(time.Time{}).Type():
 			return vm.NewTimestampFromTime(x.(time.Time))
 		case reflect.ValueOf(address.Address{}).Type():
-			data, err := x.(address.Address).MarshalText()
-			if err != nil {
-				return nil, err
-			}
-			return vm.NewBytes(data), nil
+			return vm.NewBytes([]byte(x.(address.Address).String())), nil
 		case reflect.ValueOf(signature.PublicKey{}).Type():
 			data, err := x.(signature.PublicKey).Marshal()
 			if err != nil {
@@ -113,7 +106,7 @@ func ToValueScalar(x interface{}) (vm.Value, error) {
 	case reflect.Interface:
 		// we can't handle generic interfaces
 		return nil, errors.New("is interface, not a scalar")
-	case reflect.Array, reflect.Map, reflect.Slice:
+	case reflect.Array, reflect.Slice:
 		// and arrays and slices happen at a higher level
 		return nil, errors.New("is container, not a scalar")
 	}
@@ -121,8 +114,7 @@ func ToValueScalar(x interface{}) (vm.Value, error) {
 }
 
 // ToValue returns a Go value as a VM value, including if the Go value is a struct or array.
-// Structs are treated recursively; all field IDs must be distinct at all levels, because
-// the generated struct is flat.
+// Structs may be nested. Struct fields with missing or empty `chain:` tags are skipped.
 // Arrays create a list of values in the array
 func ToValue(x interface{}) (vm.Value, error) {
 	vx := reflect.ValueOf(x)
@@ -158,8 +150,7 @@ func ToValue(x interface{}) (vm.Value, error) {
 
 		// if it's a struct, iterate the members and look to see if they have "chain:" tags;
 		// if so, assemble a struct from all the members that do. If no chain tags exist, then
-		// error. This works recursively provided that the parent struct also has a chain
-		// tag -- but the parent-level tag is ignored. Set these tags explicitly to ".".
+		// error.
 		st := vm.NewStruct()
 		for i := 0; i < tx.NumField(); i++ {
 			fld := tx.Field(i)
@@ -175,7 +166,6 @@ func ToValue(x interface{}) (vm.Value, error) {
 				return nil, err
 			}
 
-			// we have to traverse into structs that contain a chain tag == "."
 			child, err := ToValue(vx.FieldByIndex(fld.Index).Interface())
 			if isNilPtr(err) {
 				// get the existing type
@@ -188,26 +178,49 @@ func ToValue(x interface{}) (vm.Value, error) {
 			if err != nil {
 				return nil, err
 			}
-			if chstr, ok := child.(*vm.Struct); ok {
-				for _, ind := range chstr.Indices() {
-					v, _ := chstr.Get(ind)
-					st, err = st.SafeSet(ind, v)
-					if err != nil {
-						return nil, err
-					}
-				}
-				continue
-			} else if tag != "." {
-				st, err = st.SafeSet(ix, child)
-				if err != nil {
-					return nil, err
-				}
+			st, err = st.SafeSet(ix, child)
+			if err != nil {
+				return nil, err
 			}
+
 		}
 		return st, nil
 
+	case reflect.Ptr:
+		// convert pointers to the object they point to and try again recursively
+		if vx.IsNil() {
+			// chaincode doesn't like nil values, so use a zero value instead
+			return ToValue(reflect.Zero(tx.Elem()).Interface())
+		}
+		return ToValue(vx.Elem().Interface())
+
+	case reflect.Map:
+		if vx.IsNil() {
+			return ToValue(reflect.Zero(tx.Elem()).Interface())
+		}
+
+		// maps get converted into a list of structs:
+		// the 0 item is the key, and the 1 item is the value
+		ss := make([]vm.Value, 0, vx.Len())
+		for _, key := range vx.MapKeys() {
+			keyV, err := ToValueScalar(key.Interface())
+			if err != nil {
+				return nil, err
+			}
+
+			value := vx.MapIndex(key)
+			valueV, err := ToValue(value.Interface())
+			if err != nil {
+				return nil, err
+			}
+
+			ss = append(ss, vm.NewTupleStruct(keyV, valueV))
+		}
+		return vm.NewList(ss...), nil
+
 	default:
 		// for all other types assume it's a scalar
+		// fmt.Printf("scalar? %T (%v)\n", x, x)
 		return ToValueScalar(x)
 	}
 }
