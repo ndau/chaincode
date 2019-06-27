@@ -98,6 +98,16 @@ type ChaincodeVM struct {
 	now       Nower
 }
 
+// NewEmpty creates a new VM with a minimal empty handler
+func NewEmpty() (*ChaincodeVM, error) {
+	return New(ChasmBinary{"", "", MiniAsm("handler 0 enddef")})
+}
+
+// NewChaincode creates a new VM from the supplied chaincode
+func NewChaincode(c Chaincode) (*ChaincodeVM, error) {
+	return New(ChasmBinary{"", "", c})
+}
+
 // New creates a new VM and loads a ChasmBinary into it (or errors)
 func New(bin ChasmBinary) (*ChaincodeVM, error) {
 	vm := ChaincodeVM{}
