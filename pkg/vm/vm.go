@@ -304,7 +304,7 @@ func (vm *ChaincodeVM) String() string {
 	st := strings.Split(vm.stack.String(), "\n")
 	st1 := make([]string, len(st))
 	for i := range st {
-		st1[i] = st[i][4:]
+		st1[len(st)-i-1] = st[i][4:]
 	}
 	disasm, _ := vm.Disassemble(vm.pc)
 	return fmt.Sprintf("%-40s STK: %s\n", disasm, strings.Join(st1, ", "))
