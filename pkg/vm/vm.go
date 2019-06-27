@@ -1,10 +1,13 @@
 package vm
 
 import (
+	"encoding/binary"
 	"fmt"
 	"io"
 	"sort"
 	"strings"
+
+	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 )
 
 // TODO: tweak data types to support our real keys and timestamps and use ndaumath
@@ -250,6 +253,48 @@ type Stringizer func(op Opcode, extra []Opcode) string
 
 // DisasmHelpers is a map for specific opcodes to override the default renderer.
 var DisasmHelpers = make(map[Opcode]Stringizer)
+
+func init() {
+	getInt := func(extra []Opcode) int64 {
+		b := Chaincode(extra).Bytes()
+		if len(b) < 8 {
+			b = append(b, make([]byte, 8-len(b))...)
+		}
+		i := binary.LittleEndian.Uint64(b)
+		return int64(i)
+	}
+
+	helpInt := func(op Opcode, extra []Opcode) string {
+		return fmt.Sprintf("%-7s %-12d ", op, getInt(extra))
+	}
+
+	// add disassembly helpers which render the base-10 values
+	// for all pushn opcodes
+	DisasmHelpers[OpPush1] = helpInt
+	DisasmHelpers[OpPush2] = helpInt
+	DisasmHelpers[OpPush3] = helpInt
+	DisasmHelpers[OpPush4] = helpInt
+	DisasmHelpers[OpPush5] = helpInt
+	DisasmHelpers[OpPush6] = helpInt
+	DisasmHelpers[OpPush7] = helpInt
+	DisasmHelpers[OpPush8] = helpInt
+
+	// render a binary string
+	DisasmHelpers[OpPushB] = func(op Opcode, extra []Opcode) string {
+		data := fmt.Sprintf("%q", Chaincode(extra).Bytes())
+		// trim surrounding quotes
+		data = data[1 : len(data)-1]
+		if len(data) > 21 { // empirically determined field width
+			data = data[:18] + "..."
+		}
+		return fmt.Sprintf("%-7s %-12s ", op, data)
+	}
+
+	// render a timestamp
+	DisasmHelpers[OpPushT] = func(op Opcode, extra []Opcode) string {
+		return fmt.Sprintf("%-7s %-12s ", op, math.Timestamp(getInt(extra)).String())
+	}
+}
 
 // DisassembleAll dumps a disassembly of the whole VM to the Writer
 func (vm *ChaincodeVM) DisassembleAll(w io.Writer) {

@@ -63,11 +63,13 @@ func TestExerciseStrings(t *testing.T) {
 	da, n := vm.Disassemble(4)
 	assert.Equal(t, 2, n)
 	assert.Contains(t, da, "Push1")
+	t.Log(da)
 
 	da, n = vm.Disassemble(9)
 	assert.Equal(t, 19, n)
 	assert.Contains(t, da, "PushB")
 	assert.Contains(t, da, " 61 6c ")
+	t.Log(da)
 
 	DisasmHelpers[OpField] = func(op Opcode, extra []Opcode) string {
 		return fmt.Sprintf("%s Ix(%d)", op, extra[0])
