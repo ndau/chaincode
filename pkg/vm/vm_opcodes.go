@@ -22,6 +22,15 @@ func (vm *ChaincodeVM) runtimeError(err error) error {
 // means we should skip to instruction after the corresponding ENDIF.
 func (vm *ChaincodeVM) skipToMatchingBracket(wasIf bool) error {
 	nesting := 0
+	// this function relies on the assumption that we have already incremented
+	// the pc following the current instruction. That instruction is not in fact
+	// true, but it's easy to mimic those conditions.
+	vm.pc++
+	// undo the increment on the way out
+	defer func() {
+		vm.pc--
+	}()
+
 	for {
 		instr := vm.code[vm.pc]
 		extra := extraBytes(vm.code, vm.pc)
@@ -104,13 +113,34 @@ func (vm *ChaincodeVM) Step(debug Dumper) error {
 		return nil
 	}
 
-	// fetch the instruction
-	instr := vm.code[vm.pc]
 	// we'll add this at the very bottom
 	extra := extraBytes(vm.code, vm.pc)
-	// we always increment the pc immediately; we may also add to it if an instruction has additional data
-	// when we report errors, we subtract 1 to get the correct value
-	vm.pc++
+	// run the opcodes
+	err := vm.eval(vm.code[vm.pc:vm.pc+extra+1], debug)
+	// edit the pc regardless of whether the instruction succeeded or not
+	vm.pc += 1 + extra
+	// return whatever error value the opcode produced
+	return err
+}
+
+// Inject runs an instruction on this VM without editing its internal state
+func (vm *ChaincodeVM) Inject(code []Opcode, debug Dumper) error {
+	if len(code) == 0 {
+		return errors.New("no opcodes provided to Inject")
+	}
+	if len(code) != 1+extraBytes(code, 0) {
+		return errors.New("more than one opcode provided to Inject")
+	}
+	switch code[0] {
+	case OpIfZ, OpIfNZ, OpElse, OpEndIf, OpDef, OpEndDef:
+		return fmt.Errorf("cannot inject %s", code[0])
+	}
+	return vm.eval(code, debug)
+}
+
+func (vm *ChaincodeVM) eval(code []Opcode, debug Dumper) error {
+	instr := code[0]
+	code = code[1:]
 	switch instr {
 	case OpNop:
 		// do nothing
@@ -174,7 +204,7 @@ func (vm *ChaincodeVM) Step(debug Dumper) error {
 		}
 
 	case OpPick:
-		n := int(vm.code[vm.pc])
+		n := int(code[0])
 		v, err := vm.stack.Get(n)
 		if err != nil {
 			return vm.runtimeError(err)
@@ -184,7 +214,7 @@ func (vm *ChaincodeVM) Step(debug Dumper) error {
 		}
 
 	case OpRoll:
-		n := int(vm.code[vm.pc])
+		n := int(code[0])
 		v, err := vm.stack.PopAt(n)
 		if err != nil {
 			return vm.runtimeError(err)
@@ -194,7 +224,7 @@ func (vm *ChaincodeVM) Step(debug Dumper) error {
 		}
 
 	case OpTuck:
-		n := int(vm.code[vm.pc])
+		n := int(code[0])
 		v, err := vm.stack.Pop()
 		if err != nil {
 			return vm.runtimeError(err)
@@ -222,7 +252,7 @@ func (vm *ChaincodeVM) Step(debug Dumper) error {
 		var i byte
 		var b Opcode
 		for i = 0; i < nbytes; i++ {
-			b = vm.code[vm.pc+int(i)]
+			b = code[0+int(i)]
 			value |= int64(b) << (i * 8)
 		}
 		// if the high bit was zero, it is a negative number, so
@@ -241,7 +271,7 @@ func (vm *ChaincodeVM) Step(debug Dumper) error {
 		var i byte
 		var b Opcode
 		for i = 0; i < 8; i++ {
-			b = vm.code[vm.pc+int(i)]
+			b = code[0+int(i)]
 			value |= int64(b) << (i * 8)
 		}
 		if value < 0 {
@@ -262,10 +292,10 @@ func (vm *ChaincodeVM) Step(debug Dumper) error {
 		}
 
 	case OpPushB:
-		n := int(vm.code[vm.pc])
+		n := int(code[0])
 		b := make([]byte, n)
 		for i := 0; i < n; i++ {
-			b[i] = byte(vm.code[vm.pc+int(i+1)])
+			b[i] = byte(code[0+int(i+1)])
 		}
 		v := NewBytes(b)
 		if err := vm.stack.Push(v); err != nil {
@@ -572,7 +602,7 @@ func (vm *ChaincodeVM) Step(debug Dumper) error {
 		if err != nil {
 			return vm.runtimeError(err)
 		}
-		fix := vm.code[vm.pc]
+		fix := code[0]
 		f, err := st.Get(byte(fix))
 		if err != nil {
 			return vm.runtimeError(err)
@@ -586,7 +616,7 @@ func (vm *ChaincodeVM) Step(debug Dumper) error {
 		if err != nil {
 			return vm.runtimeError(err)
 		}
-		fix := vm.code[vm.pc]
+		fix := code[0]
 
 		f := NewTrue()
 		if _, err = st.Get(byte(fix)); err != nil {
@@ -601,7 +631,7 @@ func (vm *ChaincodeVM) Step(debug Dumper) error {
 		if err != nil {
 			return vm.runtimeError(err)
 		}
-		fix := vm.code[vm.pc]
+		fix := code[0]
 		extract := func(v Value) (Value, error) {
 			f, ok := v.(*Struct)
 			if !ok {
@@ -627,7 +657,7 @@ func (vm *ChaincodeVM) Step(debug Dumper) error {
 		// new stack for the function and populates it by copying (NOT popping off!) the specified number of
 		// values from the caller's stack. The function call returns a single Value which is pushed
 		// onto the caller's stack.
-		funcnum := int(vm.code[vm.pc])
+		funcnum := int(code[0])
 		result, err := vm.callFunction(funcnum, debug)
 		if err != nil {
 			return err
@@ -637,8 +667,8 @@ func (vm *ChaincodeVM) Step(debug Dumper) error {
 		}
 
 	case OpDeco:
-		funcnum := int(vm.code[vm.pc])
-		fieldID := byte(vm.code[vm.pc+1])
+		funcnum := int(code[0])
+		fieldID := byte(code[0+1])
 		// we're going to iterate over a List of structs so validate it
 		l, err := vm.stack.PopAsListOfStructs(-1)
 		if err != nil {
@@ -782,7 +812,7 @@ func (vm *ChaincodeVM) Step(debug Dumper) error {
 		}
 
 	case OpWChoice:
-		fix := vm.code[vm.pc]
+		fix := code[0]
 		src, err := vm.stack.PopAsListOfStructs(int(fix))
 		if err != nil {
 			return vm.runtimeError(err)
@@ -825,7 +855,7 @@ func (vm *ChaincodeVM) Step(debug Dumper) error {
 		if err != nil {
 			return vm.runtimeError(err)
 		}
-		fix := vm.code[vm.pc]
+		fix := code[0]
 		// note - error handling is weak because the less function that sort.Slice()
 		// uses cannot fail, so we can only figure it out after the sort completes.
 		// This means if you try to sort bad data, you still get an error but
@@ -855,7 +885,7 @@ func (vm *ChaincodeVM) Step(debug Dumper) error {
 		}
 
 	case OpLookup:
-		funcnum := int(vm.code[vm.pc])
+		funcnum := int(code[0])
 		// we're going to iterate over a List of structs so validate it
 		l, err := vm.stack.PopAsListOfStructs(-1)
 		if err != nil {
@@ -928,6 +958,5 @@ func (vm *ChaincodeVM) Step(debug Dumper) error {
 		return vm.runtimeError(newRuntimeError(fmt.Sprintf("unimplemented opcode %s at %d", instr, vm.pc)))
 	}
 
-	vm.pc += extra
 	return nil
 }
