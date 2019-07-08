@@ -22,9 +22,19 @@ func (vm *ChaincodeVM) runtimeError(err error) error {
 // means we should skip to instruction after the corresponding ENDIF.
 func (vm *ChaincodeVM) skipToMatchingBracket(wasIf bool) error {
 	nesting := 0
-	// this function relies on the assumption that we have already incremented
-	// the pc following the current instruction. That instruction is not in fact
-	// true, but it's easy to mimic those conditions.
+	// When this function was written, it was only ever called when the program
+	// counter had been incremented after an instruction: if we're trying to match
+	// the bracket of an if statement, that statement would live at
+	// `vm.code[vm.pc-1]`
+	//
+	// https://github.com/oneiro-ndev/chaincode/pull/81/commits/122aa3b5009590bc488d204289b47800954f316b
+	// refactored the sequence by which the VM is updated during an evaluation.
+	// One consequence of this refactor is that the PC is not incremented until after
+	// the instruction is fully evaluated. Fully evaluating the instruction
+	// includes calls to this function.
+	//
+	// It proved simpler to temporarily adjust the PC for the duration of this function
+	// than to rewrite it with different assumptions about the current state of the PC.
 	vm.pc++
 	// undo the increment on the way out
 	defer func() {
@@ -124,7 +134,7 @@ func (vm *ChaincodeVM) Step(debug Dumper) error {
 }
 
 // Inject runs an instruction on this VM without editing its internal state
-func (vm *ChaincodeVM) Inject(code []Opcode, debug Dumper) error {
+func (vm *MutableChaincodeVM) Inject(code []Opcode, debug Dumper) error {
 	if len(code) == 0 {
 		return errors.New("no opcodes provided to Inject")
 	}

@@ -98,6 +98,24 @@ type ChaincodeVM struct {
 	now       Nower
 }
 
+// MutableChaincodeVM is a chaincode vm into which instructions can be injected
+// externally at arbitrary points.
+//
+// The default, normal sequence of operations is for a script to be immutable:
+// it is created, initialized, run, and values are extracted. Determinism isn't
+// just an accidental property; it's a designed requirement of the system.
+//
+// However, there are cases, such as within debuggers, in which it is desirable
+// to be able to run arbitrary chaincode commands during the evaluation of a
+// chaincode script. This breaks determinism for that context, but within the
+// debugger, that isn't such a big problem.
+//
+// An instance of this type can be constructed from a normal ChaincodeVM
+// by calling its MakeMutable method.
+type MutableChaincodeVM struct {
+	ChaincodeVM
+}
+
 // NewEmpty creates a new VM with a minimal empty handler
 func NewEmpty() (*ChaincodeVM, error) {
 	return New(ChasmBinary{"", "", MiniAsm("handler 0 enddef")})
@@ -421,4 +439,15 @@ func (vm *ChaincodeVM) DisassembleLine(pc int) *DisassembledLine {
 	}
 
 	return r
+}
+
+// MakeMutable allows this VM to be mutated externally.
+//
+// This function consumes the ChaincodeVM instance on which it is defined;
+// no references to that instance should be retained or used after this is called.
+//
+// This call is explicit and grep-able, so codebases which require determinism
+// can easily prove that no script is mutable.
+func (vm ChaincodeVM) MakeMutable() MutableChaincodeVM {
+	return MutableChaincodeVM{ChaincodeVM: vm}
 }
