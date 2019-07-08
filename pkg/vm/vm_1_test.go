@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func buildVM(t *testing.T, s string) *ChaincodeVM {
@@ -1185,4 +1186,25 @@ func TestSizeFail1(t *testing.T) {
 	// and if we put max data size to 256 it should fail with data too long
 	SetMaxLengths(256, 256)
 	buildVMfail(t, s)
+}
+
+func TestMakeMutable(t *testing.T) {
+	vm, err := NewChaincode(MiniAsm("handler 0 one enddef"))
+	require.NoError(t, err)
+	require.NotNil(t, vm)
+
+	mvm := vm.MakeMutable()
+	require.NotNil(t, mvm)
+	require.NotNil(t, vm)
+	require.Zero(t, *vm)
+
+	// ensure that the inner VM still works
+	err = mvm.Init(0)
+	require.NoError(t, err)
+	err = mvm.Step(nil)
+	require.NoError(t, err)
+
+	// ensure inject works
+	err = mvm.Inject([]Opcode{OpOne}, nil)
+	require.NoError(t, err)
 }

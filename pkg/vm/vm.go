@@ -445,9 +445,12 @@ func (vm *ChaincodeVM) DisassembleLine(pc int) *DisassembledLine {
 //
 // This function consumes the ChaincodeVM instance on which it is defined;
 // no references to that instance should be retained or used after this is called.
+// To help enforce this restriction, this function zeroizes the calling vm.
 //
 // This call is explicit and grep-able, so codebases which require determinism
 // can easily prove that no script is mutable.
-func (vm ChaincodeVM) MakeMutable() MutableChaincodeVM {
-	return MutableChaincodeVM{ChaincodeVM: vm}
+func (vm *ChaincodeVM) MakeMutable() *MutableChaincodeVM {
+	mvm := MutableChaincodeVM{ChaincodeVM: *vm}
+	*vm = ChaincodeVM{}
+	return &mvm
 }
