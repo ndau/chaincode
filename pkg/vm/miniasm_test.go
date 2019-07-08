@@ -10,7 +10,7 @@ func TestMiniAsmSafe(t *testing.T) {
 		arg     string
 		wantErr bool
 	}{
-		{"// TODO: Add test cases.", true},
+		{"This is definitely not valid chaincode.", true},
 		{"ff", false},
 		{"handler 0 zero enddef", false},
 		{"ffoo", true},
