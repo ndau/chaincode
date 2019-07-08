@@ -1,10 +1,13 @@
 package vm
 
 import (
+	"encoding/binary"
 	"fmt"
 	"io"
 	"sort"
 	"strings"
+
+	math "github.com/oneiro-ndev/ndaumath/pkg/types"
 )
 
 // TODO: tweak data types to support our real keys and timestamps and use ndaumath
@@ -93,6 +96,34 @@ type ChaincodeVM struct {
 	functions []funcInfo   // info for the functions indexed by function number
 	rand      Randomer
 	now       Nower
+}
+
+// MutableChaincodeVM is a chaincode vm into which instructions can be injected
+// externally at arbitrary points.
+//
+// The default, normal sequence of operations is for a script to be immutable:
+// it is created, initialized, run, and values are extracted. Determinism isn't
+// just an accidental property; it's a designed requirement of the system.
+//
+// However, there are cases, such as within debuggers, in which it is desirable
+// to be able to run arbitrary chaincode commands during the evaluation of a
+// chaincode script. This breaks determinism for that context, but within the
+// debugger, that isn't such a big problem.
+//
+// An instance of this type can be constructed from a normal ChaincodeVM
+// by calling its MakeMutable method.
+type MutableChaincodeVM struct {
+	ChaincodeVM
+}
+
+// NewEmpty creates a new VM with a minimal empty handler
+func NewEmpty() (*ChaincodeVM, error) {
+	return New(ChasmBinary{"", "", MiniAsm("handler 0 enddef")})
+}
+
+// NewChaincode creates a new VM from the supplied chaincode
+func NewChaincode(c Chaincode) (*ChaincodeVM, error) {
+	return New(ChasmBinary{"", "", c})
 }
 
 // New creates a new VM and loads a ChasmBinary into it (or errors)
@@ -251,6 +282,48 @@ type Stringizer func(op Opcode, extra []Opcode) string
 // DisasmHelpers is a map for specific opcodes to override the default renderer.
 var DisasmHelpers = make(map[Opcode]Stringizer)
 
+func init() {
+	getInt := func(extra []Opcode) int64 {
+		b := Chaincode(extra).Bytes()
+		if len(b) < 8 {
+			b = append(b, make([]byte, 8-len(b))...)
+		}
+		i := binary.LittleEndian.Uint64(b)
+		return int64(i)
+	}
+
+	helpInt := func(op Opcode, extra []Opcode) string {
+		return fmt.Sprintf("%-7s %-12d ", op, getInt(extra))
+	}
+
+	// add disassembly helpers which render the base-10 values
+	// for all pushn opcodes
+	DisasmHelpers[OpPush1] = helpInt
+	DisasmHelpers[OpPush2] = helpInt
+	DisasmHelpers[OpPush3] = helpInt
+	DisasmHelpers[OpPush4] = helpInt
+	DisasmHelpers[OpPush5] = helpInt
+	DisasmHelpers[OpPush6] = helpInt
+	DisasmHelpers[OpPush7] = helpInt
+	DisasmHelpers[OpPush8] = helpInt
+
+	// render a binary string
+	DisasmHelpers[OpPushB] = func(op Opcode, extra []Opcode) string {
+		data := fmt.Sprintf("%q", Chaincode(extra).Bytes())
+		// trim surrounding quotes
+		data = data[1 : len(data)-1]
+		if len(data) > 21 { // empirically determined field width
+			data = data[:18] + "..."
+		}
+		return fmt.Sprintf("%-7s %-12s ", op, data)
+	}
+
+	// render a timestamp
+	DisasmHelpers[OpPushT] = func(op Opcode, extra []Opcode) string {
+		return fmt.Sprintf("%-7s %-12s ", op, math.Timestamp(getInt(extra)).String())
+	}
+}
+
 // DisassembleAll dumps a disassembly of the whole VM to the Writer
 func (vm *ChaincodeVM) DisassembleAll(w io.Writer) {
 	fmt.Fprintln(w, "--DISASSEMBLY--")
@@ -304,7 +377,7 @@ func (vm *ChaincodeVM) String() string {
 	st := strings.Split(vm.stack.String(), "\n")
 	st1 := make([]string, len(st))
 	for i := range st {
-		st1[i] = st[i][4:]
+		st1[len(st)-i-1] = st[i][4:]
 	}
 	disasm, _ := vm.Disassemble(vm.pc)
 	return fmt.Sprintf("%-40s STK: %s\n", disasm, strings.Join(st1, ", "))
@@ -366,4 +439,18 @@ func (vm *ChaincodeVM) DisassembleLine(pc int) *DisassembledLine {
 	}
 
 	return r
+}
+
+// MakeMutable allows this VM to be mutated externally.
+//
+// This function consumes the ChaincodeVM instance on which it is defined;
+// no references to that instance should be retained or used after this is called.
+// To help enforce this restriction, this function zeroizes the calling vm.
+//
+// This call is explicit and grep-able, so codebases which require determinism
+// can easily prove that no script is mutable.
+func (vm *ChaincodeVM) MakeMutable() *MutableChaincodeVM {
+	mvm := MutableChaincodeVM{ChaincodeVM: *vm}
+	*vm = ChaincodeVM{}
+	return &mvm
 }

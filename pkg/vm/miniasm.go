@@ -1,6 +1,8 @@
 package vm
 
 import (
+	"errors"
+	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
@@ -89,4 +91,22 @@ func MiniAsm(s string) Chaincode {
 		opcodes = append(opcodes, Opcode(b))
 	}
 	return Chaincode(opcodes)
+}
+
+// MiniAsmSafe is a mini-assembler for chaincode which does not panic on errors.
+func MiniAsmSafe(s string) (c Chaincode, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			switch p := r.(type) {
+			case error:
+				err = p
+			case fmt.Stringer:
+				err = errors.New(p.String())
+			default:
+				err = fmt.Errorf("%v", p)
+			}
+		}
+	}()
+	c = MiniAsm(s)
+	return
 }
