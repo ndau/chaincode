@@ -46,6 +46,38 @@ const (
 	RsError    RunState = iota
 )
 
+// DisassembleTabWidth is the number of spaces of indent for each tab in disassembly
+const DisassembleTabWidth = 4
+
+var tab string
+
+func init() {
+	for i := 0; i < DisassembleTabWidth; i++ {
+		tab += " "
+	}
+}
+
+// IndentOpcodes is the set of opcodes which result in a formatting indent
+var IndentOpcodes map[Opcode]struct{}
+
+// DedentOpcodes is the set of opcodes which result in a formatting dedent
+var DedentOpcodes map[Opcode]struct{}
+
+func init() {
+	s := struct{}{}
+
+	IndentOpcodes = make(map[Opcode]struct{})
+	IndentOpcodes[OpDef] = s
+	IndentOpcodes[OpIfZ] = s
+	IndentOpcodes[OpIfNZ] = s
+	IndentOpcodes[OpHandler] = s
+
+	DedentOpcodes = make(map[Opcode]struct{})
+	DedentOpcodes[OpEndDef] = s
+	DedentOpcodes[OpElse] = s
+	DedentOpcodes[OpEndIf] = s
+}
+
 // HistoryState is a single item in the history of a VM
 type HistoryState struct {
 	PC    int
@@ -327,10 +359,24 @@ func init() {
 // DisassembleAll dumps a disassembly of the whole VM to the Writer
 func (vm *ChaincodeVM) DisassembleAll(w io.Writer) {
 	fmt.Fprintln(w, "--DISASSEMBLY--")
+	tabs := 0
 	for pc := 0; pc < len(vm.code); {
-		s, delta := vm.Disassemble(pc)
-		pc += delta
+		// dedent before producing a line
+		if _, ok := DedentOpcodes[vm.code[pc]]; ok {
+			tabs--
+		}
+
+		// produce a line
+		s, delta := vm.disassembleIndent(pc, tabs)
 		fmt.Fprintln(w, s)
+
+		// indent after producing a line
+		if _, ok := IndentOpcodes[vm.code[pc]]; ok {
+			tabs++
+		}
+
+		// go to next instruction
+		pc += delta
 	}
 	fmt.Fprintln(w, "---------------")
 }
@@ -338,6 +384,10 @@ func (vm *ChaincodeVM) DisassembleAll(w io.Writer) {
 // Disassemble returns a single disassembled instruction as a text string, possibly with embedded newlines,
 // along with how many bytes it consumed.
 func (vm *ChaincodeVM) Disassemble(pc int) (string, int) {
+	return vm.disassembleIndent(pc, 0)
+}
+
+func (vm *ChaincodeVM) disassembleIndent(pc int, tabs int) (string, int) {
 	if pc >= len(vm.code) {
 		return "END", 0
 	}
@@ -355,6 +405,10 @@ func (vm *ChaincodeVM) Disassemble(pc int) (string, int) {
 		hex = hex[24:]
 	}
 	out += fmt.Sprintf("%-24s  ", hex)
+
+	for i := 0; i < tabs; i++ {
+		out += tab
+	}
 
 	if helper, ok := DisasmHelpers[op]; !ok {
 		args := ""
