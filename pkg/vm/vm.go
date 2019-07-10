@@ -47,7 +47,7 @@ const (
 )
 
 // DisassembleTabWidth is the number of spaces of indent for each tab in disassembly
-const DisassembleTabWidth = 4
+const DisassembleTabWidth = 2
 
 var tab string
 
