@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestDeco1(t *testing.T) {
@@ -452,4 +453,11 @@ func TestBytes(t *testing.T) {
 
 	code2 := ConvertToOpcodes(b)
 	assert.Equal(t, code, code2)
+}
+
+func TestStackNeverReturnsNil(t *testing.T) {
+	vm, err := NewEmpty()
+	require.NoError(t, err)
+	vm.Stack().Push(NewNumber(0))
+	// shouldn't panic
 }

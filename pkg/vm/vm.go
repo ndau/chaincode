@@ -213,6 +213,9 @@ func (vm *ChaincodeVM) CreateForFunc(funcnum int) (*ChaincodeVM, error) {
 
 // Stack returns the current stack of the VM
 func (vm *ChaincodeVM) Stack() *Stack {
+	if vm.stack == nil {
+		vm.stack = NewStack()
+	}
 	return vm.stack
 }
 
