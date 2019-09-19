@@ -60,6 +60,10 @@ func (vt Number) IsTrue() bool {
 }
 
 // AsInt64 allows retrieving the contents of a Number object as an int64
+//
+// implements Numeric
 func (vt Number) AsInt64() int64 {
 	return vt.v
 }
+
+var _ Numeric = (*Number)(nil)

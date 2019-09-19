@@ -74,3 +74,10 @@ func (vt Timestamp) IsTrue() bool {
 func (vt Timestamp) T() int64 {
 	return int64(vt.t)
 }
+
+// AsInt64 implements Numeric
+func (vt Timestamp) AsInt64() int64 {
+	return vt.T()
+}
+
+var _ Numeric = (*Timestamp)(nil)
