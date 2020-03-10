@@ -18,7 +18,7 @@ import (
 	"math/rand"
 	"sort"
 
-	"github.com/oneiro-ndev/ndaumath/pkg/signed"
+	"github.com/ndau/ndaumath/pkg/signed"
 )
 
 func (vm *ChaincodeVM) runtimeError(err error) error {
@@ -37,7 +37,7 @@ func (vm *ChaincodeVM) skipToMatchingBracket(wasIf bool) error {
 	// the bracket of an if statement, that statement would live at
 	// `vm.code[vm.pc-1]`
 	//
-	// https://github.com/oneiro-ndev/chaincode/pull/81/commits/122aa3b5009590bc488d204289b47800954f316b
+	// https://github.com/ndau/chaincode/pull/81/commits/122aa3b5009590bc488d204289b47800954f316b
 	// refactored the sequence by which the VM is updated during an evaluation.
 	// One consequence of this refactor is that the PC is not incremented until after
 	// the instruction is fully evaluated. Fully evaluating the instruction

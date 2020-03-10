@@ -15,7 +15,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/oneiro-ndev/ndaumath/pkg/bitset256"
+	"github.com/ndau/ndaumath/pkg/bitset256"
 )
 
 // Struct maintains a single struct object; it maintains a map of byte ids to fields

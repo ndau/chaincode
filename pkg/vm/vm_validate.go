@@ -14,7 +14,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/oneiro-ndev/ndaumath/pkg/bitset256"
+	"github.com/ndau/ndaumath/pkg/bitset256"
 )
 
 // this validates a VM to make sure that its structural elements (if, else, def, end)

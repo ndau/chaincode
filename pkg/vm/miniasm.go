@@ -17,7 +17,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/oneiro-ndev/ndaumath/pkg/address"
+	"github.com/ndau/ndaumath/pkg/address"
 )
 
 // MiniAsm is a miniature assembler that has very simple syntax. It's primarily intended for writing

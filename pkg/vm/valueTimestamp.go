@@ -13,7 +13,7 @@ package vm
 import (
 	"time"
 
-	"github.com/oneiro-ndev/ndaumath/pkg/types"
+	"github.com/ndau/ndaumath/pkg/types"
 )
 
 // Timestamp is a Value type representing duration since the epoch

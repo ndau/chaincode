@@ -17,7 +17,7 @@ import (
 	"sort"
 	"strings"
 
-	math "github.com/oneiro-ndev/ndaumath/pkg/types"
+	math "github.com/ndau/ndaumath/pkg/types"
 )
 
 // TODO: tweak data types to support our real keys and timestamps and use ndaumath

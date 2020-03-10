@@ -16,8 +16,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/oneiro-ndev/chaincode/pkg/vm"
-	"github.com/oneiro-ndev/ndaumath/pkg/types"
+	"github.com/ndau/chaincode/pkg/vm"
+	"github.com/ndau/ndaumath/pkg/types"
 )
 
 func TestToValueScalar(t *testing.T) {
