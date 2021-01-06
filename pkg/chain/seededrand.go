@@ -14,7 +14,7 @@ import (
 	"crypto/sha256"
 	"math/rand"
 
-	"github.com/bszcz/mt19937_64" // Use standard package rather than our old fork
+	"github.com/ndau/mt19937_64" // Use standard package rather than our old fork
 )
 
 // SeededRand is a random number generator that conforms to Randomer.
