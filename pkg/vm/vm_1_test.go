@@ -9,7 +9,6 @@ package vm
 // https://www.apache.org/licenses/LICENSE-2.0.txt
 // - -- --- ---- -----
 
-
 import (
 	"fmt"
 	"math"
@@ -856,6 +855,11 @@ func TestTimestampDefaultNow(t *testing.T) {
 	// This checks that the default now operation returns a date stamp
 	// between 1/1/18 and 2/2/22 (which will fail someday but not for a
 	// few years)
+
+	// EJM Well, it's been a few years... updated to test up to 2/3/23;
+	// it's still helpfult to keep a fairly narrow range.
+	// I didn't change the start date because I'm not sure how this opcode
+	// is used during catchup.
 	vm := buildVM(t, `
 		handler 0
 		now
@@ -867,7 +871,7 @@ func TestTimestampDefaultNow(t *testing.T) {
 		sub
 		zero
 		eq
-		pusht 2022-02-02T22:22:22Z
+		pusht 2023-02-03T23:23:23Z
 		now
 		gt
 		enddef
